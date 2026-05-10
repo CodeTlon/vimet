@@ -1,0 +1,53 @@
+{
+  "brand": {
+    "name": "VIMET",
+    "fullName": "Vida y Metabolismo",
+    "slogan": "Nutrición y entrenamiento especializado en alteraciones metabólicas",
+    "description": "Equipo interdisciplinario que combina nutrición basada en evidencia y entrenamiento personalizado.",
+    "city": "Córdoba, Argentina",
+    "founded": 2024
+  },
+  "colors": {
+    "primary": "#E8611A",
+    "accent": "#C4391C",
+    "dark": "#1A1A1A",
+    "cream": "#FFF8F5",
+    "sand": "#FFF9F5",
+    "background": "#FAFAFA",
+    "gradient": "linear-gradient(135deg, #E8611A, #C4391C)"
+  },
+  "typography": {
+    "heading": "Outfit",
+    "body": "DM Sans"
+  },
+  "contact": {
+    "address": "Av. Pedro Simón Laplace 5573",
+    "place": "Instituto VIANETT",
+    "city": "Córdoba",
+    "instagram": "@vimet_salud",
+    "instagramUrl": "https://instagram.com/vimet_salud",
+    "whatsapp": "https://wa.me/543513752818"
+  },
+  "team": {
+    "avril": {
+      "name": "Avril Jerushalmi",
+      "title": "Lic. en Nutrición",
+      "phone": "3513752818",
+      "instagram": "@avriljer.nutricion",
+      "instagramUrl": "https://instagram.com/avriljer.nutricion",
+      "whatsappUrl": "https://wa.me/543513752818",
+      "avatar": "/images/team/avril.jpg",
+      "email": "avril@vimet.com"
+    },
+    "gero": {
+      "name": "Gerónimo Gallardo",
+      "title": "Prof. de Educación Física",
+      "phone": "3544405114",
+      "instagram": "@gero_gallardoo",
+      "instagramUrl": "https://instagram.com/gero_gallardoo",
+      "whatsappUrl": "https://wa.me/543544405114",
+      "avatar": "/images/team/gero.jpg",
+      "email": "gero@vimet.com"
+    }
+  }
+}
