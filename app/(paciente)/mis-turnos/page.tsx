@@ -1,6 +1,5 @@
 import { Building2, CalendarDays, CalendarPlus, Clock, UserRound, Video } from 'lucide-react'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 
 import { cancelarTurnoAction } from '@/actions/turnos'
 import { createClient } from '@/lib/supabase/server'
@@ -48,7 +47,8 @@ export default async function MisTurnosPage({
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) redirect('/login?next=/mis-turnos')
+  // Layout (paciente) ya valida sesión y rol — acá user nunca es null.
+  if (!user) return null
 
   const [{ data: profile }, { data: turnos }] = await Promise.all([
     supabase.from('profiles').select('nombre, apellido').eq('id', user.id).maybeSingle(),
@@ -76,9 +76,8 @@ export default async function MisTurnosPage({
   const showNuevo = searchParams?.nuevo === '1'
 
   return (
-    <div className="min-h-screen pt-24 pb-16 bg-vimet-sand">
-      <div className="container-vimet">
-        <div className="flex flex-col sm:flex-row gap-4 sm:items-end sm:justify-between mb-8">
+    <>
+      <div className="flex flex-col sm:flex-row gap-4 sm:items-end sm:justify-between mb-8">
           <div>
             <h1 className="font-heading text-3xl sm:text-4xl font-bold text-gray-900">
               Mis Turnos
@@ -184,9 +183,8 @@ export default async function MisTurnosPage({
                 </li>
               )
             })}
-          </ul>
-        )}
-      </div>
-    </div>
+        </ul>
+      )}
+    </>
   )
 }
