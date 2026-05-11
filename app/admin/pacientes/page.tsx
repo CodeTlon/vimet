@@ -1,4 +1,5 @@
-import { Mail, Phone, UsersRound } from 'lucide-react'
+import { ArrowRight, Mail, Phone, UsersRound } from 'lucide-react'
+import Link from 'next/link'
 
 import { createClient } from '@/lib/supabase/server'
 
@@ -48,13 +49,19 @@ export default async function PacientesPage() {
                   <th className="px-4 py-3 font-semibold">Email</th>
                   <th className="px-4 py-3 font-semibold">Teléfono</th>
                   <th className="px-4 py-3 font-semibold">Registrado</th>
+                  <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {pacientes.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-semibold text-gray-900">
-                      {p.nombre} {p.apellido}
+                      <Link
+                        href={`/admin/pacientes/${p.id}`}
+                        className="hover:text-vimet-orange"
+                      >
+                        {p.nombre} {p.apellido}
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-gray-700">
                       {p.email ? (
@@ -84,6 +91,14 @@ export default async function PacientesPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-700">
                       {new Date(p.created_at).toLocaleDateString('es-AR')}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        href={`/admin/pacientes/${p.id}`}
+                        className="inline-flex items-center gap-1 text-vimet-orange font-semibold text-sm hover:underline"
+                      >
+                        Abrir <ArrowRight className="size-3.5" />
+                      </Link>
                     </td>
                   </tr>
                 ))}
