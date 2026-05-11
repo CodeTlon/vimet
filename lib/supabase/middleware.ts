@@ -33,6 +33,11 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/registro')
   const isProtected =
     pathname.startsWith('/mis-turnos') ||
+    pathname.startsWith('/mi-ficha') ||
+    pathname.startsWith('/mi-progreso') ||
+    pathname.startsWith('/mis-planes') ||
+    pathname.startsWith('/mis-objetivos') ||
+    pathname.startsWith('/feedback-semanal') ||
     pathname.startsWith('/turnos') ||
     pathname.startsWith('/admin')
 
