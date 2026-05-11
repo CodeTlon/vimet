@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarPlus, ChartLine, LogIn, LogOut, Menu, X } from 'lucide-react'
+import { CalendarPlus, ChartLine, LayoutDashboard, LogIn, LogOut, Menu, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -33,7 +33,7 @@ export function Navbar() {
   const [user, setUser] = useState<{ id: string; rol: string } | null>(null)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24)
+    const onScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.8)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
@@ -147,7 +147,7 @@ export function Navbar() {
                     transparent ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100',
                   )}
                 >
-                  <CalendarPlus className="size-4" /> Mis Turnos
+                  <LayoutDashboard className="size-4" /> Mi espacio
                 </Link>
               )}
               <form action={logoutAction}>
@@ -198,8 +198,13 @@ export function Navbar() {
         </button>
       </div>
 
-      {open && (
-        <div className="lg:hidden bg-white text-gray-900 border-t border-gray-100">
+      <div
+        className={cn(
+          'lg:hidden overflow-hidden transition-all duration-300 ease-in-out',
+          open ? 'max-h-[520px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none',
+        )}
+      >
+        <div className="bg-white text-gray-900 border-t border-gray-100">
           <nav className="container-vimet flex flex-col py-4 gap-1">
             {links.map((l) => {
               const active = l.href === '/' ? pathname === '/' : pathname.startsWith(l.href)
@@ -223,7 +228,7 @@ export function Navbar() {
                     href={isStaff ? '/admin/dashboard' : '/mis-turnos'}
                     className="px-4 py-3 rounded-md text-base font-medium bg-gray-100 text-gray-800"
                   >
-                    {isStaff ? 'Panel' : 'Mis Turnos'}
+                    {isStaff ? 'Panel' : 'Mi espacio'}
                   </Link>
                   <form action={logoutAction}>
                     <button
@@ -251,7 +256,7 @@ export function Navbar() {
             </div>
           </nav>
         </div>
-      )}
+      </div>
     </header>
   )
 }
