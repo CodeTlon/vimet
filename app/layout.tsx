@@ -4,7 +4,6 @@ import { Suspense } from 'react'
 
 import { Footer } from '@/components/footer'
 import { Navbar } from '@/components/navbar'
-import { WhatsAppFab } from '@/components/whatsapp-fab'
 
 import './globals.css'
 
@@ -64,7 +63,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Suspense>
         <main className="flex-1">{children}</main>
         <Footer />
-        <WhatsAppFab />
       </body>
     </html>
   )

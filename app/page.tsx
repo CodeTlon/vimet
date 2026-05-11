@@ -70,42 +70,57 @@ const serviciosDestacados = [
 export default function HomePage() {
   return (
     <>
-      <section className="relative h-[78vh] min-h-[560px] w-full">
-        <Image
-          src="/images/hero/training.jpg"
-          alt="Entrenamiento personalizado en VIMET"
-          fill
-          priority
-          quality={85}
-          sizes="100vw"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/45 to-black/70" />
-        <div className="relative h-full container-vimet flex items-center pt-20">
-          <div className="max-w-2xl text-white">
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight">
-              Nutrición y entrenamiento
-              <span className="block text-gradient drop-shadow-sm">para mejorar tu salud</span>
+      <section className="h-screen flex overflow-hidden">
+        {/* Panel izquierdo — oscuro, contenido */}
+        <div className="flex flex-col bg-[#111111] px-8 sm:px-12 lg:px-16 xl:px-20 w-full lg:w-1/2 shrink-0">
+          <div className="flex-none h-20 lg:h-24" />
+          <div className="flex-1 flex flex-col justify-center py-8">
+            <div className="w-10 h-[3px] rounded-full bg-vimet-gradient mb-8" />
+
+            <h1 className="font-heading font-extrabold tracking-tight">
+              <span className="block text-white text-5xl sm:text-6xl xl:text-[4rem] leading-[1.04]">
+                Nutrición y<br />entrenamiento
+              </span>
+              <span className="block text-gradient text-3xl sm:text-[2.1rem] xl:text-[2.6rem] mt-2 pb-2 leading-snug">
+                para tu salud
+              </span>
             </h1>
-            <p className="mt-6 text-base sm:text-lg text-white/85 max-w-xl leading-relaxed">
-              {brand.slogan}. Evaluación personalizada, plan nutricional y entrenamiento
-              adaptado a vos.
+
+            <p className="mt-5 text-white/50 text-[15px] max-w-[360px] leading-relaxed">
+              Especialistas en alteraciones metabólicas. Plan nutricional y
+              entrenamiento adaptado a cada persona.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+
+            <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href="/turnos/nuevo"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-lg hover:shadow-xl transition-all text-sm"
               >
-                <CalendarPlus className="size-5" /> Reservar turno
+                <CalendarPlus className="size-4" /> Reservar turno
               </Link>
               <Link
                 href="/metodologia"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/30 text-white font-semibold hover:bg-white/20 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/20 text-white/80 font-semibold hover:bg-white/10 transition-colors text-sm"
               >
                 Cómo trabajamos <ArrowRight className="size-4" />
               </Link>
             </div>
           </div>
+
+        </div>
+
+        {/* Panel derecho — foto (solo desktop) */}
+        <div className="hidden lg:block relative flex-1">
+          <Image
+            src="/images/hero/training.jpg"
+            alt="Entrenamiento personalizado en VIMET"
+            fill
+            priority
+            quality={85}
+            sizes="50vw"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black/15" />
         </div>
       </section>
 
