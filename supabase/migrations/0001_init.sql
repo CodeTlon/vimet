@@ -201,9 +201,14 @@ alter table public.bloqueos_horario enable row level security;
 
 -- profiles
 drop policy if exists "profiles select own" on public.profiles;
-create policy "profiles select own"
+drop policy if exists "profiles select staff public" on public.profiles;
+create policy "profiles select staff public"
   on public.profiles for select
-  using (auth.uid() = id or public.is_staff());
+  using (
+    auth.uid() = id
+    or public.is_staff()
+    or rol in ('nutricionista', 'entrenador', 'admin')
+  );
 
 drop policy if exists "profiles update own" on public.profiles;
 create policy "profiles update own"
