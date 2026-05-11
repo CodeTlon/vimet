@@ -1,7 +1,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { createClient } from '@/lib/supabase/server'
@@ -73,7 +72,7 @@ export async function crearTurnoAction(
   }
 
   revalidatePath('/mis-turnos')
-  redirect('/mis-turnos?nuevo=1')
+  return { ok: true }
 }
 
 export async function cancelarTurnoAction(formData: FormData) {
