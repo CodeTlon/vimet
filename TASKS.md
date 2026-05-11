@@ -49,9 +49,21 @@
 ## Backend / Email / DB
 - [x] `supabase/migrations/0001_init.sql` (5 tablas + enums + RLS + trigger handle_new_user)
 - [x] `supabase/migrations/0002_seed.sql` (asigna roles + 7 servicios + 10 horarios)
+- [x] `supabase/migrations/0003_seguimiento.sql` (7 tablas nuevas + RLS + bucket `planes`)
 - [x] `actions/contacto.ts` con Zod + Resend
 - [x] `emails/contacto.tsx` template profesional con paleta VIMET
 - [x] `.env.example` listo
+
+## Seguimiento Integral
+- [x] Schema: `fichas_paciente`, `mediciones_antropometricas`, `evaluaciones_funcionales`, `planes`, `feedback_semanal`, `evolucion_entradas`, `objetivos` + bucket `planes`
+- [x] Server actions: ficha, mediciones, evaluaciones, planes (con upload/signed URL), feedback (paciente + responder), evolución, objetivos
+- [x] Admin paciente detalle con tabs: resumen, ficha, antropometría, eval funcional, planes (CRUD + PDF), feedback (responder dudas), evolución (visible/interno), objetivos
+- [x] Área paciente: layout con subnav + `mi-ficha`, `mi-progreso` (gráficos), `mis-planes` (+ `[id]`), `feedback-semanal`, `mis-objetivos`
+- [x] Componentes: `Tabs`, `EvolutionChart` (SVG nativo), `PacienteSubnav`, formularios de cada entidad, `PlanDownloadButton` con signed URL
+- [x] Middleware actualizado con nuevas rutas paciente
+- [x] Navbar: link "Mi espacio" para paciente autenticado
+- [ ] Aplicar migration 0003 en Supabase (manual desde dashboard o CLI)
+- [ ] Probar flujo end-to-end con un usuario paciente real
 
 ## Testing
 - [x] `npm run build` pasa sin errores (17/17 páginas generadas)
