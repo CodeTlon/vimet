@@ -146,7 +146,6 @@ export async function actualizarPlanAction(
   const d = parsed.data
   const id = Number(d.id)
   const file = formData.get('archivo') as File | null
-  const reemplazarPdf = formData.get('reemplazar_pdf') === '1'
 
   const payload: Record<string, unknown> = buildPayload(d, ctx.user.id)
 
@@ -154,16 +153,11 @@ export async function actualizarPlanAction(
     if (file.type !== 'application/pdf') return { error: 'El archivo debe ser PDF.' }
     if (file.size > 15 * 1024 * 1024) return { error: 'El PDF supera 15MB.' }
 
-    if (reemplazarPdf) {
-      const { data: prev } = await ctx.supabase
-        .from('planes')
-        .select('archivo_path')
-        .eq('id', id)
-        .maybeSingle()
-      if (prev?.archivo_path) {
-        await ctx.supabase.storage.from('planes').remove([prev.archivo_path])
-      }
-    }
+    const { data: prev } = await ctx.supabase
+      .from('planes')
+      .select('archivo_path')
+      .eq('id', id)
+      .maybeSingle()
 
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
     const archivo_path = `${d.paciente_id}/${Date.now()}_${safeName}`
@@ -173,6 +167,12 @@ export async function actualizarPlanAction(
       .upload(archivo_path, buf, { contentType: 'application/pdf', upsert: false })
     if (upErr) return { error: 'No se pudo subir el PDF.' }
     payload.archivo_path = archivo_path
+
+    // Si había un PDF previo, lo borramos del bucket recién después de subir el
+    // nuevo: así nunca quedan huérfanos y si falla el upload no perdemos el viejo.
+    if (prev?.archivo_path && prev.archivo_path !== archivo_path) {
+      await ctx.supabase.storage.from('planes').remove([prev.archivo_path])
+    }
   }
 
   const { error } = await ctx.supabase.from('planes').update(payload).eq('id', id)

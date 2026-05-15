@@ -2,6 +2,7 @@ import { Building2, CalendarDays, CalendarPlus, Clock, UserRound, Video } from '
 import Link from 'next/link'
 
 import { cancelarTurnoAction } from '@/actions/turnos'
+import { hoyArgentina } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 
 const MESES = [
@@ -73,6 +74,7 @@ export default async function MisTurnosPage({
     profesional: { nombre: string; apellido: string } | null
   }
   const rows = (turnos ?? []) as unknown as Row[]
+  const hoy = hoyArgentina()
   const showNuevo = searchParams?.nuevo === '1'
 
   return (
@@ -123,7 +125,8 @@ export default async function MisTurnosPage({
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {rows.map((t) => {
               const fecha = new Date(`${t.fecha}T00:00:00`)
-              const cancelable = ['pendiente', 'confirmado'].includes(t.estado)
+              const cancelable =
+                ['pendiente', 'confirmado'].includes(t.estado) && t.fecha >= hoy
               const ModalidadIcon = t.modalidad === 'virtual' ? Video : Building2
               return (
                 <li

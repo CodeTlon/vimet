@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { hoyArgentina } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 
 export type TurnoState = { ok?: boolean; error?: string }
@@ -91,6 +92,7 @@ export async function cancelarTurnoAction(formData: FormData) {
     .eq('id', id)
     .eq('paciente_id', user.id)
     .in('estado', ['pendiente', 'confirmado'])
+    .gte('fecha', hoyArgentina())
 
   revalidatePath('/mis-turnos')
 }

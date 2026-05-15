@@ -71,6 +71,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `components/footer.tsx` | Footer + CodeTlonBadge |
 | `components/admin-sidebar.tsx` | Sidebar del admin |
 | `lib/seguimiento.ts` | Helpers: scoring funcional, labels, lunesDeSemana, formatFecha |
+| `lib/datetime.ts` | Helpers de fecha en zona Argentina (`hoyArgentina`, `horaArgentina`, `lunesDeSemanaArgentina`) |
 | `lib/supabase/server.ts` | Cliente Supabase server-side |
 | `lib/supabase/client.ts` | Cliente Supabase browser |
 | `lib/supabase/middleware.ts` | Helper para refresh de session en middleware |
@@ -147,6 +148,8 @@ Ver `.env.example` para el listado completo.
 - Subnav del paciente vive en `app/(paciente)/layout.tsx`. El wizard de turno está fuera del grupo (`app/turnos/nuevo`) para no heredar el subnav.
 - Para abrir un PDF del bucket `planes` se usa `obtenerUrlPlanAction` (server action) que genera signed URL de 5 min y verifica permisos. No exponer paths directamente.
 - Excels legacy de origen del módulo: `documentos/FICHA DEL ALUMNO (no cambiar nombre).xlsx`, `documentos/PROYECTO (no cambiar nombre).xlsx`, `documentos/SERVICIO_ ENTRENAMIENTO Y NUTRICIÓN.docx`. Sirven de referencia al modificar el modelo.
+- Fechas: **nunca usar `new Date().toISOString().slice(0,10)` para representar "hoy"**, devuelve fecha en UTC y se corre un día cuando son >21:00 en Córdoba (server en Vercel es UTC). Usar siempre `hoyArgentina()` / `lunesDeSemanaArgentina()` de `lib/datetime.ts`. Mismo principio para `lib/booking/slots.ts` al calcular el mínimo de hora de hoy. Aplica server y client.
+- Al actualizar un plan con nuevo PDF: la action borra automáticamente el PDF previo del bucket *después* de subir el nuevo (si falla el upload conservamos el viejo). No hay checkbox de "reemplazar"; cualquier upload reemplaza.
 
 ## Comandos Rápidos
 ```bash
@@ -161,3 +164,4 @@ npx playwright test  # Tests E2E
 |-------|------|--------|
 | 2026-05-09 | dev | Bootstrap proyecto + repo CodeTlon/vimet + .claude/ |
 | 2026-05-10 | dev | Módulo seguimiento integral: 7 tablas nuevas + bucket `planes` + áreas paciente/admin (ficha, antrop, eval funcional, planes PDF+estructurados, feedback semanal, evolución, objetivos) |
+| 2026-05-15 | dev | Fix timezone (`lib/datetime.ts` con `hoyArgentina`/`lunesDeSemanaArgentina`) en dashboards, calendario, booking, slots y forms de seguimiento + slot mínimo de hoy ahora usa hora local Córdoba + cancelar-turno bloquea fechas pasadas + plan update borra PDF previo automáticamente |

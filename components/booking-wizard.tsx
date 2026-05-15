@@ -6,6 +6,7 @@ import { useFormState, useFormStatus } from 'react-dom'
 import { useRouter } from 'next/navigation'
 
 import { crearTurnoAction, type TurnoState } from '@/actions/turnos'
+import { hoyArgentina } from '@/lib/datetime'
 
 type Profesional = { id: string; nombre: string; apellido: string; rol: string }
 type Servicio = {
@@ -20,7 +21,7 @@ type Slot = { hora_inicio: string; hora_fin: string }
 const initialState: TurnoState = {}
 
 function todayISO(): string {
-  return new Date().toISOString().slice(0, 10)
+  return hoyArgentina()
 }
 
 function SubmitButton({ disabled }: { disabled: boolean }) {

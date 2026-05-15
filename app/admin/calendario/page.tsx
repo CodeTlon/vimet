@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
+import { hoyArgentina } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata = { title: 'Calendario' }
@@ -54,7 +55,7 @@ export default async function AdminCalendario({
   const first = new Date(year, monthIdx, 1)
   const dim = new Date(year, monthIdx + 1, 0).getDate()
   const start = first.getDay()
-  const todayISO = new Date().toISOString().slice(0, 10)
+  const todayISO = hoyArgentina()
   const monthStart = `${year}-${String(month).padStart(2, '0')}-01`
   const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(dim).padStart(2, '0')}`
 

@@ -1,5 +1,7 @@
 // Helpers compartidos del módulo de seguimiento
 
+import { lunesDeSemanaArgentina } from '@/lib/datetime'
+
 export function categoriaCondicionFisica(puntajeTotal: number, puntajeMax = 100) {
   const pct = puntajeMax === 0 ? 0 : (puntajeTotal / puntajeMax) * 100
   if (pct >= 90) return { label: 'Excelente', color: 'bg-green-100 text-green-800', pct }
@@ -62,14 +64,9 @@ export const TIPO_PLAN_LABEL: Record<string, string> = {
   combo: 'Combo',
 }
 
-// Lunes (00:00) de la semana de la fecha dada — formato YYYY-MM-DD
+// Lunes de la semana calendario de Argentina — formato YYYY-MM-DD
 export function lunesDeSemana(date: Date = new Date()): string {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  const day = d.getDay() // 0=domingo
-  const diff = (day === 0 ? -6 : 1) - day
-  d.setDate(d.getDate() + diff)
-  return d.toISOString().slice(0, 10)
+  return lunesDeSemanaArgentina(date)
 }
 
 export function formatearFechaCorta(iso: string | null | undefined) {

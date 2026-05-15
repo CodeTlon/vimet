@@ -15,7 +15,7 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { brand, location, social, team } from '@/lib/config/team'
+import { location, social, team } from '@/lib/config/team'
 
 const pilares = [
   {

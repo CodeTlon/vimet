@@ -8,6 +8,7 @@ import {
   crearPlanAction,
   type PlanState,
 } from '@/actions/planes'
+import { hoyArgentina } from '@/lib/datetime'
 
 const initial: PlanState = {}
 const inputBase =
@@ -112,7 +113,7 @@ export function PlanForm({
           <input
             type="date"
             name="fecha_desde"
-            defaultValue={p?.fecha_desde ?? new Date().toISOString().slice(0, 10)}
+            defaultValue={p?.fecha_desde ?? hoyArgentina()}
             required
             className={inputBase}
           />
@@ -133,10 +134,9 @@ export function PlanForm({
             <p className="text-sm text-gray-700 break-all">
               {p.archivo_path.split('/').slice(1).join('/')}
             </p>
-            <label className="inline-flex items-center gap-2 mt-2 text-sm">
-              <input type="checkbox" name="reemplazar_pdf" value="1" />
-              Reemplazar el PDF actual
-            </label>
+            <p className="mt-1 text-xs text-gray-500">
+              Si subís un PDF nuevo, reemplaza al actual.
+            </p>
           </FullField>
         ) : null}
         <FullField label={p?.archivo_path ? 'Nuevo PDF (opcional)' : 'PDF (opcional, máx 15MB)'}>

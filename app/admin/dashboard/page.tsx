@@ -1,6 +1,7 @@
 import { CalendarCheck2, CalendarClock, CalendarDays, CalendarRange } from 'lucide-react'
 import Link from 'next/link'
 
+import { hoyArgentina } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata = { title: 'Dashboard' }
@@ -26,8 +27,8 @@ type TurnoRow = {
 
 export default async function AdminDashboard() {
   const supabase = createClient()
-  const today = new Date().toISOString().slice(0, 10)
-  const in15 = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const today = hoyArgentina()
+  const in15 = hoyArgentina(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000))
 
   const [{ data: hoyData }, { data: proxData }] = await Promise.all([
     supabase

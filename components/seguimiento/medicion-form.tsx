@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { crearMedicionAction, type MedicionState } from '@/actions/mediciones'
+import { hoyArgentina } from '@/lib/datetime'
 
 const initial: MedicionState = {}
 const inputBase =
@@ -25,7 +26,7 @@ function Btn() {
 
 export function MedicionForm({ pacienteId }: { pacienteId: string }) {
   const [state, action] = useFormState(crearMedicionAction, initial)
-  const today = new Date().toISOString().slice(0, 10)
+  const today = hoyArgentina()
   return (
     <form
       action={action}

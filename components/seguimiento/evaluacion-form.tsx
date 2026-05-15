@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { crearEvaluacionAction, type EvalState } from '@/actions/evaluaciones'
+import { hoyArgentina } from '@/lib/datetime'
 import { TESTS_FUNCIONALES } from '@/lib/seguimiento'
 
 const initial: EvalState = {}
@@ -26,7 +27,7 @@ function Btn() {
 
 export function EvaluacionForm({ pacienteId }: { pacienteId: string }) {
   const [state, action] = useFormState(crearEvaluacionAction, initial)
-  const today = new Date().toISOString().slice(0, 10)
+  const today = hoyArgentina()
   return (
     <form
       action={action}
