@@ -1,6 +1,7 @@
 'use client'
 
 import { UserPlus } from 'lucide-react'
+import { useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { registerAction, type AuthState } from '@/actions/auth'
@@ -27,6 +28,10 @@ function SubmitButton() {
 export function RegisterForm() {
   const [state, formAction] = useFormState(registerAction, initialState)
   const f = state.fields ?? { nombre: '', apellido: '', email: '', telefono: '' }
+
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const mismatch = confirm.length > 0 && password !== confirm
 
   return (
     <form action={formAction} className="space-y-4">
@@ -56,9 +61,32 @@ export function RegisterForm() {
         placeholder="Ej: 3513752818"
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Contraseña" name="password" type="password" minLength={6} required />
-        <Field label="Confirmar" name="password_confirm" type="password" minLength={6} required />
+        <Field
+          label="Contraseña"
+          name="password"
+          type="password"
+          minLength={6}
+          required
+          value={password}
+          onChange={(v) => setPassword(v)}
+        />
+        <Field
+          label="Confirmar"
+          name="password_confirm"
+          type="password"
+          minLength={6}
+          required
+          value={confirm}
+          onChange={(v) => setConfirm(v)}
+          ariaInvalid={mismatch}
+        />
       </div>
+
+      {mismatch ? (
+        <p role="alert" className="text-sm text-vimet-red">
+          Las contraseñas no coinciden.
+        </p>
+      ) : null}
 
       <SubmitButton />
     </form>
@@ -73,6 +101,9 @@ function Field({
   placeholder,
   required,
   minLength,
+  value,
+  onChange,
+  ariaInvalid,
 }: {
   label: string
   name: string
@@ -81,18 +112,29 @@ function Field({
   placeholder?: string
   required?: boolean
   minLength?: number
+  value?: string
+  onChange?: (v: string) => void
+  ariaInvalid?: boolean
 }) {
+  const controlled = value !== undefined && onChange !== undefined
   return (
     <div>
       <label className="block text-sm font-medium text-gray-800 mb-1.5">{label}</label>
       <input
         type={type}
         name={name}
-        defaultValue={defaultValue}
+        {...(controlled
+          ? { value, onChange: (e) => onChange!(e.target.value) }
+          : { defaultValue })}
         required={required}
         placeholder={placeholder}
         minLength={minLength}
-        className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+        aria-invalid={ariaInvalid || undefined}
+        className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 ${
+          ariaInvalid
+            ? 'border-vimet-red/40 focus:ring-vimet-red/30 focus:border-vimet-red'
+            : 'border-gray-200 focus:ring-vimet-orange/40 focus:border-vimet-orange'
+        }`}
       />
     </div>
   )

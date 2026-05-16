@@ -35,6 +35,13 @@ export async function crearTurnoAction(
     return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
   }
 
+  if (parsed.data.fecha < hoyArgentina()) {
+    return { error: 'No podés reservar un turno en una fecha pasada.' }
+  }
+  if (parsed.data.hora_fin <= parsed.data.hora_inicio) {
+    return { error: 'El horario del turno es inválido.' }
+  }
+
   const supabase = createClient()
   const {
     data: { user },

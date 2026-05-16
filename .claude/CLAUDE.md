@@ -40,6 +40,8 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `app/contacto/page.tsx` | Form Resend + WhatsApp + ubicación con map |
 | `app/login/page.tsx` | Login con Supabase Auth |
 | `app/registro/page.tsx` | Registro paciente (signUp) |
+| `app/terminos/page.tsx` | Términos de servicio |
+| `app/privacidad/page.tsx` | Política de privacidad |
 | `app/(paciente)/layout.tsx` | Layout área paciente: auth gating + subnav |
 | `app/(paciente)/mis-turnos/page.tsx` | Lista de turnos del paciente con cancelar |
 | `app/(paciente)/mi-ficha/page.tsx` | Ficha clínica del paciente (read-only) |
@@ -64,17 +66,31 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `app/admin/pacientes/[id]/objetivos/page.tsx` | CRUD objetivos por categoría |
 | `app/api/slots/route.ts` | GET slots disponibles (lo consume el wizard) |
 | `components/navbar.tsx` | Navbar pública (transparente en home) |
+| `components/auth-shell.tsx` | Shell visual de las pantallas login/registro |
+| `components/login-form.tsx` | Form cliente del login (useFormState) |
+| `components/register-form.tsx` | Form cliente del registro (incluye chequeo de password match) |
+| `components/booking-wizard.tsx` | Wizard cliente de reserva — consume `/api/slots` |
+| `components/contacto-form.tsx` | Form cliente del contacto público (Resend) |
+| `components/faq-list.tsx` | Accordion de FAQ |
+| `components/turno-detalle-form.tsx` | Form de cambio de estado/notas del turno (admin) |
 | `components/paciente-subnav.tsx` | Subnav de tabs del área paciente |
 | `components/tabs.tsx` | Tabs underline para admin paciente |
 | `components/evolution-chart.tsx` | Gráfico SVG nativo (multi-serie) |
 | `components/seguimiento/*.tsx` | Forms del módulo (ficha, medición, eval, plan, feedback, evolución, objetivo) |
+| `components/page-header.tsx` | Hero/header genérico de páginas internas |
+| `components/whatsapp-fab.tsx` | FAB flotante de WhatsApp en páginas públicas |
 | `components/footer.tsx` | Footer + CodeTlonBadge |
+| `components/codetlon-badge.tsx` | Badge de marca CodeTlon en footer |
 | `components/admin-sidebar.tsx` | Sidebar del admin |
 | `lib/seguimiento.ts` | Helpers: scoring funcional, labels, lunesDeSemana, formatFecha |
 | `lib/datetime.ts` | Helpers de fecha en zona Argentina (`hoyArgentina`, `horaArgentina`, `lunesDeSemanaArgentina`) |
+| `lib/booking/slots.ts` | Cálculo de slots disponibles (horarios − turnos − bloqueos − filtro de hoy) |
+| `lib/config/team.ts` | Datos estáticos del equipo + ubicación + redes |
+| `lib/config/servicios.ts` | Catálogo estático para la página de servicios pública |
 | `lib/supabase/server.ts` | Cliente Supabase server-side |
 | `lib/supabase/client.ts` | Cliente Supabase browser |
 | `lib/supabase/middleware.ts` | Helper para refresh de session en middleware |
+| `lib/supabase/auth-helpers.ts` | `getUserAndProfile` / `requireAuth` / `requireStaff` |
 | `middleware.ts` | Auth middleware: protege /mis-*, /feedback-semanal, /turnos/*, /admin/* |
 | `actions/auth.ts` | Server Actions: login, register, logout |
 | `actions/turnos.ts` | Server Actions: crear, cancelar, actualizar estado |
@@ -89,6 +105,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `supabase/migrations/0001_init.sql` | Schema inicial |
 | `supabase/migrations/0002_seed.sql` | Seed servicios + horarios |
 | `supabase/migrations/0003_seguimiento.sql` | Tablas seguimiento + RLS + bucket `planes` |
+| `supabase/migrations/0004_security_hardening.sql` | Triggers que bloquean cambios sensibles por parte del paciente (rol/activo, fecha/hora del turno, respuesta de feedback) + SELECT de profiles requiere auth |
 | `emails/contacto.tsx` | Template Resend del formulario contacto |
 
 ## Base de Datos (Supabase)
@@ -150,6 +167,8 @@ Ver `.env.example` para el listado completo.
 - Excels legacy de origen del módulo: `documentos/FICHA DEL ALUMNO (no cambiar nombre).xlsx`, `documentos/PROYECTO (no cambiar nombre).xlsx`, `documentos/SERVICIO_ ENTRENAMIENTO Y NUTRICIÓN.docx`. Sirven de referencia al modificar el modelo.
 - Fechas: **nunca usar `new Date().toISOString().slice(0,10)` para representar "hoy"**, devuelve fecha en UTC y se corre un día cuando son >21:00 en Córdoba (server en Vercel es UTC). Usar siempre `hoyArgentina()` / `lunesDeSemanaArgentina()` de `lib/datetime.ts`. Mismo principio para `lib/booking/slots.ts` al calcular el mínimo de hora de hoy. Aplica server y client.
 - Al actualizar un plan con nuevo PDF: la action borra automáticamente el PDF previo del bucket *después* de subir el nuevo (si falla el upload conservamos el viejo). No hay checkbox de "reemplazar"; cualquier upload reemplaza.
+- Endurecimiento de RLS (migración `0004`): además de las policies, hay triggers BEFORE UPDATE que impiden al paciente (a) cambiar su `rol`/`activo` en `profiles`, (b) modificar fecha/hora/profesional/notas del profesional o cambiar `estado` a algo distinto de `cancelado` en `turnos`, (c) falsificar `respuesta_profesional` / `respondido_*` en `feedback_semanal`. `is_staff()` cortocircuita los tres triggers. Si se agregan columnas sensibles nuevas hay que sumarlas explícitamente al chequeo.
+- `crearTurnoAction` revalida en el servidor que la fecha sea >= hoy en zona Córdoba: el `min` del input es defensa en profundidad, pero no se confía en él.
 
 ## Comandos Rápidos
 ```bash
@@ -165,3 +184,4 @@ npx playwright test  # Tests E2E
 | 2026-05-09 | dev | Bootstrap proyecto + repo CodeTlon/vimet + .claude/ |
 | 2026-05-10 | dev | Módulo seguimiento integral: 7 tablas nuevas + bucket `planes` + áreas paciente/admin (ficha, antrop, eval funcional, planes PDF+estructurados, feedback semanal, evolución, objetivos) |
 | 2026-05-15 | dev | Fix timezone (`lib/datetime.ts` con `hoyArgentina`/`lunesDeSemanaArgentina`) en dashboards, calendario, booking, slots y forms de seguimiento + slot mínimo de hoy ahora usa hora local Córdoba + cancelar-turno bloquea fechas pasadas + plan update borra PDF previo automáticamente |
+| 2026-05-15 | dev | Endurecimiento de seguridad: migración `0004` con triggers que cierran auto-escalación de rol, modificación arbitraria de turnos por el paciente y falsificación de respuesta de feedback. SELECT de profiles ahora requiere sesión. `crearTurnoAction` revalida `fecha >= hoyArgentina()`. Register form valida match de password en cliente. CLAUDE.md actualizado con archivos faltantes. |
