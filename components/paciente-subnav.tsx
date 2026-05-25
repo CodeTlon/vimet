@@ -5,6 +5,7 @@ import {
   ClipboardList,
   FileText,
   HeartPulse,
+  Library,
   MessageSquare,
   Target,
 } from 'lucide-react'
@@ -18,6 +19,7 @@ const ICONS = {
   ClipboardList,
   FileText,
   HeartPulse,
+  Library,
   MessageSquare,
   Target,
 } as const

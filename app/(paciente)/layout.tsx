@@ -7,12 +7,13 @@ import { createClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
 const tabs = [
-  { href: '/mis-turnos', label: 'Mis turnos', icon: 'CalendarDays' as const },
-  { href: '/mi-ficha', label: 'Mi ficha', icon: 'ClipboardList' as const },
-  { href: '/mi-progreso', label: 'Mi progreso', icon: 'HeartPulse' as const },
-  { href: '/mis-planes', label: 'Mis planes', icon: 'FileText' as const },
-  { href: '/feedback-semanal', label: 'Feedback', icon: 'MessageSquare' as const },
-  { href: '/mis-objetivos', label: 'Objetivos', icon: 'Target' as const },
+  { href: '/mis-turnos',       label: 'Mis turnos',    icon: 'CalendarDays'  as const },
+  { href: '/mi-ficha',         label: 'Mi ficha',      icon: 'ClipboardList' as const },
+  { href: '/mi-progreso',      label: 'Mi progreso',   icon: 'HeartPulse'    as const },
+  { href: '/mis-planes',       label: 'Mis planes',    icon: 'FileText'      as const },
+  { href: '/feedback-semanal', label: 'Feedback',      icon: 'MessageSquare' as const },
+  { href: '/mis-objetivos',    label: 'Objetivos',     icon: 'Target'        as const },
+  { href: '/mis-recursos',     label: 'Mis recursos',  icon: 'Library'       as const },
 ]
 
 export default async function PacienteLayout({ children }: { children: ReactNode }) {
