@@ -1,4 +1,4 @@
-import { CheckCheck, ClipboardList, FileText, Lock, MessageCircleQuestion } from 'lucide-react'
+import { CheckCheck, ClipboardList, FileText, Lock, MessageCircleQuestion, Paperclip } from 'lucide-react'
 import Link from 'next/link'
 
 import { FeedbackForm } from '@/components/seguimiento/feedback-form'
@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { formatearFechaCorta, lunesDeSemana } from '@/lib/seguimiento'
 
 export const metadata = { title: 'Feedback semanal' }
-export const dynamic = 'force-dynamic'
+export const dynamic  = 'force-dynamic'
 
 type Feedback = {
   id: number
@@ -21,6 +21,7 @@ type Feedback = {
   dudas: string | null
   respuesta_profesional: string | null
   respondido_at: string | null
+  adjunto_path: string | null
 }
 
 export default async function FeedbackSemanalPage() {
@@ -31,7 +32,8 @@ export default async function FeedbackSemanalPage() {
   if (!user) return null
 
   const semana = lunesDeSemana()
-  const [{ data: actual }, { data: historico }, { data: ficha }, { count: planesVigentes }] =
+
+  const [{ data: actual }, { data: historicoRaw }, { data: ficha }, { count: planesVigentes }] =
     await Promise.all([
       supabase
         .from('feedback_semanal')
@@ -42,7 +44,7 @@ export default async function FeedbackSemanalPage() {
       supabase
         .from('feedback_semanal')
         .select(
-          'id, semana_inicio, estado_fisico, animo, energia, adherencia_entrenamiento, adherencia_alimentacion, peso_autoreporte_kg, observaciones, dudas, respuesta_profesional, respondido_at',
+          'id, semana_inicio, estado_fisico, animo, energia, adherencia_entrenamiento, adherencia_alimentacion, peso_autoreporte_kg, observaciones, dudas, respuesta_profesional, respondido_at, adjunto_path',
         )
         .eq('paciente_id', user.id)
         .neq('semana_inicio', semana)
@@ -61,8 +63,29 @@ export default async function FeedbackSemanalPage() {
     ])
 
   const tieneFicha = Boolean(ficha)
-  const tienePlan = (planesVigentes ?? 0) > 0
+  const tienePlan  = (planesVigentes ?? 0) > 0
   const habilitado = tieneFicha && tienePlan
+
+  // URL firmada del adjunto de la semana actual (si existe)
+  const adjuntoUrlActual =
+    actual?.adjunto_path
+      ? (
+          await supabase.storage
+            .from('recursos')
+            .createSignedUrl(actual.adjunto_path, 3600)
+        ).data?.signedUrl ?? null
+      : null
+
+  // URLs firmadas de adjuntos del histórico
+  const historico: (Feedback & { adjuntoUrl: string | null })[] = await Promise.all(
+    ((historicoRaw ?? []) as Feedback[]).map(async (f) => {
+      if (!f.adjunto_path) return { ...f, adjuntoUrl: null }
+      const { data: signed } = await supabase.storage
+        .from('recursos')
+        .createSignedUrl(f.adjunto_path, 3600)
+      return { ...f, adjuntoUrl: signed?.signedUrl ?? null }
+    }),
+  )
 
   return (
     <>
@@ -77,7 +100,7 @@ export default async function FeedbackSemanalPage() {
       </header>
 
       {habilitado ? (
-        <FeedbackForm existente={actual} />
+        <FeedbackForm existente={actual} adjuntoUrl={adjuntoUrlActual} />
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
           <div className="flex items-start gap-4">
@@ -96,9 +119,7 @@ export default async function FeedbackSemanalPage() {
                 <li className="flex items-center gap-2">
                   <span
                     className={`inline-flex items-center justify-center size-6 rounded-full ${
-                      tieneFicha
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-500'
+                      tieneFicha ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                     }`}
                   >
                     <ClipboardList className="size-3.5" />
@@ -139,13 +160,13 @@ export default async function FeedbackSemanalPage() {
         </div>
       )}
 
-      {(historico ?? []).length > 0 ? (
+      {historico.length > 0 ? (
         <section className="mt-10">
           <h2 className="font-heading text-xl font-semibold text-gray-900 mb-4">
             Semanas anteriores
           </h2>
           <ul className="space-y-3">
-            {(historico as Feedback[]).map((f) => {
+            {historico.map((f) => {
               const tieneDudas = Boolean(f.dudas?.trim())
               const respondido = Boolean(f.respondido_at)
               return (
@@ -160,38 +181,49 @@ export default async function FeedbackSemanalPage() {
                     {tieneDudas ? (
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          respondido
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
+                          respondido ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                         }`}
                       >
                         {respondido ? (
-                          <>
-                            <CheckCheck className="size-3.5" /> Respondido
-                          </>
+                          <><CheckCheck className="size-3.5" /> Respondido</>
                         ) : (
-                          <>
-                            <MessageCircleQuestion className="size-3.5" /> Pendiente
-                          </>
+                          <><MessageCircleQuestion className="size-3.5" /> Pendiente</>
                         )}
                       </span>
                     ) : null}
                   </header>
+
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                     <Stat label="Estado físico" value={f.estado_fisico} suffix="/10" />
-                    <Stat label="Ánimo" value={f.animo} suffix="/10" />
-                    <Stat label="Energía" value={f.energia} suffix="/10" />
+                    <Stat label="Ánimo"         value={f.animo}         suffix="/10" />
+                    <Stat label="Energía"        value={f.energia}       suffix="/10" />
                     <Stat
                       label="Peso"
                       value={f.peso_autoreporte_kg}
                       suffix={f.peso_autoreporte_kg ? 'kg' : ''}
                     />
                   </div>
+
                   {f.observaciones ? (
                     <p className="text-sm text-gray-800 whitespace-pre-line mt-3">
                       {f.observaciones}
                     </p>
                   ) : null}
+
+                  {/* Adjunto del paciente */}
+                  {f.adjuntoUrl ? (
+                    <div className="mt-3">
+                      <a
+                        href={f.adjuntoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs text-vimet-orange hover:underline"
+                      >
+                        <Paperclip className="size-3.5" /> Ver adjunto de esta semana
+                      </a>
+                    </div>
+                  ) : null}
+
                   {f.respuesta_profesional ? (
                     <div className="mt-3 rounded-xl bg-vimet-cream border border-vimet-orange/20 px-4 py-3">
                       <p className="text-xs uppercase tracking-wide font-semibold text-vimet-red mb-1">
@@ -217,8 +249,8 @@ function Stat({
   value,
   suffix = '',
 }: {
-  label: string
-  value: number | null
+  label:   string
+  value:   number | null
   suffix?: string
 }) {
   return (
@@ -226,7 +258,9 @@ function Stat({
       <p className="text-xs uppercase tracking-wide text-gray-500">{label}</p>
       <p className="font-heading font-semibold text-gray-900 mt-0.5">
         {value != null ? value : '—'}
-        {value != null && suffix ? <span className="text-xs text-gray-500 ml-1">{suffix}</span> : null}
+        {value != null && suffix ? (
+          <span className="text-xs text-gray-500 ml-1">{suffix}</span>
+        ) : null}
       </p>
     </div>
   )

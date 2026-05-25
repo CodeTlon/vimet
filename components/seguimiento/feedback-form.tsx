@@ -1,6 +1,6 @@
 'use client'
 
-import { Send } from 'lucide-react'
+import { Paperclip, Send } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { enviarFeedbackAction, type FeedbackState } from '@/actions/feedback'
@@ -25,24 +25,31 @@ function Btn() {
 }
 
 type Existente = {
-  semana_inicio: string
-  estado_fisico: number | null
-  animo: number | null
-  energia: number | null
+  semana_inicio:            string
+  estado_fisico:            number | null
+  animo:                    number | null
+  energia:                  number | null
   adherencia_entrenamiento: number | null
-  adherencia_alimentacion: number | null
-  peso_autoreporte_kg: number | null
-  observaciones: string | null
-  dudas: string | null
+  adherencia_alimentacion:  number | null
+  peso_autoreporte_kg:      number | null
+  observaciones:            string | null
+  dudas:                    string | null
 }
 
-export function FeedbackForm({ existente }: { existente: Existente | null }) {
+export function FeedbackForm({
+  existente,
+  adjuntoUrl,
+}: {
+  existente:  Existente | null
+  adjuntoUrl: string | null
+}) {
   const [state, action] = useFormState(enviarFeedbackAction, initial)
   const semana = existente?.semana_inicio ?? lunesDeSemana()
 
   return (
     <form
       action={action}
+      encType="multipart/form-data"
       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6"
     >
       <input type="hidden" name="semana_inicio" value={semana} />
@@ -113,6 +120,34 @@ export function FeedbackForm({ existente }: { existente: Existente | null }) {
         />
       </label>
 
+      {/* Adjunto */}
+      <div className="block text-sm">
+        <span className="block font-medium text-gray-800 mb-1">Foto o adjunto (opcional)</span>
+        {adjuntoUrl ? (
+          <div className="mb-2 flex flex-wrap items-center gap-2 rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-700">
+            <Paperclip className="size-4 text-gray-400 shrink-0" />
+            <a
+              href={adjuntoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-vimet-orange hover:underline truncate"
+            >
+              Ver adjunto de esta semana
+            </a>
+            <span className="text-gray-400">— subí uno nuevo para reemplazarlo</span>
+          </div>
+        ) : null}
+        <input
+          type="file"
+          name="adjunto"
+          accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+          className="w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-vimet-cream file:text-vimet-orange hover:file:bg-vimet-orange/10 cursor-pointer"
+        />
+        <span className="text-xs text-gray-400 mt-1 block">
+          JPG, PNG, WEBP, GIF, PDF · máx 15 MB
+        </span>
+      </div>
+
       <Btn />
     </form>
   )
@@ -123,8 +158,8 @@ function ScaleField({
   name,
   defaultValue,
 }: {
-  label: string
-  name: string
+  label:        string
+  name:         string
   defaultValue: number | null
 }) {
   return (
@@ -148,8 +183,8 @@ function PercentField({
   name,
   defaultValue,
 }: {
-  label: string
-  name: string
+  label:        string
+  name:         string
   defaultValue: number | null
 }) {
   return (

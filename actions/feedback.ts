@@ -15,12 +15,12 @@ const intRange = (min: number, max: number) =>
     .refine((v) => v === null || (Number.isInteger(v) && v >= min && v <= max), 'Fuera de rango')
 
 const schema = z.object({
-  semana_inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Semana inválida'),
-  estado_fisico: intRange(1, 10),
-  animo: intRange(1, 10),
-  energia: intRange(1, 10),
-  adherencia_entrenamiento: intRange(0, 100),
-  adherencia_alimentacion: intRange(0, 100),
+  semana_inicio:              z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Semana inválida'),
+  estado_fisico:              intRange(1, 10),
+  animo:                      intRange(1, 10),
+  energia:                    intRange(1, 10),
+  adherencia_entrenamiento:   intRange(0, 100),
+  adherencia_alimentacion:    intRange(0, 100),
   peso_autoreporte_kg: z
     .string()
     .optional()
@@ -31,8 +31,13 @@ const schema = z.object({
     })
     .refine((v) => v === null || (v > 20 && v < 400), 'Peso inválido'),
   observaciones: z.string().max(4000).optional().or(z.literal('')),
-  dudas: z.string().max(2000).optional().or(z.literal('')),
+  dudas:         z.string().max(2000).optional().or(z.literal('')),
 })
+
+const FEEDBACK_ALLOWED_MIME = [
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf',
+]
+const FEEDBACK_MAX_BYTES = 15 * 1024 * 1024
 
 const toStr = (v: string | undefined) => (v && v.trim() !== '' ? v.trim() : null)
 
@@ -40,6 +45,10 @@ export async function enviarFeedbackAction(
   _prev: unknown,
   formData: FormData,
 ): Promise<FeedbackState> {
+  // Extraer archivo antes de parsear el schema (los File no pasan por zod)
+  const file    = formData.get('adjunto') as File | null
+  const hasFile = Boolean(file && file.size > 0)
+
   const parsed = schema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
@@ -65,23 +74,70 @@ export async function enviarFeedbackAction(
   }
 
   const d = parsed.data
-  const { error } = await supabase.from('feedback_semanal').upsert(
-    {
-      paciente_id: user.id,
-      semana_inicio: d.semana_inicio,
-      estado_fisico: d.estado_fisico,
-      animo: d.animo,
-      energia: d.energia,
-      adherencia_entrenamiento: d.adherencia_entrenamiento,
-      adherencia_alimentacion: d.adherencia_alimentacion,
-      peso_autoreporte_kg: d.peso_autoreporte_kg,
-      observaciones: toStr(d.observaciones),
-      dudas: toStr(d.dudas),
-    },
-    { onConflict: 'paciente_id,semana_inicio' },
-  )
 
-  if (error) return { error: 'No se pudo guardar tu feedback.' }
+  // Manejo del adjunto
+  let adjunto_path: string | undefined = undefined // undefined → no tocar la columna
+
+  if (hasFile && file) {
+    if (!FEEDBACK_ALLOWED_MIME.includes(file.type)) {
+      return { error: 'Solo podés adjuntar imágenes (JPG, PNG, WEBP, GIF) o PDFs.' }
+    }
+    if (file.size > FEEDBACK_MAX_BYTES) {
+      return { error: 'El adjunto no puede superar 15 MB.' }
+    }
+
+    // Buscar el registro actual para borrar el adjunto previo si existe
+    const { data: existing } = await supabase
+      .from('feedback_semanal')
+      .select('adjunto_path')
+      .eq('paciente_id', user.id)
+      .eq('semana_inicio', d.semana_inicio)
+      .maybeSingle()
+
+    const safeName   = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+    adjunto_path     = `${user.id}/f/${d.semana_inicio}_${Date.now()}_${safeName}`
+    const buf        = Buffer.from(await file.arrayBuffer())
+
+    const { error: upErr } = await supabase.storage
+      .from('recursos')
+      .upload(adjunto_path, buf, { contentType: file.type, upsert: false })
+    if (upErr) return { error: 'No se pudo subir el adjunto.' }
+
+    // Borrar el adjunto previo después de subir el nuevo con éxito
+    if (existing?.adjunto_path && existing.adjunto_path !== adjunto_path) {
+      await supabase.storage.from('recursos').remove([existing.adjunto_path])
+    }
+  }
+
+  const upsertData: Record<string, unknown> = {
+    paciente_id:              user.id,
+    semana_inicio:            d.semana_inicio,
+    estado_fisico:            d.estado_fisico,
+    animo:                    d.animo,
+    energia:                  d.energia,
+    adherencia_entrenamiento: d.adherencia_entrenamiento,
+    adherencia_alimentacion:  d.adherencia_alimentacion,
+    peso_autoreporte_kg:      d.peso_autoreporte_kg,
+    observaciones:            toStr(d.observaciones),
+    dudas:                    toStr(d.dudas),
+  }
+
+  // Solo incluir adjunto_path en el upsert cuando hay un archivo nuevo
+  if (adjunto_path !== undefined) {
+    upsertData.adjunto_path = adjunto_path
+  }
+
+  const { error } = await supabase
+    .from('feedback_semanal')
+    .upsert(upsertData, { onConflict: 'paciente_id,semana_inicio' })
+
+  if (error) {
+    // Si el upsert falló, limpiar el archivo recién subido para evitar huérfanos
+    if (adjunto_path) {
+      await supabase.storage.from('recursos').remove([adjunto_path])
+    }
+    return { error: 'No se pudo guardar tu feedback.' }
+  }
 
   revalidatePath('/feedback-semanal')
   revalidatePath('/admin/pacientes')
@@ -89,8 +145,8 @@ export async function enviarFeedbackAction(
 }
 
 const responderSchema = z.object({
-  id: z.coerce.number().int().positive(),
-  paciente_id: z.string().uuid(),
+  id:                    z.coerce.number().int().positive(),
+  paciente_id:           z.string().uuid(),
   respuesta_profesional: z.string().min(1).max(4000),
 })
 
@@ -120,8 +176,8 @@ export async function responderFeedbackAction(
     .from('feedback_semanal')
     .update({
       respuesta_profesional: parsed.data.respuesta_profesional,
-      respondido_por: user.id,
-      respondido_at: new Date().toISOString(),
+      respondido_por:        user.id,
+      respondido_at:         new Date().toISOString(),
     })
     .eq('id', parsed.data.id)
 
