@@ -5,7 +5,10 @@
       "Bash(pip install *)",
       "Bash(npx tsc *)",
       "Bash(echo \"EXIT=$?\")",
-      "Bash(powershell -Command ' *)"
+      "Bash(powershell -Command ' *)",
+      "Bash(git filter-branch *)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --msg-filter 'sed \"/Co-Authored-By:/d\"' f79da9d..HEAD)",
+      "Bash(git -c 'user.name=Mateo Pavoni' -c user.email=mateopavonint905@gmail.com commit -m ' *)"
     ]
   }
 }

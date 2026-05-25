@@ -19,7 +19,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 
 ## Stack
 - Next.js 14 (App Router), TypeScript, Tailwind CSS, Shadcn/UI, Lucide React
-- Supabase: sí — tablas: `profiles`, `servicios`, `horarios_disponibles`, `turnos`, `bloqueos_horario`, `fichas_paciente`, `mediciones_antropometricas`, `evaluaciones_funcionales`, `planes`, `feedback_semanal`, `evolucion_entradas`, `objetivos`. Bucket Storage: `planes` (privado, PDFs).
+- Supabase: sí — tablas: `profiles`, `servicios`, `horarios_disponibles`, `turnos`, `bloqueos_horario`, `fichas_paciente`, `mediciones_antropometricas`, `evaluaciones_funcionales`, `planes`, `feedback_semanal`, `evolucion_entradas`, `objetivos`, `recursos_paciente`. Bucket Storage: `planes` (privado, PDFs) + `recursos` (privado, multimedia + adjuntos de feedback).
 - Resend: sí — solo formulario de contacto público (sin almacenamiento en DB)
 - Fuentes: Outfit (headings) + DM Sans (body) — vía `next/font`
 
@@ -64,6 +64,10 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `app/admin/pacientes/[id]/feedback/page.tsx` | Feedback recibido + responder dudas |
 | `app/admin/pacientes/[id]/evolucion/page.tsx` | Notas timeline (visible/interna) |
 | `app/admin/pacientes/[id]/objetivos/page.tsx` | CRUD objetivos por categoría |
+| `app/admin/pacientes/[id]/recursos/page.tsx` | CRUD recursos multimedia del paciente (admin) |
+| `app/(paciente)/mis-recursos/page.tsx` | Vista de recursos visibles para el paciente |
+| `actions/recursos.ts` | CRUD recursos: crear (link/pdf/imagen/video), eliminar, toggle visibilidad |
+| `components/seguimiento/recurso-form.tsx` | Form admin para subir/linkear recursos (tipo selector dinámico) |
 | `app/api/slots/route.ts` | GET slots disponibles (lo consume el wizard) |
 | `components/navbar.tsx` | Navbar pública (transparente en home) |
 | `components/auth-shell.tsx` | Shell visual de las pantallas login/registro |
@@ -123,10 +127,13 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `feedback_semanal` | unique(paciente,semana_inicio): estado físico, ánimo, energía, adherencias, peso, dudas, respuesta profesional | paciente CRUD propio + staff lee/responde |
 | `evolucion_entradas` | timeline: origen, tipo, contenido, `visible_paciente` | staff CRUD + paciente lee solo las visibles |
 | `objetivos` | categoría (5), descripción, estado (4), fecha_objetivo | paciente lee + staff escribe |
+| `recursos_paciente` | tipo (link/pdf/imagen/video), categoria (5), titulo, descripcion, url, storage_path, `visible_paciente`, plan_id | staff CRUD + paciente lee solo los visibles |
 
 **Roles** (campo `rol` en `profiles`): `paciente` (default), `nutricionista`, `entrenador`, `admin`.
 **Trigger:** `on_auth_user_created` → inserta fila en `profiles` con rol `paciente`.
 **Storage bucket** `planes` (privado): paths `{paciente_id}/{filename}`. Staff todo, paciente solo lee su propia carpeta. Acceso vía signed URL (5 min TTL).
+**Storage bucket** `recursos` (privado): paths `{paciente_id}/r/{ts}_{file}` (staff) y `{paciente_id}/f/{semana}_{ts}_{file}` (adjuntos de feedback, subidos por el paciente). Signed URLs con TTL 1 hora. Paciente puede insertar/borrar solo en subcarpeta `f/`; staff full access.
+**`feedback_semanal.adjunto_path`**: columna opcional (text) para el archivo que el paciente adjunta a su feedback semanal. Se sube al bucket `recursos` desde `enviarFeedbackAction`. Al re-subir se borra el anterior del bucket antes de sobrescribir la columna.
 
 ## Variables de Entorno
 ```
@@ -185,3 +192,4 @@ npx playwright test  # Tests E2E
 | 2026-05-10 | dev | Módulo seguimiento integral: 7 tablas nuevas + bucket `planes` + áreas paciente/admin (ficha, antrop, eval funcional, planes PDF+estructurados, feedback semanal, evolución, objetivos) |
 | 2026-05-15 | dev | Fix timezone (`lib/datetime.ts` con `hoyArgentina`/`lunesDeSemanaArgentina`) en dashboards, calendario, booking, slots y forms de seguimiento + slot mínimo de hoy ahora usa hora local Córdoba + cancelar-turno bloquea fechas pasadas + plan update borra PDF previo automáticamente |
 | 2026-05-15 | dev | Endurecimiento de seguridad: migración `0004` con triggers que cierran auto-escalación de rol, modificación arbitraria de turnos por el paciente y falsificación de respuesta de feedback. SELECT de profiles ahora requiere sesión. `crearTurnoAction` revalida `fecha >= hoyArgentina()`. Register form valida match de password en cliente. CLAUDE.md actualizado con archivos faltantes. |
+| 2026-05-23 | dev | Módulo de recursos multimedia: migración `0005` + bucket `recursos` (privado) + tabla `recursos_paciente` (link/pdf/imagen/video con categoría y visibilidad) + tab "Recursos" en admin + sección "Mis recursos" en área paciente + adjunto opcional en feedback semanal (imagen/PDF, 15 MB, signed URLs 1h). |
