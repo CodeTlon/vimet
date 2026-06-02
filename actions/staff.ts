@@ -18,6 +18,11 @@ const passwordSchema = z.object({
   password: z.string().min(6, 'Mínimo 6 caracteres'),
 })
 
+const reasignarSchema = z.object({
+  email_origen: z.string().email('Email origen inválido'),
+  email_destino: z.string().email('Email destino inválido'),
+})
+
 export async function asignarRolAction(_prev: unknown, formData: FormData): Promise<StaffState> {
   await requireStaff()
 
@@ -69,5 +74,41 @@ export async function cambiarPasswordAction(
 
   if (error) return { error: 'No se pudo cambiar la contraseña.' }
 
+  return { ok: true }
+}
+
+export async function reasignarServiciosAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<StaffState> {
+  await requireStaff()
+
+  const parsed = reasignarSchema.safeParse({
+    email_origen: formData.get('email_origen'),
+    email_destino: formData.get('email_destino'),
+  })
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+
+  const admin = createAdminClient()
+
+  const [{ data: origen }, { data: destino }] = await Promise.all([
+    admin.from('profiles').select('id').eq('email', parsed.data.email_origen).maybeSingle(),
+    admin.from('profiles').select('id').eq('email', parsed.data.email_destino).maybeSingle(),
+  ])
+
+  if (!origen) return { error: 'No se encontró el usuario origen.' }
+  if (!destino) return { error: 'No se encontró el usuario destino.' }
+
+  const [{ error: e1 }, { error: e2 }] = await Promise.all([
+    admin.from('servicios').update({ profesional_id: destino.id }).eq('profesional_id', origen.id),
+    admin
+      .from('horarios_disponibles')
+      .update({ profesional_id: destino.id })
+      .eq('profesional_id', origen.id),
+  ])
+
+  if (e1 || e2) return { error: 'Error al reasignar. Verificá los emails.' }
+
+  revalidatePath('/admin', 'layout')
   return { ok: true }
 }
