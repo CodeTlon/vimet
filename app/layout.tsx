@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { DM_Sans, Outfit } from 'next/font/google'
-import { Suspense } from 'react'
 
-import { Footer } from '@/components/footer'
-import { Navbar } from '@/components/navbar'
+import { HashInviteHandler } from '@/components/hash-invite-handler'
 
 import './globals.css'
 
@@ -58,11 +56,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className={`${outfit.variable} ${dmSans.variable}`}>
       <body className="min-h-screen flex flex-col">
-        <Suspense>
-          <Navbar />
-        </Suspense>
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <HashInviteHandler />
+        {children}
       </body>
     </html>
   )

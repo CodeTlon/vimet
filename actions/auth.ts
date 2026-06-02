@@ -118,6 +118,30 @@ export async function registerAction(_prev: unknown, formData: FormData): Promis
   return { ok: true }
 }
 
+export async function nuevaContrasenaAction(_prev: unknown, formData: FormData): Promise<AuthState> {
+  const password = String(formData.get('password') ?? '')
+  const confirm = String(formData.get('confirm') ?? '')
+
+  if (password.length < 6) return { error: 'Mínimo 6 caracteres.' }
+  if (password !== confirm) return { error: 'Las contraseñas no coinciden.' }
+
+  const supabase = createClient()
+  const { error } = await supabase.auth.updateUser({ password })
+
+  if (error) return { error: 'No se pudo guardar la contraseña. El link puede haber expirado.' }
+
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('rol')
+    .eq('id', user?.id ?? '')
+    .maybeSingle()
+
+  revalidatePath('/', 'layout')
+  const isStaff = profile?.rol && ['nutricionista', 'entrenador', 'admin'].includes(profile.rol)
+  redirect(isStaff ? '/admin/dashboard' : '/login')
+}
+
 export async function logoutAction() {
   const supabase = createClient()
   await supabase.auth.signOut()
