@@ -118,6 +118,25 @@ export async function registerAction(_prev: unknown, formData: FormData): Promis
   return { ok: true }
 }
 
+export async function recuperarContrasenaAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<AuthState> {
+  const parsed = z.string().email().safeParse(formData.get('email'))
+  if (!parsed.success) {
+    return { error: 'Ingresá un email válido.' }
+  }
+
+  const supabase = createClient()
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  await supabase.auth.resetPasswordForEmail(parsed.data, {
+    redirectTo: `${siteUrl}/auth/nueva-contrasena`,
+  })
+
+  // Siempre devolvemos ok: no revelamos si el email existe o no.
+  return { ok: true }
+}
+
 export async function nuevaContrasenaAction(_prev: unknown, formData: FormData): Promise<AuthState> {
   const password = String(formData.get('password') ?? '')
   const confirm = String(formData.get('confirm') ?? '')
