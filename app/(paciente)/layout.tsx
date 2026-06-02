@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { type ReactNode } from 'react'
 
-import { logoutAction } from '@/actions/auth'
+import { LogoutButton } from '@/components/logout-button'
 import { PacienteSubnav } from '@/components/paciente-subnav'
 import { createClient } from '@/lib/supabase/server'
 
@@ -58,14 +58,9 @@ export default async function PacienteLayout({ children }: { children: ReactNode
                 Hola, {profile.nombre}
               </span>
             ) : null}
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                <LogOut className="size-4" /> Salir
-              </button>
-            </form>
+            <LogoutButton className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60">
+              <LogOut className="size-4" /> Salir
+            </LogoutButton>
           </div>
         </div>
       </header>
