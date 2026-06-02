@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 export type AuthState = {
@@ -60,7 +61,7 @@ export async function loginAction(_prev: unknown, formData: FormData): Promise<A
 
   if (profile && !profile.activo) {
     await supabase.auth.signOut()
-    return { error: 'Tu cuenta está desactivada.' }
+    return { error: 'Tu cuenta está pendiente de activación. El equipo VIMET te avisará cuando esté lista.' }
   }
 
   const isStaff = profile?.rol && ['nutricionista', 'entrenador', 'admin'].includes(profile.rol)
@@ -107,12 +108,14 @@ export async function registerAction(_prev: unknown, formData: FormData): Promis
     return { error: error.message, fields: { ...fields, password: '', password_confirm: '' } }
   }
 
-  if (!data.session) {
-    return { ok: true, error: 'Revisá tu email para confirmar la cuenta.' }
+  if (data.user) {
+    // Marcar como inactivo hasta que el admin lo active
+    await createAdminClient().from('profiles').update({ activo: false }).eq('id', data.user.id)
+    // Cerrar la sesión que pudo haberse abierto automáticamente
+    await createClient().auth.signOut()
   }
 
-  revalidatePath('/', 'layout')
-  redirect('/mis-turnos')
+  return { ok: true }
 }
 
 export async function logoutAction() {

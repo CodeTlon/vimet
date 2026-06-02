@@ -33,17 +33,21 @@ export function RegisterForm() {
   const [confirm, setConfirm] = useState('')
   const mismatch = confirm.length > 0 && password !== confirm
 
+  if (state.ok) {
+    return (
+      <div role="status" className="rounded-xl bg-vimet-orange/10 border border-vimet-orange/30 px-6 py-8 text-center space-y-2">
+        <p className="font-semibold text-gray-900">¡Cuenta creada!</p>
+        <p className="text-sm text-gray-700">
+          Tu solicitud fue recibida. El equipo VIMET va a activar tu cuenta y te avisará cuando esté lista para usar.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <form action={formAction} className="space-y-4">
       {state.error ? (
-        <div
-          role={state.ok ? 'status' : 'alert'}
-          className={
-            state.ok
-              ? 'rounded-lg bg-vimet-orange/10 border border-vimet-orange/30 px-4 py-3 text-sm text-vimet-red'
-              : 'rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red'
-          }
-        >
+        <div role="alert" className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
           {state.error}
         </div>
       ) : null}
