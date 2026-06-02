@@ -3,6 +3,7 @@ import { DM_Sans, Outfit } from 'next/font/google'
 import { Suspense } from 'react'
 
 import { Footer } from '@/components/footer'
+import { HashInviteHandler } from '@/components/hash-invite-handler'
 import { Navbar } from '@/components/navbar'
 
 import './globals.css'
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className={`${outfit.variable} ${dmSans.variable}`}>
       <body className="min-h-screen flex flex-col">
+        <HashInviteHandler />
         <Suspense>
           <Navbar />
         </Suspense>
