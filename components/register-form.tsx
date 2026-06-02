@@ -53,10 +53,17 @@ export function RegisterForm() {
       ) : null}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Nombre" name="nombre" defaultValue={f.nombre} required />
-        <Field label="Apellido" name="apellido" defaultValue={f.apellido} required />
+        <Field label="Nombre" name="nombre" defaultValue={f.nombre} placeholder="Ej: Avril" required />
+        <Field label="Apellido" name="apellido" defaultValue={f.apellido} placeholder="Ej: Jerushalmi" required />
       </div>
-      <Field label="Email" name="email" type="email" defaultValue={f.email} required />
+      <Field
+        label="Email"
+        name="email"
+        type="email"
+        defaultValue={f.email}
+        placeholder="tu@email.com"
+        required
+      />
       <Field
         label="Teléfono (WhatsApp)"
         name="telefono"
@@ -71,6 +78,7 @@ export function RegisterForm() {
           type="password"
           minLength={6}
           required
+          placeholder="Mínimo 6 caracteres"
           value={password}
           onChange={(v) => setPassword(v)}
         />
@@ -80,6 +88,7 @@ export function RegisterForm() {
           type="password"
           minLength={6}
           required
+          placeholder="Repetí la contraseña"
           value={confirm}
           onChange={(v) => setConfirm(v)}
           ariaInvalid={mismatch}
