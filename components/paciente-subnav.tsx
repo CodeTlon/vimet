@@ -33,8 +33,8 @@ export function PacienteSubnav({
 }) {
   const pathname = usePathname()
   return (
-    <nav className="mb-6 -mx-2 sm:mx-0 overflow-x-auto">
-      <ul className="flex gap-1 min-w-max sm:flex-wrap">
+    <nav className="mb-6">
+      <ul className="flex flex-wrap gap-2">
         {tabs.map((t) => {
           const Icon = ICONS[t.icon]
           const active = pathname === t.href || pathname.startsWith(`${t.href}/`)

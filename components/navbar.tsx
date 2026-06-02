@@ -18,7 +18,19 @@ const links = [
   { href: '/contacto', label: 'Contacto' },
 ]
 
-const HIDE_PREFIXES = ['/admin', '/login', '/registro', '/turnos/nuevo']
+const HIDE_PREFIXES = [
+  '/admin',
+  '/login',
+  '/registro',
+  '/turnos/nuevo',
+  '/mis-turnos',
+  '/mi-ficha',
+  '/mi-progreso',
+  '/mis-planes',
+  '/feedback-semanal',
+  '/mis-objetivos',
+  '/mis-recursos',
+]
 
 export function Navbar() {
   const pathname = usePathname()
