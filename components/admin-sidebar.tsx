@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarDays, LayoutDashboard, LogOut, UsersRound } from 'lucide-react'
+import { CalendarDays, LayoutDashboard, LogOut, Settings, UsersRound } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -11,6 +11,7 @@ const links = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/calendario', label: 'Calendario', icon: CalendarDays },
   { href: '/admin/pacientes', label: 'Pacientes', icon: UsersRound },
+  { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
 ] as const
 
 export function AdminSidebar({ name }: { name: string }) {
