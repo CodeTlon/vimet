@@ -11,14 +11,29 @@ export function HashInviteHandler() {
   const router = useRouter()
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
     if (!window.location.hash.includes('type=invite')) return
 
     const supabase = createClient()
+    let done = false
+    const go = () => {
+      if (done) return
+      done = true
+      router.replace('/auth/nueva-contrasena')
+    }
+
+    // Suscribirse ANTES de getSession para no perder el evento si ya se disparó
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
+      if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
         subscription.unsubscribe()
-        router.replace('/auth/nueva-contrasena')
+        go()
+      }
+    })
+
+    // Chequear sesión existente en paralelo (el cliente puede haberla procesado ya)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        subscription.unsubscribe()
+        go()
       }
     })
 
