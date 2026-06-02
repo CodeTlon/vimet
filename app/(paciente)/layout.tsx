@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
-import { type ReactNode } from 'react'
+import { Suspense, type ReactNode } from 'react'
 
+import { Footer } from '@/components/footer'
+import { Navbar } from '@/components/navbar'
 import { PacienteSubnav } from '@/components/paciente-subnav'
 import { createClient } from '@/lib/supabase/server'
 
@@ -34,11 +36,17 @@ export default async function PacienteLayout({ children }: { children: ReactNode
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-16 bg-vimet-sand">
-      <div className="container-vimet">
-        <PacienteSubnav tabs={tabs} />
-        {children}
+    <>
+      <Suspense>
+        <Navbar />
+      </Suspense>
+      <div className="min-h-screen pt-24 pb-16 bg-vimet-sand">
+        <div className="container-vimet">
+          <PacienteSubnav tabs={tabs} />
+          {children}
+        </div>
       </div>
-    </div>
+      <Footer />
+    </>
   )
 }
