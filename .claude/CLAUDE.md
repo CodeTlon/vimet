@@ -45,7 +45,8 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `app/auth/callback/route.ts` | Callback auth: intercambia `code` (PKCE) o `token_hash` (OTP), redirige a `next` |
 | `app/auth/confirmar/page.tsx` | Confirma invite via `token_hash` o implicit flow; redirige a nueva-contrasena |
 | `app/auth/nueva-contrasena/page.tsx` | Form para crear contraseña (invite + reset) |
-| `components/hash-invite-handler.tsx` | Client component global: detecta hash invite y llama `setSession` + redirige |
+| `app/auth/recuperar/page.tsx` | "Olvidé mi contraseña": pide email y dispara `resetPasswordForEmail` |
+| `components/hash-invite-handler.tsx` | Client component global: detecta hash invite/recovery y llama `setSession` + redirige |
 | `app/terminos/page.tsx` | Términos de servicio |
 | `app/privacidad/page.tsx` | Política de privacidad |
 | `app/(paciente)/layout.tsx` | Layout área paciente: auth gating + subnav |
@@ -105,7 +106,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `lib/supabase/middleware.ts` | Helper para refresh de session en middleware |
 | `lib/supabase/auth-helpers.ts` | `getUserAndProfile` / `requireAuth` / `requireStaff` |
 | `middleware.ts` | Auth middleware: protege /mis-*, /feedback-semanal, /turnos/*, /admin/* |
-| `actions/auth.ts` | Server Actions: login, register, logout |
+| `actions/auth.ts` | Server Actions: login, register, logout, nuevaContrasena, recuperarContrasena |
 | `actions/turnos.ts` | Server Actions: crear, cancelar, actualizar estado |
 | `actions/contacto.ts` | Server Action: enviar email contacto |
 | `actions/ficha.ts` | Upsert de ficha clínica |
