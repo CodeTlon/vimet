@@ -119,6 +119,8 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `supabase/migrations/0002_seed.sql` | Seed servicios + horarios |
 | `supabase/migrations/0003_seguimiento.sql` | Tablas seguimiento + RLS + bucket `planes` |
 | `supabase/migrations/0004_security_hardening.sql` | Triggers que bloquean cambios sensibles por parte del paciente (rol/activo, fecha/hora del turno, respuesta de feedback) + SELECT de profiles requiere auth |
+| `supabase/migrations/0005_recursos.sql` | Tabla `recursos_paciente` + bucket `recursos` + `adjunto_path` en feedback |
+| `supabase/migrations/0006_invited_role.sql` | `handle_new_user` respeta `rol` del metadata para invitados (`invited_at`) + relaja trigger de profiles para permitir asignar rol desde service role / SQL editor |
 | `emails/contacto.tsx` | Template Resend del formulario contacto |
 
 ## Base de Datos (Supabase)
@@ -139,7 +141,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `recursos_paciente` | tipo (link/pdf/imagen/video), categoria (5), titulo, descripcion, url, storage_path, `visible_paciente`, plan_id | staff CRUD + paciente lee solo los visibles |
 
 **Roles** (campo `rol` en `profiles`): `paciente` (default), `nutricionista`, `entrenador`, `admin`.
-**Trigger:** `on_auth_user_created` → inserta fila en `profiles` con rol `paciente`.
+**Trigger:** `on_auth_user_created` → inserta fila en `profiles`. Rol por defecto `paciente`; si el usuario fue **invitado** (`auth.users.invited_at` no null) y trae `rol` válido en `user_metadata`, respeta ese rol (registro público siempre cae en `paciente`). El dashboard de Supabase no expone metadata al invitar → para staff, invitar y luego setear `rol` en `profiles` desde el Table/SQL editor.
 **Storage bucket** `planes` (privado): paths `{paciente_id}/{filename}`. Staff todo, paciente solo lee su propia carpeta. Acceso vía signed URL (5 min TTL).
 **Storage bucket** `recursos` (privado): paths `{paciente_id}/r/{ts}_{file}` (staff) y `{paciente_id}/f/{semana}_{ts}_{file}` (adjuntos de feedback, subidos por el paciente). Signed URLs con TTL 1 hora. Paciente puede insertar/borrar solo en subcarpeta `f/`; staff full access.
 **`feedback_semanal.adjunto_path`**: columna opcional (text) para el archivo que el paciente adjunta a su feedback semanal. Se sube al bucket `recursos` desde `enviarFeedbackAction`. Al re-subir se borra el anterior del bucket antes de sobrescribir la columna.
@@ -184,7 +186,7 @@ Ver `.env.example` para el listado completo.
 - Fechas: **nunca usar `new Date().toISOString().slice(0,10)` para representar "hoy"**, devuelve fecha en UTC y se corre un día cuando son >21:00 en Córdoba (server en Vercel es UTC). Usar siempre `hoyArgentina()` / `lunesDeSemanaArgentina()` de `lib/datetime.ts`. Mismo principio para `lib/booking/slots.ts` al calcular el mínimo de hora de hoy. Aplica server y client.
 - Invite flow de Supabase usa implicit flow (hash fragment `#access_token=...&type=invite`). `@supabase/ssr`'s `createBrowserClient` **no** procesa el hash automáticamente — hay que parsear con `URLSearchParams` y llamar `setSession` explícitamente. Ver `components/hash-invite-handler.tsx`. Para PKCE invite (token_hash), ver `app/auth/confirmar/page.tsx`.
 - Al actualizar un plan con nuevo PDF: la action borra automáticamente el PDF previo del bucket *después* de subir el nuevo (si falla el upload conservamos el viejo). No hay checkbox de "reemplazar"; cualquier upload reemplaza.
-- Endurecimiento de RLS (migración `0004`): además de las policies, hay triggers BEFORE UPDATE que impiden al paciente (a) cambiar su `rol`/`activo` en `profiles`, (b) modificar fecha/hora/profesional/notas del profesional o cambiar `estado` a algo distinto de `cancelado` en `turnos`, (c) falsificar `respuesta_profesional` / `respondido_*` en `feedback_semanal`. `is_staff()` cortocircuita los tres triggers. Si se agregan columnas sensibles nuevas hay que sumarlas explícitamente al chequeo.
+- Endurecimiento de RLS (migración `0004`): además de las policies, hay triggers BEFORE UPDATE que impiden al paciente (a) cambiar su `rol`/`activo` en `profiles`, (b) modificar fecha/hora/profesional/notas del profesional o cambiar `estado` a algo distinto de `cancelado` en `turnos`, (c) falsificar `respuesta_profesional` / `respondido_*` en `feedback_semanal`. `is_staff()` cortocircuita los tres triggers. Si se agregan columnas sensibles nuevas hay que sumarlas explícitamente al chequeo. El trigger de `profiles` (migración `0006`) también cortocircuita cuando `auth.uid()` es null (service role / SQL editor) para permitir asignar rol desde el backend; un paciente por la API siempre tiene `auth.uid()` seteado, así que el bloqueo de auto-escalación sigue intacto.
 - `crearTurnoAction` revalida en el servidor que la fecha sea >= hoy en zona Córdoba: el `min` del input es defensa en profundidad, pero no se confía en él.
 
 ## Comandos Rápidos
