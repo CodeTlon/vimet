@@ -4,7 +4,7 @@ import { CalendarDays, LayoutDashboard, LogOut, Settings, UsersRound } from 'luc
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-import { logoutAction } from '@/actions/auth'
+import { LogoutButton } from '@/components/logout-button'
 import { cn } from '@/lib/utils'
 
 const links = [
@@ -47,14 +47,9 @@ export function AdminSidebar({ name }: { name: string }) {
       </nav>
 
       <div className="hidden lg:block p-3 border-t border-white/10">
-        <form action={logoutAction}>
-          <button
-            type="submit"
-            className="w-full inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
-          >
-            <LogOut className="size-4" /> Cerrar sesión
-          </button>
-        </form>
+        <LogoutButton className="w-full inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-60">
+          <LogOut className="size-4" /> Cerrar sesión
+        </LogoutButton>
       </div>
 
       {/* Mobile bar */}
@@ -79,15 +74,12 @@ export function AdminSidebar({ name }: { name: string }) {
               </Link>
             )
           })}
-          <form action={logoutAction} className="inline">
-            <button
-              type="submit"
-              className="p-2 rounded-md text-sm text-white/70 hover:bg-white/10"
-              aria-label="Cerrar sesión"
-            >
-              <LogOut className="size-5" />
-            </button>
-          </form>
+          <LogoutButton
+            className="p-2 rounded-md text-sm text-white/70 hover:bg-white/10 disabled:opacity-60"
+            aria-label="Cerrar sesión"
+          >
+            <LogOut className="size-5" />
+          </LogoutButton>
         </nav>
       </div>
     </aside>
