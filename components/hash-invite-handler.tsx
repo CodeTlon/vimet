@@ -5,39 +5,25 @@ import { useRouter } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/client'
 
-// Detecta tokens de invitación en el hash (#access_token=...&type=invite)
-// que Supabase envía al site URL en el implicit flow.
+// Detecta tokens de invitación en el hash (#access_token=...&type=invite).
+// @supabase/ssr no procesa el hash automáticamente, hay que parsear y setSession manualmente.
 export function HashInviteHandler() {
   const router = useRouter()
 
   useEffect(() => {
-    if (!window.location.hash.includes('type=invite')) return
+    const hash = window.location.hash.substring(1)
+    if (!hash.includes('type=invite')) return
 
-    const supabase = createClient()
-    let done = false
-    const go = () => {
-      if (done) return
-      done = true
-      router.replace('/auth/nueva-contrasena')
-    }
+    const params = new URLSearchParams(hash)
+    const accessToken = params.get('access_token')
+    const refreshToken = params.get('refresh_token')
+    if (!accessToken || !refreshToken) return
 
-    // Suscribirse ANTES de getSession para no perder el evento si ya se disparó
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
-        subscription.unsubscribe()
-        go()
-      }
-    })
-
-    // Chequear sesión existente en paralelo (el cliente puede haberla procesado ya)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        subscription.unsubscribe()
-        go()
-      }
-    })
-
-    return () => subscription.unsubscribe()
+    createClient()
+      .auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+      .then(({ data: { session } }) => {
+        if (session) router.replace('/auth/nueva-contrasena')
+      })
   }, [router])
 
   return null
