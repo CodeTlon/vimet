@@ -68,6 +68,9 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `app/admin/pacientes/[id]/recursos/page.tsx` | CRUD recursos multimedia del paciente (admin) |
 | `app/(paciente)/mis-recursos/page.tsx` | Vista de recursos visibles para el paciente |
 | `actions/recursos.ts` | CRUD recursos: crear (link/pdf/imagen/video), eliminar, toggle visibilidad |
+| `actions/staff.ts` | Server Actions admin: `configurarProfesionalAction` (rol + servicios + horarios), `toggleActivoAction`, `cambiarPasswordAction` |
+| `app/admin/configuracion/page.tsx` | Configuración admin: configurar profesional + cambiar contraseña |
+| `lib/supabase/admin.ts` | Cliente Supabase con service role key (bypass RLS, Admin Auth API) |
 | `components/seguimiento/recurso-form.tsx` | Form admin para subir/linkear recursos (tipo selector dinámico) |
 | `app/api/slots/route.ts` | GET slots disponibles (lo consume el wizard) |
 | `components/navbar.tsx` | Navbar pública (transparente en home) |
@@ -194,3 +197,4 @@ npx playwright test  # Tests E2E
 | 2026-05-15 | dev | Fix timezone (`lib/datetime.ts` con `hoyArgentina`/`lunesDeSemanaArgentina`) en dashboards, calendario, booking, slots y forms de seguimiento + slot mínimo de hoy ahora usa hora local Córdoba + cancelar-turno bloquea fechas pasadas + plan update borra PDF previo automáticamente |
 | 2026-05-15 | dev | Endurecimiento de seguridad: migración `0004` con triggers que cierran auto-escalación de rol, modificación arbitraria de turnos por el paciente y falsificación de respuesta de feedback. SELECT de profiles ahora requiere sesión. `crearTurnoAction` revalida `fecha >= hoyArgentina()`. Register form valida match de password en cliente. CLAUDE.md actualizado con archivos faltantes. |
 | 2026-05-23 | dev | Módulo de recursos multimedia: migración `0005` + bucket `recursos` (privado) + tabla `recursos_paciente` (link/pdf/imagen/video con categoría y visibilidad) + tab "Recursos" en admin + sección "Mis recursos" en área paciente + adjunto opcional en feedback semanal (imagen/PDF, 15 MB, signed URLs 1h). |
+| 2026-06-02 | feat/configuracion-staff | `/admin/configuracion`: `configurarProfesionalAction` (asigna rol + linkea servicios/horarios en un paso), `cambiarPasswordAction`, `toggleActivoAction`. Registro deja `activo=false`; admin activa desde listado de pacientes. `lib/supabase/admin.ts` (service role client). |
