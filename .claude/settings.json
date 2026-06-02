@@ -6,6 +6,7 @@
       "Bash(npm start)",
       "Bash(npm install*)",
       "Bash(npm ci)",
+      "Bash(npm run lint)",
       "Bash(npx playwright*)",
       "Bash(npx supabase*)",
       "Bash(npx tsx*)",
@@ -18,7 +19,11 @@
       "Bash(git checkout*)",
       "Bash(git branch*)",
       "Bash(git stash*)",
-      "Bash(git pull*)"
+      "Bash(git pull*)",
+      "Bash(git merge*)",
+      "Bash(git tag*)",
+      "Bash(gh pr*)",
+      "Bash(gh repo*)"
     ]
   },
   "hooks": {
@@ -28,7 +33,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'RECORDATORIO: Actualizar .claude/CLAUDE.md — si hubo cambios estructurales (archivos nuevos, tablas, env vars, quirks, URL producción), editar la sección correspondiente y agregar fila en Historial de Cambios.'"
+            "command": "echo 'RECORDATORIO mantenimiento: 1) README.md (raiz) -> fila nueva en Changelog. 2) .claude/CLAUDE.md + ARCHITECTURE.md si hubo cambios estructurales + fila en Historial. 3) Commits SIN Co-Authored-By: Claude.'"
           }
         ]
       }

@@ -1,8 +1,9 @@
 # VIMET — Project Context
 
 > **Contexto de sesión para Claude Code.**
-> Al iniciar: leer este archivo + TASKS.md. Ir directo al problema.
-> Al finalizar: si hubo cambios estructurales → editar la sección correspondiente + agregar fila en Historial de Cambios.
+> Al iniciar: leer este archivo + `ARCHITECTURE.md` + `TASKS.md`. Ir directo al cambio (leé SOLO lo que indica ARCHITECTURE.md, no el repo entero).
+> Sesión de mantenimiento: `/cambio "<tema>"` abre la rama; cada prompt commitea ahí (sin coautor, sin tocar main); `/cerrar` mergea/pushea/tagea cuando lo pidas.
+> Al cerrar: fila(s) en el **Changelog del README.md (raíz)** + fila en Historial de Cambios acá. Si hubo cambios estructurales → editar la sección + ARCHITECTURE.md.
 
 ---
 
