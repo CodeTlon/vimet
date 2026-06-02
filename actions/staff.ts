@@ -76,22 +76,16 @@ export async function configurarProfesionalAction(
   return { ok: true }
 }
 
-export async function toggleActivoAction(
-  _prev: unknown,
-  formData: FormData,
-): Promise<StaffState> {
+export async function toggleActivoAction(formData: FormData): Promise<void> {
   await requireStaff()
 
   const id = String(formData.get('id') ?? '')
   const activo = formData.get('activo') === 'true'
-  if (!id) return { error: 'ID inválido.' }
+  if (!id) return
 
   const admin = createAdminClient()
   const { error } = await admin.from('profiles').update({ activo }).eq('id', id)
-  if (error) return { error: 'No se pudo actualizar el estado.' }
-
-  revalidatePath('/admin/pacientes')
-  return { ok: true }
+  if (!error) revalidatePath('/admin/pacientes')
 }
 
 export async function cambiarPasswordAction(
