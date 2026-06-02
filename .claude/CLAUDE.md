@@ -39,8 +39,13 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `app/servicios/page.tsx` | Catálogo de servicios por tipo (nutrición/entrenamiento/combo) |
 | `app/faq/page.tsx` | 10 preguntas frecuentes con accordion |
 | `app/contacto/page.tsx` | Form Resend + WhatsApp + ubicación con map |
+| `app/(public)/layout.tsx` | Layout páginas públicas: Navbar + Footer |
 | `app/login/page.tsx` | Login con Supabase Auth |
 | `app/registro/page.tsx` | Registro paciente (signUp) |
+| `app/auth/callback/route.ts` | Callback auth: intercambia `code` (PKCE) o `token_hash` (OTP), redirige a `next` |
+| `app/auth/confirmar/page.tsx` | Confirma invite via `token_hash` o implicit flow; redirige a nueva-contrasena |
+| `app/auth/nueva-contrasena/page.tsx` | Form para crear contraseña (invite + reset) |
+| `components/hash-invite-handler.tsx` | Client component global: detecta hash invite y llama `setSession` + redirige |
 | `app/terminos/page.tsx` | Términos de servicio |
 | `app/privacidad/page.tsx` | Política de privacidad |
 | `app/(paciente)/layout.tsx` | Layout área paciente: auth gating + subnav |
@@ -177,6 +182,7 @@ Ver `.env.example` para el listado completo.
 - Para abrir un PDF del bucket `planes` se usa `obtenerUrlPlanAction` (server action) que genera signed URL de 5 min y verifica permisos. No exponer paths directamente.
 - Excels legacy de origen del módulo: `documentos/FICHA DEL ALUMNO (no cambiar nombre).xlsx`, `documentos/PROYECTO (no cambiar nombre).xlsx`, `documentos/SERVICIO_ ENTRENAMIENTO Y NUTRICIÓN.docx`. Sirven de referencia al modificar el modelo.
 - Fechas: **nunca usar `new Date().toISOString().slice(0,10)` para representar "hoy"**, devuelve fecha en UTC y se corre un día cuando son >21:00 en Córdoba (server en Vercel es UTC). Usar siempre `hoyArgentina()` / `lunesDeSemanaArgentina()` de `lib/datetime.ts`. Mismo principio para `lib/booking/slots.ts` al calcular el mínimo de hora de hoy. Aplica server y client.
+- Invite flow de Supabase usa implicit flow (hash fragment `#access_token=...&type=invite`). `@supabase/ssr`'s `createBrowserClient` **no** procesa el hash automáticamente — hay que parsear con `URLSearchParams` y llamar `setSession` explícitamente. Ver `components/hash-invite-handler.tsx`. Para PKCE invite (token_hash), ver `app/auth/confirmar/page.tsx`.
 - Al actualizar un plan con nuevo PDF: la action borra automáticamente el PDF previo del bucket *después* de subir el nuevo (si falla el upload conservamos el viejo). No hay checkbox de "reemplazar"; cualquier upload reemplaza.
 - Endurecimiento de RLS (migración `0004`): además de las policies, hay triggers BEFORE UPDATE que impiden al paciente (a) cambiar su `rol`/`activo` en `profiles`, (b) modificar fecha/hora/profesional/notas del profesional o cambiar `estado` a algo distinto de `cancelado` en `turnos`, (c) falsificar `respuesta_profesional` / `respondido_*` en `feedback_semanal`. `is_staff()` cortocircuita los tres triggers. Si se agregan columnas sensibles nuevas hay que sumarlas explícitamente al chequeo.
 - `crearTurnoAction` revalida en el servidor que la fecha sea >= hoy en zona Córdoba: el `min` del input es defensa en profundidad, pero no se confía en él.
@@ -198,3 +204,4 @@ npx playwright test  # Tests E2E
 | 2026-05-15 | dev | Endurecimiento de seguridad: migración `0004` con triggers que cierran auto-escalación de rol, modificación arbitraria de turnos por el paciente y falsificación de respuesta de feedback. SELECT de profiles ahora requiere sesión. `crearTurnoAction` revalida `fecha >= hoyArgentina()`. Register form valida match de password en cliente. CLAUDE.md actualizado con archivos faltantes. |
 | 2026-05-23 | dev | Módulo de recursos multimedia: migración `0005` + bucket `recursos` (privado) + tabla `recursos_paciente` (link/pdf/imagen/video con categoría y visibilidad) + tab "Recursos" en admin + sección "Mis recursos" en área paciente + adjunto opcional en feedback semanal (imagen/PDF, 15 MB, signed URLs 1h). |
 | 2026-06-02 | feat/configuracion-staff | `/admin/configuracion`: `configurarProfesionalAction` (asigna rol + linkea servicios/horarios en un paso), `cambiarPasswordAction`, `toggleActivoAction`. Registro deja `activo=false`; admin activa desde listado de pacientes. `lib/supabase/admin.ts` (service role client). |
+| 2026-06-02 | feat/invite-flow | Flujo de invitación staff: `app/auth/confirmar/page.tsx` (implicit + PKCE), `app/auth/nueva-contrasena/page.tsx`, `nuevaContrasenaAction`, `app/auth/callback/route.ts`. `components/hash-invite-handler.tsx` detecta `#access_token&type=invite` en cualquier página y llama `setSession` manualmente (@supabase/ssr no procesa hash automático). Layout refactorizado: route group `app/(public)/` con Navbar+Footer; admin y auth sin navbar pública. `app/(paciente)/layout.tsx` incluye ahora Navbar+Footer propio. |
