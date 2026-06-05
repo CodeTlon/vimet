@@ -65,7 +65,7 @@ export default async function PacienteLayout({ children }: { children: ReactNode
         </div>
       </header>
 
-      <div className="flex-1 pt-8 pb-16">
+      <div className="flex-1 pt-8 pb-16 overflow-x-hidden">
         <div className="container-vimet">
           <PacienteSubnav tabs={tabs} />
           {children}
