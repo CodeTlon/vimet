@@ -2,6 +2,7 @@ import { Instagram, MapPin, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
 
 import { ContactoForm } from '@/components/contacto-form'
+import { LazyMap } from '@/components/lazy-map'
 import { PageHeader } from '@/components/page-header'
 import { location, social, team } from '@/lib/config/team'
 
@@ -79,14 +80,10 @@ export default function ContactoPage() {
             </p>
           </div>
           <div className="rounded-2xl bg-white p-2 shadow-lg">
-            <iframe
+            <LazyMap
               title="Mapa VIMET — Instituto VIANETT"
               src={location.mapEmbed}
-              width="100%"
               height={420}
-              loading="lazy"
-              allowFullScreen
-              className="rounded-xl border-0 block w-full"
             />
           </div>
         </div>
