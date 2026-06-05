@@ -51,12 +51,12 @@ export function RecursoForm({ pacienteId }: { pacienteId: string }) {
 
       <h3 className="font-heading font-semibold text-gray-900">Nuevo recurso</h3>
 
-      {state.error ? (
+      {state?.error ? (
         <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-2 text-sm text-vimet-red">
           {state.error}
         </div>
       ) : null}
-      {state.ok ? (
+      {state?.ok ? (
         <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
           Recurso agregado correctamente.
         </div>

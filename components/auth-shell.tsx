@@ -1,3 +1,4 @@
+import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { type ReactNode } from 'react'
 
@@ -15,7 +16,14 @@ export function AuthShell({
   return (
     <div className="min-h-screen pt-24 pb-16 bg-gradient-to-br from-vimet-sand to-vimet-cream flex items-center">
       <div className="container-vimet">
-        <div className="max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <div className="max-w-md mx-auto">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-vimet-orange transition-colors mb-4"
+          >
+            <ArrowLeft className="size-4" /> Volver al sitio
+          </Link>
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           <div className="bg-vimet-gradient text-white px-7 py-7 text-center">
             <Link
               href="/"
@@ -29,6 +37,7 @@ export function AuthShell({
             <h1 className="font-heading text-xl font-semibold text-gray-900 mb-4">{title}</h1>
             {children}
             <div className="mt-6 text-center text-sm text-gray-700">{footer}</div>
+          </div>
           </div>
         </div>
       </div>
