@@ -27,7 +27,10 @@ export function LogoutButton({
     if (loading) return
     setLoading(true)
     const supabase = createClient()
-    await supabase.auth.signOut()
+    // scope 'local': limpia la sesión y las cookies del browser al instante, sin
+    // round-trip a Supabase para revocar el token globalmente. Evita que el logout
+    // se cuelgue cuando la conexión a Supabase está lenta.
+    await supabase.auth.signOut({ scope: 'local' })
     router.replace('/')
     router.refresh()
   }
