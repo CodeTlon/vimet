@@ -25,7 +25,7 @@ export function AdminSidebar({ name }: { name: string }) {
         <p className="text-xs text-white/60 mt-1">Panel · {name}</p>
       </div>
 
-      <nav className="lg:flex-1 lg:px-3 lg:py-4 lg:space-y-1 hidden lg:block">
+      <nav className="lg:flex-1 lg:px-3 lg:py-4 lg:space-y-1 hidden lg:block lg:overflow-y-auto">
         {links.map((l) => {
           const active = pathname === l.href || pathname.startsWith(`${l.href}/`)
           return (
