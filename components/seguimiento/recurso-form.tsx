@@ -1,10 +1,11 @@
 'use client'
 
 import { FileImage, FileText, Link2, PlusCircle, Video } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { crearRecursoAction, type RecursoState } from '@/actions/recursos'
+import { useResetOnSuccess } from '@/components/seguimiento/use-reset-on-success'
 
 const initial: RecursoState = {}
 
@@ -37,11 +38,18 @@ function Btn() {
 export function RecursoForm({ pacienteId }: { pacienteId: string }) {
   const [tipo, setTipo]   = useState<TipoValue>('link')
   const [state, action]   = useFormState(crearRecursoAction, initial)
+  const formRef           = useResetOnSuccess(state)
+
+  // El tipo es estado controlado → form.reset() no lo toca; lo volvemos a 'link'.
+  useEffect(() => {
+    if (state?.ok) setTipo('link')
+  }, [state])
 
   const tipoInfo = TIPOS.find((t) => t.value === tipo)!
 
   return (
     <form
+      ref={formRef}
       action={action}
       encType="multipart/form-data"
       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4"
