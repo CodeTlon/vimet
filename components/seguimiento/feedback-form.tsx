@@ -95,6 +95,7 @@ export function FeedbackForm({
             max="400"
             name="peso_autoreporte_kg"
             defaultValue={existente?.peso_autoreporte_kg ?? ''}
+            placeholder="Ej: 72.5"
             className={inputBase}
           />
         </label>
@@ -106,6 +107,7 @@ export function FeedbackForm({
           name="observaciones"
           rows={4}
           defaultValue={existente?.observaciones ?? ''}
+          placeholder="Contanos cómo te fue con el plan, energía, descanso, dificultades…"
           className={inputBase}
         />
       </label>
@@ -116,6 +118,7 @@ export function FeedbackForm({
           name="dudas"
           rows={3}
           defaultValue={existente?.dudas ?? ''}
+          placeholder="¿Alguna duda o pregunta para Avril o Gero?"
           className={inputBase}
         />
       </label>
@@ -172,6 +175,7 @@ function ScaleField({
         step={1}
         name={name}
         defaultValue={defaultValue ?? ''}
+        placeholder="1–10"
         className={inputBase}
       />
     </label>
@@ -197,6 +201,7 @@ function PercentField({
         step={1}
         name={name}
         defaultValue={defaultValue ?? ''}
+        placeholder="0–100"
         className={inputBase}
       />
     </label>

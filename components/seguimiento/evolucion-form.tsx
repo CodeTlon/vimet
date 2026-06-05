@@ -7,6 +7,7 @@ import {
   crearEntradaEvolucionAction,
   type EvolucionState,
 } from '@/actions/evolucion'
+import { useResetOnSuccess } from '@/components/seguimiento/use-reset-on-success'
 
 const initial: EvolucionState = {}
 const inputBase =
@@ -34,8 +35,10 @@ export function EvolucionForm({
   defaultOrigen?: 'nutricion' | 'entrenamiento'
 }) {
   const [state, action] = useFormState(crearEntradaEvolucionAction, initial)
+  const formRef = useResetOnSuccess(state)
   return (
     <form
+      ref={formRef}
       action={action}
       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4"
     >
@@ -79,7 +82,7 @@ export function EvolucionForm({
 
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Contenido</span>
-        <textarea name="contenido" rows={4} required className={inputBase} />
+        <textarea name="contenido" rows={4} required placeholder="Describí la evolución u observación…" className={inputBase} />
       </label>
 
       <Btn />
