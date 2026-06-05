@@ -15,6 +15,7 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { LazyMap } from '@/components/lazy-map'
 import { location, social, team } from '@/lib/config/team'
 
 const pilares = [
@@ -362,14 +363,10 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="rounded-2xl overflow-hidden shadow-lg bg-white p-2">
-              <iframe
+              <LazyMap
                 title="Ubicación VIMET en Córdoba"
                 src={location.mapEmbed}
-                width="100%"
                 height={400}
-                loading="lazy"
-                allowFullScreen
-                className="rounded-xl border-0 block w-full"
               />
             </div>
           </div>
