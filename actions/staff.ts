@@ -55,8 +55,8 @@ export async function configurarProfesionalAction(
     .neq('id', nuevo.id)
     .maybeSingle()
 
-  // 1) Asignar rol al nuevo usuario
-  await admin.from('profiles').update({ rol: tipo }).eq('id', nuevo.id)
+  // 1) Asignar rol al nuevo usuario y activarlo (un profesional siempre va activo)
+  await admin.from('profiles').update({ rol: tipo, activo: true }).eq('id', nuevo.id)
 
   // 2) Linkear servicios del tipo correspondiente al nuevo usuario
   await admin
@@ -70,6 +70,25 @@ export async function configurarProfesionalAction(
       .from('horarios_disponibles')
       .update({ profesional_id: nuevo.id })
       .eq('profesional_id', anterior.id)
+  }
+
+  // 4) Si el profesional quedó sin horarios (setup inicial, sin profesional
+  //    previo del que heredarlos), sembramos una agenda Lun–Vie por defecto.
+  //    Sin esto el wizard de reserva no muestra slots para ninguna fecha.
+  //    Se puede ajustar después desde la base de datos.
+  const { count: horariosCount } = await admin
+    .from('horarios_disponibles')
+    .select('id', { count: 'exact', head: true })
+    .eq('profesional_id', nuevo.id)
+
+  if (!horariosCount) {
+    const dias = [1, 2, 3, 4, 5] // lunes a viernes
+    await admin.from('horarios_disponibles').insert(
+      dias.flatMap((dia) => [
+        { profesional_id: nuevo.id, dia_semana: dia, hora_inicio: '09:00', hora_fin: '13:00', modalidad: 'ambas' as const },
+        { profesional_id: nuevo.id, dia_semana: dia, hora_inicio: '14:00', hora_fin: '18:00', modalidad: 'ambas' as const },
+      ]),
+    )
   }
 
   revalidatePath('/admin', 'layout')
