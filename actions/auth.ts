@@ -150,6 +150,21 @@ export async function nuevaContrasenaAction(_prev: unknown, formData: FormData):
   if (error) return { error: 'No se pudo guardar la contraseña. El link puede haber expirado.' }
 
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Datos de perfil: para invitados (staff/paciente nuevo) que llegan sin nombre.
+  // Solo actualizamos los campos que vengan cargados → un reset de contraseña
+  // de alguien existente que los deje vacíos no pisa lo que ya tenía.
+  const perfilUpdate: Record<string, string> = {}
+  const nombre = String(formData.get('nombre') ?? '').trim()
+  const apellido = String(formData.get('apellido') ?? '').trim()
+  const telefono = String(formData.get('telefono') ?? '').trim()
+  if (nombre) perfilUpdate.nombre = nombre
+  if (apellido) perfilUpdate.apellido = apellido
+  if (telefono) perfilUpdate.telefono = telefono
+  if (user?.id && Object.keys(perfilUpdate).length > 0) {
+    await supabase.from('profiles').update(perfilUpdate).eq('id', user.id)
+  }
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('rol')

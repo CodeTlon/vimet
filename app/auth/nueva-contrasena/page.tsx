@@ -41,6 +41,39 @@ export default function NuevaContrasenaPage() {
             {state.error}
           </div>
         )}
+        <p className="text-sm text-gray-500">
+          Si es tu primer ingreso, completá tus datos. Si solo estás recuperando tu
+          contraseña, podés dejarlos en blanco.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-800 mb-1.5">Nombre</label>
+            <input
+              type="text"
+              name="nombre"
+              placeholder="Ej: Avril"
+              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-800 mb-1.5">Apellido</label>
+            <input
+              type="text"
+              name="apellido"
+              placeholder="Ej: Jerushalmi"
+              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-800 mb-1.5">Teléfono (WhatsApp)</label>
+          <input
+            type="tel"
+            name="telefono"
+            placeholder="Ej: 3513752818"
+            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+          />
+        </div>
         <div>
           <label className="block text-sm font-medium text-gray-800 mb-1.5">Nueva contraseña</label>
           <input
