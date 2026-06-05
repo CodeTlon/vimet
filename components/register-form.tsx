@@ -8,13 +8,13 @@ import { registerAction, type AuthState } from '@/actions/auth'
 
 const initialState: AuthState = {}
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus()
   return (
     <button
       type="submit"
-      disabled={pending}
-      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-60"
+      disabled={pending || disabled}
+      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
     >
       {pending ? 'Creando cuenta…' : (
         <>
@@ -45,7 +45,13 @@ export function RegisterForm() {
   }
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form
+      action={formAction}
+      onSubmit={(e) => {
+        if (mismatch) e.preventDefault()
+      }}
+      className="space-y-4"
+    >
       {state.error ? (
         <div role="alert" className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
           {state.error}
@@ -101,7 +107,7 @@ export function RegisterForm() {
         </p>
       ) : null}
 
-      <SubmitButton />
+      <SubmitButton disabled={mismatch} />
     </form>
   )
 }
