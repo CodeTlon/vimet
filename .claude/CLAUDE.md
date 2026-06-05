@@ -93,6 +93,10 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `components/seguimiento/*.tsx` | Forms del módulo (ficha, medición, eval, plan, feedback, evolución, objetivo) |
 | `components/page-header.tsx` | Hero/header genérico de páginas internas |
 | `components/whatsapp-fab.tsx` | FAB flotante de WhatsApp en páginas públicas |
+| `components/lazy-map.tsx` | Mapa de Google que solo monta el iframe on-click (perf en home/contacto) |
+| `components/section-skeleton.tsx` | Skeleton genérico para los `loading.tsx` de paciente/admin |
+| `components/seguimiento/use-reset-on-success.ts` | Hook: resetea el form cuando la Server Action devuelve `ok` |
+| `app/(paciente)/loading.tsx` · `app/admin/loading.tsx` · `app/admin/pacientes/[id]/loading.tsx` | Loading UI (Suspense) al navegar entre secciones |
 | `components/footer.tsx` | Footer + CodeTlonBadge |
 | `components/codetlon-badge.tsx` | Badge de marca CodeTlon en footer |
 | `components/admin-sidebar.tsx` | Sidebar del admin |
@@ -189,6 +193,10 @@ Ver `.env.example` para el listado completo.
 - Al actualizar un plan con nuevo PDF: la action borra automáticamente el PDF previo del bucket *después* de subir el nuevo (si falla el upload conservamos el viejo). No hay checkbox de "reemplazar"; cualquier upload reemplaza.
 - Endurecimiento de RLS (migración `0004`): además de las policies, hay triggers BEFORE UPDATE que impiden al paciente (a) cambiar su `rol`/`activo` en `profiles`, (b) modificar fecha/hora/profesional/notas del profesional o cambiar `estado` a algo distinto de `cancelado` en `turnos`, (c) falsificar `respuesta_profesional` / `respondido_*` en `feedback_semanal`. `is_staff()` cortocircuita los tres triggers. Si se agregan columnas sensibles nuevas hay que sumarlas explícitamente al chequeo. El trigger de `profiles` (migración `0006`) también cortocircuita cuando `auth.uid()` es null (service role / SQL editor) para permitir asignar rol desde el backend; un paciente por la API siempre tiene `auth.uid()` seteado, así que el bloqueo de auto-escalación sigue intacto.
 - `crearTurnoAction` revalida en el servidor que la fecha sea >= hoy en zona Córdoba: el `min` del input es defensa en profundidad, pero no se confía en él.
+- `configurarProfesionalAction` (staff): además de asignar rol + linkear servicios, **activa la cuenta** (`activo=true`) y, si el profesional no tiene horarios (setup inicial sin profesional previo del que heredarlos), **siembra una agenda Lun–Vie 09–13/14–18 por defecto**. Sin esto el wizard de reserva no mostraba slots para ninguna fecha. No hay UI para editar horarios todavía → ajustar desde la base si hace falta otra grilla.
+- Pantallas de auth (`AuthShell`): link "Volver al sitio" arriba. El registro bloquea el submit si las contraseñas no coinciden (botón disabled + `onSubmit` preventDefault). `nueva-contrasena` (invite/reset) pide nombre/apellido/teléfono opcionales y `nuevaContrasenaAction` actualiza el perfil solo con los campos cargados.
+- Logout (`LogoutButton`): `signOut({ scope: 'local' })` para no esperar el round-trip de revocación global (evita cuelgues con conexión lenta a Supabase).
+- Forms de "agregar" del módulo seguimiento usan `useResetOnSuccess(state)` → limpian inputs al guardar. Los de edición (ficha, plan, feedback semanal, responder feedback) no resetean porque muestran datos existentes.
 
 ## Comandos Rápidos
 ```bash
