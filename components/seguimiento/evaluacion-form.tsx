@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { crearEvaluacionAction, type EvalState } from '@/actions/evaluaciones'
+import { useResetOnSuccess } from '@/components/seguimiento/use-reset-on-success'
 import { hoyArgentina } from '@/lib/datetime'
 import { TESTS_FUNCIONALES } from '@/lib/seguimiento'
 
@@ -27,9 +28,11 @@ function Btn() {
 
 export function EvaluacionForm({ pacienteId }: { pacienteId: string }) {
   const [state, action] = useFormState(crearEvaluacionAction, initial)
+  const formRef = useResetOnSuccess(state)
   const today = hoyArgentina()
   return (
     <form
+      ref={formRef}
       action={action}
       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4"
     >
@@ -62,6 +65,7 @@ export function EvaluacionForm({ pacienteId }: { pacienteId: string }) {
               min={0}
               max={t.max}
               name={t.key}
+              placeholder={`0–${t.max}`}
               className={inputBase}
             />
           </label>
@@ -70,7 +74,7 @@ export function EvaluacionForm({ pacienteId }: { pacienteId: string }) {
 
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Observaciones</span>
-        <textarea name="observaciones" rows={3} className={inputBase} />
+        <textarea name="observaciones" rows={3} placeholder="Notas de la evaluación (opcional)" className={inputBase} />
       </label>
 
       <Btn />
