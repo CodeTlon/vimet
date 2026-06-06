@@ -5,6 +5,9 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* Reserva el ancho de la scrollbar siempre, así el navbar fixed queda
+       alineado con el contenido (container-vimet) y no se corre a un costado. */
+    scrollbar-gutter: stable;
   }
 
   body {

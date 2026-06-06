@@ -34,7 +34,7 @@ export function PacienteSubnav({
   const pathname = usePathname()
   return (
     <nav className="mb-6">
-      <ul className="flex flex-wrap gap-2">
+      <ul className="flex flex-wrap gap-1.5">
         {tabs.map((t) => {
           const Icon = ICONS[t.icon]
           const active = pathname === t.href || pathname.startsWith(`${t.href}/`)
@@ -43,13 +43,13 @@ export function PacienteSubnav({
               <Link
                 href={t.href}
                 className={cn(
-                  'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors',
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors',
                   active
                     ? 'bg-vimet-gradient text-white shadow-sm'
                     : 'bg-white border border-gray-200 text-gray-800 hover:border-vimet-orange/40 hover:text-vimet-orange',
                 )}
               >
-                <Icon className="size-4" />
+                <Icon className="size-3.5 shrink-0" />
                 {t.label}
               </Link>
             </li>

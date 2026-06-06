@@ -10,6 +10,8 @@ export default function RegistroPage() {
     <AuthShell
       description="Creá tu cuenta para sacar turnos"
       title="Crear cuenta"
+      backHref="/login"
+      backLabel="Volver a iniciar sesión"
       footer={
         <>
           ¿Ya tenés cuenta?{' '}

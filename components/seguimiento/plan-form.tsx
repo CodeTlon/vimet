@@ -160,6 +160,7 @@ export function PlanForm({
             name="pautas_hidratacion"
             rows={2}
             defaultValue={p?.pautas_hidratacion ?? ''}
+            placeholder="Ej: 2,5 L de agua por día, más en días de entrenamiento"
             className={inputBase}
           />
         </FullField>
@@ -168,6 +169,7 @@ export function PlanForm({
             name="pre_entreno"
             rows={2}
             defaultValue={p?.pre_entreno ?? ''}
+            placeholder="Qué consumir antes de entrenar"
             className={inputBase}
           />
         </Field>
@@ -176,6 +178,7 @@ export function PlanForm({
             name="intra_entreno"
             rows={2}
             defaultValue={p?.intra_entreno ?? ''}
+            placeholder="Qué consumir durante el entrenamiento"
             className={inputBase}
           />
         </Field>
@@ -184,6 +187,7 @@ export function PlanForm({
             name="post_entreno"
             rows={2}
             defaultValue={p?.post_entreno ?? ''}
+            placeholder="Qué consumir después de entrenar"
             className={inputBase}
           />
         </Field>
@@ -192,6 +196,7 @@ export function PlanForm({
             name="suplementacion"
             rows={2}
             defaultValue={p?.suplementacion ?? ''}
+            placeholder="Suplementos sugeridos y dosis"
             className={inputBase}
           />
         </Field>
@@ -209,6 +214,7 @@ export function PlanForm({
             name="experiencia_previa"
             rows={2}
             defaultValue={p?.experiencia_previa ?? ''}
+            placeholder="Ej: 2 años de musculación, antecedentes deportivos"
             className={inputBase}
           />
         </FullField>
@@ -217,6 +223,7 @@ export function PlanForm({
             name="volumen"
             rows={2}
             defaultValue={p?.volumen ?? ''}
+            placeholder="Ej: 12–16 series por grupo muscular, progresión semanal"
             className={inputBase}
           />
         </FullField>
@@ -272,7 +279,7 @@ export function PlanForm({
 
       <Section title="Notas">
         <FullField label="Notas internas / extra">
-          <textarea name="notas" rows={4} defaultValue={p?.notas ?? ''} className={inputBase} />
+          <textarea name="notas" rows={4} defaultValue={p?.notas ?? ''} placeholder="Notas internas o aclaraciones extra del plan" className={inputBase} />
         </FullField>
       </Section>
 

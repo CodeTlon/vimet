@@ -64,10 +64,10 @@ export function ContactoForm() {
       ) : null}
 
       <div className="space-y-4">
-        <Field label="Nombre" name="nombre" defaultValue={f.nombre} required />
+        <Field label="Nombre" name="nombre" defaultValue={f.nombre} placeholder="Tu nombre y apellido" required />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Email" name="email" type="email" defaultValue={f.email} required />
-          <Field label="Teléfono" name="telefono" type="tel" defaultValue={f.telefono} />
+          <Field label="Email" name="email" type="email" defaultValue={f.email} placeholder="tu@email.com" required />
+          <Field label="Teléfono" name="telefono" type="tel" defaultValue={f.telefono} placeholder="Ej: 3513752818" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-800 mb-1.5">Mensaje</label>
@@ -92,12 +92,14 @@ function Field({
   name,
   type = 'text',
   defaultValue,
+  placeholder,
   required,
 }: {
   label: string
   name: string
   type?: string
   defaultValue?: string
+  placeholder?: string
   required?: boolean
 }) {
   return (
@@ -107,6 +109,7 @@ function Field({
         type={type}
         name={name}
         defaultValue={defaultValue}
+        placeholder={placeholder}
         required={required}
         className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
       />

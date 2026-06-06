@@ -39,16 +39,16 @@ export default function ContactoPage() {
                 />
                 <ContactItem
                   icon={MessageCircle}
-                  iconColor="text-[#25D366]"
-                  iconBg="bg-[#25D366]/15"
+                  iconColor="text-vimet-orange"
+                  iconBg="bg-vimet-cream"
                   label="WhatsApp · Avril (Nutrición)"
                   href={team.avril.whatsappUrl}
                   value="Escribir a Avril"
                 />
                 <ContactItem
                   icon={MessageCircle}
-                  iconColor="text-[#25D366]"
-                  iconBg="bg-[#25D366]/15"
+                  iconColor="text-vimet-orange"
+                  iconBg="bg-vimet-cream"
                   label="WhatsApp · Gero (Entrenamiento)"
                   href={team.gero.whatsappUrl}
                   value="Escribir a Gero"
