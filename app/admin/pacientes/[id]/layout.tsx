@@ -69,7 +69,7 @@ export default async function PacienteLayout(
                   href={`https://wa.me/54${paciente.telefono.replace(/\D/g, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[#25D366] font-semibold hover:underline"
+                  className="inline-flex items-center gap-1.5 text-vimet-orange font-semibold hover:underline"
                 >
                   <Phone className="size-4" /> {paciente.telefono}
                 </a>

@@ -16,7 +16,7 @@ export function WhatsAppFab() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Abrir WhatsApp"
-      className="fixed bottom-5 right-5 z-30 inline-flex items-center justify-center size-14 rounded-full bg-[#25D366] text-white shadow-lg hover:scale-105 hover:shadow-xl transition-all"
+      className="fixed bottom-5 right-5 z-30 inline-flex items-center justify-center size-14 rounded-full bg-vimet-gradient text-white shadow-lg hover:scale-105 hover:shadow-xl transition-all"
     >
       <svg
         viewBox="0 0 32 32"

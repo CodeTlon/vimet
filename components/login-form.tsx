@@ -57,13 +57,13 @@ export function LoginForm() {
           placeholder="Tu contraseña"
           className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
         />
-        <div className="mt-1.5 text-right">
-          <Link href="/auth/recuperar" className="text-sm text-vimet-orange hover:underline">
-            ¿Olvidaste tu contraseña?
-          </Link>
-        </div>
       </div>
       <SubmitButton />
+      <p className="text-center text-sm text-gray-700">
+        <Link href="/auth/recuperar" className="font-semibold text-vimet-orange hover:underline">
+          ¿Olvidaste tu contraseña?
+        </Link>
+      </p>
     </form>
   )
 }

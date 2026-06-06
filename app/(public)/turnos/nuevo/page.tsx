@@ -1,3 +1,4 @@
+import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
@@ -31,6 +32,14 @@ export default async function NuevoTurnoPage() {
   return (
     <div className="min-h-screen pt-24 pb-16 bg-gradient-to-br from-vimet-sand to-vimet-cream">
       <div className="container-vimet">
+        <div className="max-w-3xl mx-auto mb-4">
+          <Link
+            href="/mis-turnos"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-vimet-orange transition-colors"
+          >
+            <ArrowLeft className="size-4" /> Volver a mis turnos
+          </Link>
+        </div>
         <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           <div className="bg-vimet-gradient text-white px-7 py-7">
             <h1 className="font-heading text-2xl sm:text-3xl font-bold">

@@ -133,6 +133,7 @@ export function FichaForm({
             max="24"
             name="horas_sueno"
             defaultValue={f?.horas_sueno ?? ''}
+            placeholder="Ej: 7"
             className={inputBase}
           />
         </Field>

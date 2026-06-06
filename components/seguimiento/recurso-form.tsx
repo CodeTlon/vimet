@@ -127,7 +127,7 @@ export function RecursoForm({ pacienteId }: { pacienteId: string }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Título *</span>
-          <input type="text" name="titulo" required maxLength={200} className={inputBase} />
+          <input type="text" name="titulo" required maxLength={200} placeholder="Ej: Rutina de movilidad" className={inputBase} />
         </label>
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Categoría</span>
@@ -143,7 +143,7 @@ export function RecursoForm({ pacienteId }: { pacienteId: string }) {
 
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Descripción</span>
-        <textarea name="descripcion" rows={2} maxLength={1000} className={inputBase} />
+        <textarea name="descripcion" rows={2} maxLength={1000} placeholder="Breve descripción del recurso (opcional)" className={inputBase} />
       </label>
 
       <div className="flex flex-wrap items-end justify-between gap-3">

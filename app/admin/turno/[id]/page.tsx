@@ -161,7 +161,7 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
                   href={`https://wa.me/54${turno.paciente.telefono.replace(/\D/g, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-[#25D366] hover:underline font-semibold"
+                  className="inline-flex items-center gap-2 text-vimet-orange hover:underline font-semibold"
                 >
                   <MessageCircle className="size-4" /> WhatsApp · {turno.paciente.telefono}
                 </a>

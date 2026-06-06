@@ -21,10 +21,13 @@ export function HashInviteHandler() {
     const refreshToken = params.get('refresh_token')
     if (!accessToken || !refreshToken) return
 
+    // recovery = usuario existente cambiando contraseña; invite = primer ingreso.
+    const flow = params.get('type') === 'recovery' ? 'recovery' : 'invite'
+
     createClient()
       .auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
       .then(({ data: { session } }) => {
-        if (session) router.replace('/auth/nueva-contrasena')
+        if (session) router.replace(`/auth/nueva-contrasena?flow=${flow}`)
       })
   }, [router])
 

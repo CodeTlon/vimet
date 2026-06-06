@@ -323,7 +323,7 @@ export default function HomePage() {
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="mt-1 size-9 rounded-full bg-[#25D366]/15 text-[#25D366] flex items-center justify-center shrink-0">
+                  <div className="mt-1 size-9 rounded-full bg-vimet-cream text-vimet-orange flex items-center justify-center shrink-0">
                     <HeartPulse className="size-4" />
                   </div>
                   <div>
