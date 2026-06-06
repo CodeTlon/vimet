@@ -129,8 +129,11 @@ export async function recuperarContrasenaAction(
 
   const supabase = createClient()
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  // flow=recovery → la pantalla muestra "Cambiar contraseña" (cuenta ya existente)
+  // y no pide nombre/apellido. El param viaja en el redirect y sobrevive aunque
+  // Supabase agregue un hash con el token.
   await supabase.auth.resetPasswordForEmail(parsed.data, {
-    redirectTo: `${siteUrl}/auth/nueva-contrasena`,
+    redirectTo: `${siteUrl}/auth/nueva-contrasena?flow=recovery`,
   })
 
   // Siempre devolvemos ok: no revelamos si el email existe o no.
