@@ -26,6 +26,8 @@ export default function RecuperarPage() {
     <AuthShell
       title="Recuperar contraseña"
       description="Te enviamos un link para crear una nueva"
+      backHref="/login"
+      backLabel="Volver a iniciar sesión"
       footer={
         <>
           ¿Te acordaste?{' '}
