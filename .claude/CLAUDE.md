@@ -45,7 +45,8 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `app/auth/callback/route.ts` | Callback auth: intercambia `code` (PKCE) o `token_hash` (OTP), redirige a `next` |
 | `app/auth/confirmar/page.tsx` | Confirma invite via `token_hash` o implicit flow; redirige a nueva-contrasena |
 | `app/auth/nueva-contrasena/page.tsx` | Form para crear contraseña (invite + reset) |
-| `components/hash-invite-handler.tsx` | Client component global: detecta hash invite y llama `setSession` + redirige |
+| `app/auth/recuperar/page.tsx` | "Olvidé mi contraseña": pide email y dispara `resetPasswordForEmail` |
+| `components/hash-invite-handler.tsx` | Client component global: detecta hash invite/recovery y llama `setSession` + redirige |
 | `app/terminos/page.tsx` | Términos de servicio |
 | `app/privacidad/page.tsx` | Política de privacidad |
 | `app/(paciente)/layout.tsx` | Layout área paciente: auth gating + subnav |
@@ -74,7 +75,10 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `app/(paciente)/mis-recursos/page.tsx` | Vista de recursos visibles para el paciente |
 | `actions/recursos.ts` | CRUD recursos: crear (link/pdf/imagen/video), eliminar, toggle visibilidad |
 | `actions/staff.ts` | Server Actions admin: `configurarProfesionalAction` (rol + servicios + horarios), `toggleActivoAction`, `cambiarPasswordAction` |
+| `actions/horarios.ts` | Server Actions: `agregarHorarioAction` / `eliminarHorarioAction` — el profesional gestiona SU propia agenda (profesional_id = usuario logueado) |
 | `app/admin/configuracion/page.tsx` | Configuración admin: configurar profesional + cambiar contraseña |
+| `app/admin/horarios/page.tsx` | "Mis horarios": el profesional logueado edita sus franjas de atención por día |
+| `components/horarios-editor.tsx` | Editor de agenda (lista por día + form para agregar/eliminar franjas) |
 | `lib/supabase/admin.ts` | Cliente Supabase con service role key (bypass RLS, Admin Auth API) |
 | `components/seguimiento/recurso-form.tsx` | Form admin para subir/linkear recursos (tipo selector dinámico) |
 | `app/api/slots/route.ts` | GET slots disponibles (lo consume el wizard) |
@@ -92,6 +96,10 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `components/seguimiento/*.tsx` | Forms del módulo (ficha, medición, eval, plan, feedback, evolución, objetivo) |
 | `components/page-header.tsx` | Hero/header genérico de páginas internas |
 | `components/whatsapp-fab.tsx` | FAB flotante de WhatsApp en páginas públicas |
+| `components/lazy-map.tsx` | Mapa de Google que solo monta el iframe on-click (perf en home/contacto) |
+| `components/section-skeleton.tsx` | Skeleton genérico para los `loading.tsx` de paciente/admin |
+| `components/seguimiento/use-reset-on-success.ts` | Hook: resetea el form cuando la Server Action devuelve `ok` |
+| `app/(paciente)/loading.tsx` · `app/admin/loading.tsx` · `app/admin/pacientes/[id]/loading.tsx` | Loading UI (Suspense) al navegar entre secciones |
 | `components/footer.tsx` | Footer + CodeTlonBadge |
 | `components/codetlon-badge.tsx` | Badge de marca CodeTlon en footer |
 | `components/admin-sidebar.tsx` | Sidebar del admin |
@@ -105,7 +113,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `lib/supabase/middleware.ts` | Helper para refresh de session en middleware |
 | `lib/supabase/auth-helpers.ts` | `getUserAndProfile` / `requireAuth` / `requireStaff` |
 | `middleware.ts` | Auth middleware: protege /mis-*, /feedback-semanal, /turnos/*, /admin/* |
-| `actions/auth.ts` | Server Actions: login, register, logout |
+| `actions/auth.ts` | Server Actions: login, register, logout, nuevaContrasena, recuperarContrasena |
 | `actions/turnos.ts` | Server Actions: crear, cancelar, actualizar estado |
 | `actions/contacto.ts` | Server Action: enviar email contacto |
 | `actions/ficha.ts` | Upsert de ficha clínica |
@@ -119,6 +127,8 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `supabase/migrations/0002_seed.sql` | Seed servicios + horarios |
 | `supabase/migrations/0003_seguimiento.sql` | Tablas seguimiento + RLS + bucket `planes` |
 | `supabase/migrations/0004_security_hardening.sql` | Triggers que bloquean cambios sensibles por parte del paciente (rol/activo, fecha/hora del turno, respuesta de feedback) + SELECT de profiles requiere auth |
+| `supabase/migrations/0005_recursos.sql` | Tabla `recursos_paciente` + bucket `recursos` + `adjunto_path` en feedback |
+| `supabase/migrations/0006_invited_role.sql` | `handle_new_user` respeta `rol` del metadata para invitados (`invited_at`) + relaja trigger de profiles para permitir asignar rol desde service role / SQL editor |
 | `emails/contacto.tsx` | Template Resend del formulario contacto |
 
 ## Base de Datos (Supabase)
@@ -139,7 +149,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `recursos_paciente` | tipo (link/pdf/imagen/video), categoria (5), titulo, descripcion, url, storage_path, `visible_paciente`, plan_id | staff CRUD + paciente lee solo los visibles |
 
 **Roles** (campo `rol` en `profiles`): `paciente` (default), `nutricionista`, `entrenador`, `admin`.
-**Trigger:** `on_auth_user_created` → inserta fila en `profiles` con rol `paciente`.
+**Trigger:** `on_auth_user_created` → inserta fila en `profiles`. Rol por defecto `paciente`; si el usuario fue **invitado** (`auth.users.invited_at` no null) y trae `rol` válido en `user_metadata`, respeta ese rol (registro público siempre cae en `paciente`). El dashboard de Supabase no expone metadata al invitar → para staff, invitar y luego setear `rol` en `profiles` desde el Table/SQL editor.
 **Storage bucket** `planes` (privado): paths `{paciente_id}/{filename}`. Staff todo, paciente solo lee su propia carpeta. Acceso vía signed URL (5 min TTL).
 **Storage bucket** `recursos` (privado): paths `{paciente_id}/r/{ts}_{file}` (staff) y `{paciente_id}/f/{semana}_{ts}_{file}` (adjuntos de feedback, subidos por el paciente). Signed URLs con TTL 1 hora. Paciente puede insertar/borrar solo en subcarpeta `f/`; staff full access.
 **`feedback_semanal.adjunto_path`**: columna opcional (text) para el archivo que el paciente adjunta a su feedback semanal. Se sube al bucket `recursos` desde `enviarFeedbackAction`. Al re-subir se borra el anterior del bucket antes de sobrescribir la columna.
@@ -184,8 +194,12 @@ Ver `.env.example` para el listado completo.
 - Fechas: **nunca usar `new Date().toISOString().slice(0,10)` para representar "hoy"**, devuelve fecha en UTC y se corre un día cuando son >21:00 en Córdoba (server en Vercel es UTC). Usar siempre `hoyArgentina()` / `lunesDeSemanaArgentina()` de `lib/datetime.ts`. Mismo principio para `lib/booking/slots.ts` al calcular el mínimo de hora de hoy. Aplica server y client.
 - Invite flow de Supabase usa implicit flow (hash fragment `#access_token=...&type=invite`). `@supabase/ssr`'s `createBrowserClient` **no** procesa el hash automáticamente — hay que parsear con `URLSearchParams` y llamar `setSession` explícitamente. Ver `components/hash-invite-handler.tsx`. Para PKCE invite (token_hash), ver `app/auth/confirmar/page.tsx`.
 - Al actualizar un plan con nuevo PDF: la action borra automáticamente el PDF previo del bucket *después* de subir el nuevo (si falla el upload conservamos el viejo). No hay checkbox de "reemplazar"; cualquier upload reemplaza.
-- Endurecimiento de RLS (migración `0004`): además de las policies, hay triggers BEFORE UPDATE que impiden al paciente (a) cambiar su `rol`/`activo` en `profiles`, (b) modificar fecha/hora/profesional/notas del profesional o cambiar `estado` a algo distinto de `cancelado` en `turnos`, (c) falsificar `respuesta_profesional` / `respondido_*` en `feedback_semanal`. `is_staff()` cortocircuita los tres triggers. Si se agregan columnas sensibles nuevas hay que sumarlas explícitamente al chequeo.
+- Endurecimiento de RLS (migración `0004`): además de las policies, hay triggers BEFORE UPDATE que impiden al paciente (a) cambiar su `rol`/`activo` en `profiles`, (b) modificar fecha/hora/profesional/notas del profesional o cambiar `estado` a algo distinto de `cancelado` en `turnos`, (c) falsificar `respuesta_profesional` / `respondido_*` en `feedback_semanal`. `is_staff()` cortocircuita los tres triggers. Si se agregan columnas sensibles nuevas hay que sumarlas explícitamente al chequeo. El trigger de `profiles` (migración `0006`) también cortocircuita cuando `auth.uid()` es null (service role / SQL editor) para permitir asignar rol desde el backend; un paciente por la API siempre tiene `auth.uid()` seteado, así que el bloqueo de auto-escalación sigue intacto.
 - `crearTurnoAction` revalida en el servidor que la fecha sea >= hoy en zona Córdoba: el `min` del input es defensa en profundidad, pero no se confía en él.
+- `configurarProfesionalAction` (staff): además de asignar rol + linkear servicios, **activa la cuenta** (`activo=true`) y, si el profesional no tiene horarios (setup inicial sin profesional previo del que heredarlos), **siembra una agenda Lun–Vie 09–13/14–18 por defecto**. Sin esto el wizard de reserva no mostraba slots para ninguna fecha. El profesional puede después editar sus franjas desde `/admin/horarios` (cada uno gestiona su propia agenda; `actions/horarios.ts` filtra por `profesional_id = auth.uid()`).
+- Pantallas de auth (`AuthShell`): link "Volver al sitio" arriba. El registro bloquea el submit si las contraseñas no coinciden (botón disabled + `onSubmit` preventDefault). `nueva-contrasena` (invite/reset) pide nombre/apellido/teléfono opcionales y `nuevaContrasenaAction` actualiza el perfil solo con los campos cargados.
+- Logout (`LogoutButton`): `signOut({ scope: 'local' })` para no esperar el round-trip de revocación global (evita cuelgues con conexión lenta a Supabase).
+- Forms de "agregar" del módulo seguimiento usan `useResetOnSuccess(state)` → limpian inputs al guardar. Los de edición (ficha, plan, feedback semanal, responder feedback) no resetean porque muestran datos existentes.
 
 ## Comandos Rápidos
 ```bash

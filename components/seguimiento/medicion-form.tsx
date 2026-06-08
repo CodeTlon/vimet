@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { crearMedicionAction, type MedicionState } from '@/actions/mediciones'
+import { useResetOnSuccess } from '@/components/seguimiento/use-reset-on-success'
 import { hoyArgentina } from '@/lib/datetime'
 
 const initial: MedicionState = {}
@@ -26,9 +27,11 @@ function Btn() {
 
 export function MedicionForm({ pacienteId }: { pacienteId: string }) {
   const [state, action] = useFormState(crearMedicionAction, initial)
+  const formRef = useResetOnSuccess(state)
   const today = hoyArgentina()
   return (
     <form
+      ref={formRef}
       action={action}
       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4"
     >
@@ -51,29 +54,29 @@ export function MedicionForm({ pacienteId }: { pacienteId: string }) {
           <input type="date" name="fecha_medicion" defaultValue={today} className={inputBase} required />
         </Lab>
         <Lab label="Peso (kg)">
-          <input type="number" step="0.1" name="peso_kg" className={inputBase} />
+          <input type="number" step="0.1" name="peso_kg" placeholder="Ej: 72.5" className={inputBase} />
         </Lab>
         <Lab label="Talla (cm)">
-          <input type="number" step="0.1" name="talla_cm" className={inputBase} />
+          <input type="number" step="0.1" name="talla_cm" placeholder="Ej: 170" className={inputBase} />
         </Lab>
         <Lab label="DX antropométrico">
-          <input name="dx_antropometrico" className={inputBase} />
+          <input name="dx_antropometrico" placeholder="Ej: normopeso" className={inputBase} />
         </Lab>
         <Lab label="% grasa">
-          <input type="number" step="0.1" name="porc_grasa" className={inputBase} />
+          <input type="number" step="0.1" name="porc_grasa" placeholder="Ej: 22.0" className={inputBase} />
         </Lab>
         <Lab label="% masa muscular">
-          <input type="number" step="0.1" name="porc_masa_muscular" className={inputBase} />
+          <input type="number" step="0.1" name="porc_masa_muscular" placeholder="Ej: 38.0" className={inputBase} />
         </Lab>
         <Lab label="Kg grasa">
-          <input type="number" step="0.1" name="kg_grasa" className={inputBase} />
+          <input type="number" step="0.1" name="kg_grasa" placeholder="Ej: 16.0" className={inputBase} />
         </Lab>
         <Lab label="Kg músculo">
-          <input type="number" step="0.1" name="kg_musculo" className={inputBase} />
+          <input type="number" step="0.1" name="kg_musculo" placeholder="Ej: 27.5" className={inputBase} />
         </Lab>
       </div>
       <Lab label="Observaciones">
-        <textarea name="observaciones" rows={2} className={inputBase} />
+        <textarea name="observaciones" rows={2} placeholder="Notas de la medición (opcional)" className={inputBase} />
       </Lab>
 
       <Btn />

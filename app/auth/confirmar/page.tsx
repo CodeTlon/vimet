@@ -25,7 +25,8 @@ function ConfirmarInner() {
         if (error) {
           setError('El link es inválido o ya expiró.')
         } else {
-          router.replace('/auth/nueva-contrasena')
+          const flow = type === 'recovery' ? 'recovery' : 'invite'
+          router.replace(`/auth/nueva-contrasena?flow=${flow}`)
         }
       })
       return

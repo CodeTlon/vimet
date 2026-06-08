@@ -96,7 +96,7 @@ export function FichaForm({
           </select>
         </Field>
         <Field label="Ocupación">
-          <input name="ocupacion" defaultValue={f?.ocupacion ?? ''} className={inputBase} />
+          <input name="ocupacion" defaultValue={f?.ocupacion ?? ''} placeholder="Ej: Docente" className={inputBase} />
         </Field>
         <Field label="Fecha 1ª consulta">
           <input
@@ -133,6 +133,7 @@ export function FichaForm({
             max="24"
             name="horas_sueno"
             defaultValue={f?.horas_sueno ?? ''}
+            placeholder="Ej: 7"
             className={inputBase}
           />
         </Field>
@@ -144,6 +145,7 @@ export function FichaForm({
             name="dx_medico"
             rows={2}
             defaultValue={f?.dx_medico ?? ''}
+            placeholder="Ej: resistencia a la insulina, hipotiroidismo…"
             className={inputBase}
           />
         </FullField>
@@ -152,6 +154,7 @@ export function FichaForm({
             name="dx_nutricional"
             rows={2}
             defaultValue={f?.dx_nutricional ?? ''}
+            placeholder="Ej: sobrepeso grado I"
             className={inputBase}
           />
         </FullField>
@@ -160,6 +163,7 @@ export function FichaForm({
             name="medicacion"
             rows={2}
             defaultValue={f?.medicacion ?? ''}
+            placeholder="Medicación actual y dosis"
             className={inputBase}
           />
         </FullField>
@@ -168,6 +172,7 @@ export function FichaForm({
             name="suplementacion"
             rows={2}
             defaultValue={f?.suplementacion ?? ''}
+            placeholder="Suplementos que consume"
             className={inputBase}
           />
         </FullField>
@@ -176,6 +181,7 @@ export function FichaForm({
             name="lesiones"
             rows={2}
             defaultValue={f?.lesiones ?? ''}
+            placeholder="Lesiones previas o actuales"
             className={inputBase}
           />
         </FullField>
@@ -184,6 +190,7 @@ export function FichaForm({
             name="molestias"
             rows={2}
             defaultValue={f?.molestias ?? ''}
+            placeholder="Dolores, pinzamientos, zonas a cuidar"
             className={inputBase}
           />
         </FullField>
@@ -195,6 +202,7 @@ export function FichaForm({
             name="datos_laboratorio"
             rows={4}
             defaultValue={f?.datos_laboratorio ?? ''}
+            placeholder="Glucemia, perfil lipídico, TSH, etc."
             className={inputBase}
           />
         </FullField>
@@ -203,6 +211,7 @@ export function FichaForm({
             name="motivos_consulta"
             rows={3}
             defaultValue={f?.motivos_consulta ?? ''}
+            placeholder="Qué lo trae a la consulta y qué objetivos tiene"
             className={inputBase}
           />
         </FullField>
@@ -211,6 +220,7 @@ export function FichaForm({
             name="observaciones_internas"
             rows={3}
             defaultValue={f?.observaciones_internas ?? ''}
+            placeholder="Notas del equipo (no visibles al paciente)"
             className={inputBase}
           />
         </FullField>

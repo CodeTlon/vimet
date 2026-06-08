@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { crearObjetivoAction, type ObjetivoState } from '@/actions/objetivos'
+import { useResetOnSuccess } from '@/components/seguimiento/use-reset-on-success'
 import { CATEGORIA_OBJETIVO_LABEL } from '@/lib/seguimiento'
 
 const initial: ObjetivoState = {}
@@ -26,8 +27,10 @@ function Btn() {
 
 export function ObjetivoForm({ pacienteId }: { pacienteId: string }) {
   const [state, action] = useFormState(crearObjetivoAction, initial)
+  const formRef = useResetOnSuccess(state)
   return (
     <form
+      ref={formRef}
       action={action}
       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4"
     >
@@ -73,7 +76,7 @@ export function ObjetivoForm({ pacienteId }: { pacienteId: string }) {
 
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Descripción</span>
-        <textarea name="descripcion" rows={3} required className={inputBase} />
+        <textarea name="descripcion" rows={3} required placeholder="Ej: Bajar 5% de grasa corporal en 3 meses" className={inputBase} />
       </label>
 
       <Btn />

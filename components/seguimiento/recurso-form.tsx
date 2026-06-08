@@ -1,10 +1,11 @@
 'use client'
 
 import { FileImage, FileText, Link2, PlusCircle, Video } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { crearRecursoAction, type RecursoState } from '@/actions/recursos'
+import { useResetOnSuccess } from '@/components/seguimiento/use-reset-on-success'
 
 const initial: RecursoState = {}
 
@@ -37,11 +38,18 @@ function Btn() {
 export function RecursoForm({ pacienteId }: { pacienteId: string }) {
   const [tipo, setTipo]   = useState<TipoValue>('link')
   const [state, action]   = useFormState(crearRecursoAction, initial)
+  const formRef           = useResetOnSuccess(state)
+
+  // El tipo es estado controlado → form.reset() no lo toca; lo volvemos a 'link'.
+  useEffect(() => {
+    if (state?.ok) setTipo('link')
+  }, [state])
 
   const tipoInfo = TIPOS.find((t) => t.value === tipo)!
 
   return (
     <form
+      ref={formRef}
       action={action}
       encType="multipart/form-data"
       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4"
@@ -51,12 +59,12 @@ export function RecursoForm({ pacienteId }: { pacienteId: string }) {
 
       <h3 className="font-heading font-semibold text-gray-900">Nuevo recurso</h3>
 
-      {state.error ? (
+      {state?.error ? (
         <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-2 text-sm text-vimet-red">
           {state.error}
         </div>
       ) : null}
-      {state.ok ? (
+      {state?.ok ? (
         <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
           Recurso agregado correctamente.
         </div>
@@ -119,7 +127,7 @@ export function RecursoForm({ pacienteId }: { pacienteId: string }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Título *</span>
-          <input type="text" name="titulo" required maxLength={200} className={inputBase} />
+          <input type="text" name="titulo" required maxLength={200} placeholder="Ej: Rutina de movilidad" className={inputBase} />
         </label>
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Categoría</span>
@@ -135,7 +143,7 @@ export function RecursoForm({ pacienteId }: { pacienteId: string }) {
 
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Descripción</span>
-        <textarea name="descripcion" rows={2} maxLength={1000} className={inputBase} />
+        <textarea name="descripcion" rows={2} maxLength={1000} placeholder="Breve descripción del recurso (opcional)" className={inputBase} />
       </label>
 
       <div className="flex flex-wrap items-end justify-between gap-3">

@@ -15,6 +15,7 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { LazyMap } from '@/components/lazy-map'
 import { location, social, team } from '@/lib/config/team'
 
 const pilares = [
@@ -322,7 +323,7 @@ export default function HomePage() {
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="mt-1 size-9 rounded-full bg-[#25D366]/15 text-[#25D366] flex items-center justify-center shrink-0">
+                  <div className="mt-1 size-9 rounded-full bg-vimet-cream text-vimet-orange flex items-center justify-center shrink-0">
                     <HeartPulse className="size-4" />
                   </div>
                   <div>
@@ -362,14 +363,10 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="rounded-2xl overflow-hidden shadow-lg bg-white p-2">
-              <iframe
+              <LazyMap
                 title="Ubicación VIMET en Córdoba"
                 src={location.mapEmbed}
-                width="100%"
                 height={400}
-                loading="lazy"
-                allowFullScreen
-                className="rounded-xl border-0 block w-full"
               />
             </div>
           </div>

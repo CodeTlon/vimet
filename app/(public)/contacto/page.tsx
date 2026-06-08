@@ -2,6 +2,7 @@ import { Instagram, MapPin, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
 
 import { ContactoForm } from '@/components/contacto-form'
+import { LazyMap } from '@/components/lazy-map'
 import { PageHeader } from '@/components/page-header'
 import { location, social, team } from '@/lib/config/team'
 
@@ -38,16 +39,16 @@ export default function ContactoPage() {
                 />
                 <ContactItem
                   icon={MessageCircle}
-                  iconColor="text-[#25D366]"
-                  iconBg="bg-[#25D366]/15"
+                  iconColor="text-vimet-orange"
+                  iconBg="bg-vimet-cream"
                   label="WhatsApp · Avril (Nutrición)"
                   href={team.avril.whatsappUrl}
                   value="Escribir a Avril"
                 />
                 <ContactItem
                   icon={MessageCircle}
-                  iconColor="text-[#25D366]"
-                  iconBg="bg-[#25D366]/15"
+                  iconColor="text-vimet-orange"
+                  iconBg="bg-vimet-cream"
                   label="WhatsApp · Gero (Entrenamiento)"
                   href={team.gero.whatsappUrl}
                   value="Escribir a Gero"
@@ -79,14 +80,10 @@ export default function ContactoPage() {
             </p>
           </div>
           <div className="rounded-2xl bg-white p-2 shadow-lg">
-            <iframe
+            <LazyMap
               title="Mapa VIMET — Instituto VIANETT"
               src={location.mapEmbed}
-              width="100%"
               height={420}
-              loading="lazy"
-              allowFullScreen
-              className="rounded-xl border-0 block w-full"
             />
           </div>
         </div>

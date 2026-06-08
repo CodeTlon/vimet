@@ -118,6 +118,30 @@ export async function registerAction(_prev: unknown, formData: FormData): Promis
   return { ok: true }
 }
 
+export async function recuperarContrasenaAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<AuthState> {
+  const parsed = z.string().email().safeParse(formData.get('email'))
+  if (!parsed.success) {
+    return { error: 'Ingresá un email válido.' }
+  }
+
+  const supabase = createClient()
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  // Pasamos por /auth/callback para que intercambie el `code` (PKCE) por sesión
+  // ANTES de llegar al form; si no, updateUser no tiene sesión y Supabase
+  // responde "link expirado". `next` lleva flow=recovery → la pantalla muestra
+  // "Cambiar contraseña" (cuenta existente) sin pedir nombre/apellido.
+  const next = encodeURIComponent('/auth/nueva-contrasena?flow=recovery')
+  await supabase.auth.resetPasswordForEmail(parsed.data, {
+    redirectTo: `${siteUrl}/auth/callback?next=${next}`,
+  })
+
+  // Siempre devolvemos ok: no revelamos si el email existe o no.
+  return { ok: true }
+}
+
 export async function nuevaContrasenaAction(_prev: unknown, formData: FormData): Promise<AuthState> {
   const password = String(formData.get('password') ?? '')
   const confirm = String(formData.get('confirm') ?? '')
@@ -131,6 +155,21 @@ export async function nuevaContrasenaAction(_prev: unknown, formData: FormData):
   if (error) return { error: 'No se pudo guardar la contraseña. El link puede haber expirado.' }
 
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Datos de perfil: para invitados (staff/paciente nuevo) que llegan sin nombre.
+  // Solo actualizamos los campos que vengan cargados → un reset de contraseña
+  // de alguien existente que los deje vacíos no pisa lo que ya tenía.
+  const perfilUpdate: Record<string, string> = {}
+  const nombre = String(formData.get('nombre') ?? '').trim()
+  const apellido = String(formData.get('apellido') ?? '').trim()
+  const telefono = String(formData.get('telefono') ?? '').trim()
+  if (nombre) perfilUpdate.nombre = nombre
+  if (apellido) perfilUpdate.apellido = apellido
+  if (telefono) perfilUpdate.telefono = telefono
+  if (user?.id && Object.keys(perfilUpdate).length > 0) {
+    await supabase.from('profiles').update(perfilUpdate).eq('id', user.id)
+  }
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('rol')

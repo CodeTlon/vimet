@@ -1,8 +1,10 @@
+import { LogOut } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Suspense, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 
-import { Footer } from '@/components/footer'
-import { Navbar } from '@/components/navbar'
+import { LogoutButton } from '@/components/logout-button'
 import { PacienteSubnav } from '@/components/paciente-subnav'
 import { createClient } from '@/lib/supabase/server'
 
@@ -27,7 +29,7 @@ export default async function PacienteLayout({ children }: { children: ReactNode
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('rol')
+    .select('rol, nombre')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -36,17 +38,39 @@ export default async function PacienteLayout({ children }: { children: ReactNode
   }
 
   return (
-    <>
-      <Suspense>
-        <Navbar />
-      </Suspense>
-      <div className="min-h-screen pt-24 pb-16 bg-vimet-sand">
+    <div className="min-h-screen flex flex-col bg-vimet-sand">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md shadow-sm">
+        <div className="container-vimet flex items-center justify-between h-16">
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/images/brand/logo-light.jpg"
+              alt="VIMET"
+              width={120}
+              height={40}
+              priority
+              className="h-9 w-auto object-contain"
+              sizes="120px"
+            />
+          </Link>
+          <div className="flex items-center gap-3">
+            {profile?.nombre ? (
+              <span className="hidden sm:inline text-sm text-gray-600">
+                Hola, {profile.nombre}
+              </span>
+            ) : null}
+            <LogoutButton className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60">
+              <LogOut className="size-4" /> Salir
+            </LogoutButton>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex-1 pt-8 pb-16 overflow-x-hidden">
         <div className="container-vimet">
           <PacienteSubnav tabs={tabs} />
           {children}
         </div>
       </div>
-      <Footer />
-    </>
+    </div>
   )
 }

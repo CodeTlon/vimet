@@ -8,13 +8,13 @@ import { registerAction, type AuthState } from '@/actions/auth'
 
 const initialState: AuthState = {}
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus()
   return (
     <button
       type="submit"
-      disabled={pending}
-      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-60"
+      disabled={pending || disabled}
+      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
     >
       {pending ? 'Creando cuenta…' : (
         <>
@@ -45,7 +45,13 @@ export function RegisterForm() {
   }
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form
+      action={formAction}
+      onSubmit={(e) => {
+        if (mismatch) e.preventDefault()
+      }}
+      className="space-y-4"
+    >
       {state.error ? (
         <div role="alert" className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
           {state.error}
@@ -53,10 +59,17 @@ export function RegisterForm() {
       ) : null}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Nombre" name="nombre" defaultValue={f.nombre} required />
-        <Field label="Apellido" name="apellido" defaultValue={f.apellido} required />
+        <Field label="Nombre" name="nombre" defaultValue={f.nombre} placeholder="Ej: Avril" required />
+        <Field label="Apellido" name="apellido" defaultValue={f.apellido} placeholder="Ej: Jerushalmi" required />
       </div>
-      <Field label="Email" name="email" type="email" defaultValue={f.email} required />
+      <Field
+        label="Email"
+        name="email"
+        type="email"
+        defaultValue={f.email}
+        placeholder="tu@email.com"
+        required
+      />
       <Field
         label="Teléfono (WhatsApp)"
         name="telefono"
@@ -71,6 +84,7 @@ export function RegisterForm() {
           type="password"
           minLength={6}
           required
+          placeholder="Mínimo 6 caracteres"
           value={password}
           onChange={(v) => setPassword(v)}
         />
@@ -80,6 +94,7 @@ export function RegisterForm() {
           type="password"
           minLength={6}
           required
+          placeholder="Repetí la contraseña"
           value={confirm}
           onChange={(v) => setConfirm(v)}
           ariaInvalid={mismatch}
@@ -92,7 +107,7 @@ export function RegisterForm() {
         </p>
       ) : null}
 
-      <SubmitButton />
+      <SubmitButton disabled={mismatch} />
     </form>
   )
 }

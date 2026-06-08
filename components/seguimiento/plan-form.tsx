@@ -106,6 +106,7 @@ export function PlanForm({
             name="titulo"
             defaultValue={p?.titulo ?? ''}
             required
+            placeholder="Ej: Plan nutricional — Mayo 2026"
             className={inputBase}
           />
         </FullField>
@@ -150,6 +151,7 @@ export function PlanForm({
             name="pautas_generales"
             rows={4}
             defaultValue={p?.pautas_generales ?? ''}
+            placeholder="Indicaciones generales del plan alimentario"
             className={inputBase}
           />
         </FullField>
@@ -158,6 +160,7 @@ export function PlanForm({
             name="pautas_hidratacion"
             rows={2}
             defaultValue={p?.pautas_hidratacion ?? ''}
+            placeholder="Ej: 2,5 L de agua por día, más en días de entrenamiento"
             className={inputBase}
           />
         </FullField>
@@ -166,6 +169,7 @@ export function PlanForm({
             name="pre_entreno"
             rows={2}
             defaultValue={p?.pre_entreno ?? ''}
+            placeholder="Qué consumir antes de entrenar"
             className={inputBase}
           />
         </Field>
@@ -174,6 +178,7 @@ export function PlanForm({
             name="intra_entreno"
             rows={2}
             defaultValue={p?.intra_entreno ?? ''}
+            placeholder="Qué consumir durante el entrenamiento"
             className={inputBase}
           />
         </Field>
@@ -182,6 +187,7 @@ export function PlanForm({
             name="post_entreno"
             rows={2}
             defaultValue={p?.post_entreno ?? ''}
+            placeholder="Qué consumir después de entrenar"
             className={inputBase}
           />
         </Field>
@@ -190,6 +196,7 @@ export function PlanForm({
             name="suplementacion"
             rows={2}
             defaultValue={p?.suplementacion ?? ''}
+            placeholder="Suplementos sugeridos y dosis"
             className={inputBase}
           />
         </Field>
@@ -197,16 +204,17 @@ export function PlanForm({
 
       <Section title="Datos de entrenamiento">
         <Field label="Disciplina">
-          <input name="disciplina" defaultValue={p?.disciplina ?? ''} className={inputBase} />
+          <input name="disciplina" defaultValue={p?.disciplina ?? ''} placeholder="Ej: Musculación" className={inputBase} />
         </Field>
         <Field label="Frecuencia">
-          <input name="frecuencia" defaultValue={p?.frecuencia ?? ''} className={inputBase} />
+          <input name="frecuencia" defaultValue={p?.frecuencia ?? ''} placeholder="Ej: 4 días/semana" className={inputBase} />
         </Field>
         <FullField label="Experiencia previa">
           <textarea
             name="experiencia_previa"
             rows={2}
             defaultValue={p?.experiencia_previa ?? ''}
+            placeholder="Ej: 2 años de musculación, antecedentes deportivos"
             className={inputBase}
           />
         </FullField>
@@ -215,6 +223,7 @@ export function PlanForm({
             name="volumen"
             rows={2}
             defaultValue={p?.volumen ?? ''}
+            placeholder="Ej: 12–16 series por grupo muscular, progresión semanal"
             className={inputBase}
           />
         </FullField>
@@ -222,6 +231,7 @@ export function PlanForm({
           <input
             name="disponibilidad_lunes"
             defaultValue={p?.disponibilidad_lunes ?? ''}
+            placeholder="Ej: 18–19 hs"
             className={inputBase}
           />
         </Field>
@@ -229,6 +239,7 @@ export function PlanForm({
           <input
             name="disponibilidad_martes"
             defaultValue={p?.disponibilidad_martes ?? ''}
+            placeholder="Ej: 18–19 hs"
             className={inputBase}
           />
         </Field>
@@ -236,6 +247,7 @@ export function PlanForm({
           <input
             name="disponibilidad_miercoles"
             defaultValue={p?.disponibilidad_miercoles ?? ''}
+            placeholder="Ej: 18–19 hs"
             className={inputBase}
           />
         </Field>
@@ -243,6 +255,7 @@ export function PlanForm({
           <input
             name="disponibilidad_jueves"
             defaultValue={p?.disponibilidad_jueves ?? ''}
+            placeholder="Ej: 18–19 hs"
             className={inputBase}
           />
         </Field>
@@ -250,6 +263,7 @@ export function PlanForm({
           <input
             name="disponibilidad_viernes"
             defaultValue={p?.disponibilidad_viernes ?? ''}
+            placeholder="Ej: 18–19 hs"
             className={inputBase}
           />
         </Field>
@@ -257,6 +271,7 @@ export function PlanForm({
           <input
             name="disponibilidad_sabado"
             defaultValue={p?.disponibilidad_sabado ?? ''}
+            placeholder="Ej: 10–11 hs"
             className={inputBase}
           />
         </Field>
@@ -264,7 +279,7 @@ export function PlanForm({
 
       <Section title="Notas">
         <FullField label="Notas internas / extra">
-          <textarea name="notas" rows={4} defaultValue={p?.notas ?? ''} className={inputBase} />
+          <textarea name="notas" rows={4} defaultValue={p?.notas ?? ''} placeholder="Notas internas o aclaraciones extra del plan" className={inputBase} />
         </FullField>
       </Section>
 

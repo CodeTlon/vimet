@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-import { logoutAction } from '@/actions/auth'
+import { LogoutButton } from '@/components/logout-button'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
@@ -18,7 +18,19 @@ const links = [
   { href: '/contacto', label: 'Contacto' },
 ]
 
-const HIDE_PREFIXES = ['/admin', '/login', '/registro', '/turnos/nuevo']
+const HIDE_PREFIXES = [
+  '/admin',
+  '/login',
+  '/registro',
+  '/turnos/nuevo',
+  '/mis-turnos',
+  '/mi-ficha',
+  '/mi-progreso',
+  '/mis-planes',
+  '/feedback-semanal',
+  '/mis-objetivos',
+  '/mis-recursos',
+]
 
 export function Navbar() {
   const pathname = usePathname()
@@ -150,19 +162,16 @@ export function Navbar() {
                   <LayoutDashboard className="size-4" /> Mi espacio
                 </Link>
               )}
-              <form action={logoutAction}>
-                <button
-                  type="submit"
-                  className={cn(
-                    'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-colors',
-                    transparent
-                      ? 'border-white/40 text-white hover:bg-white/10'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-50',
-                  )}
-                >
-                  <LogOut className="size-4" /> Salir
-                </button>
-              </form>
+              <LogoutButton
+                className={cn(
+                  'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-colors disabled:opacity-60',
+                  transparent
+                    ? 'border-white/40 text-white hover:bg-white/10'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50',
+                )}
+              >
+                <LogOut className="size-4" /> Salir
+              </LogoutButton>
             </>
           ) : (
             <>
@@ -230,14 +239,9 @@ export function Navbar() {
                   >
                     {isStaff ? 'Panel' : 'Mi espacio'}
                   </Link>
-                  <form action={logoutAction}>
-                    <button
-                      type="submit"
-                      className="w-full px-4 py-3 rounded-md text-base font-medium border border-gray-300 text-gray-700"
-                    >
-                      Salir
-                    </button>
-                  </form>
+                  <LogoutButton className="w-full px-4 py-3 rounded-md text-base font-medium border border-gray-300 text-gray-700 disabled:opacity-60">
+                    Salir
+                  </LogoutButton>
                 </>
               ) : (
                 <>

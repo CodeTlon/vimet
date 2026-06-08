@@ -1,6 +1,7 @@
 'use client'
 
 import { LogIn } from 'lucide-react'
+import Link from 'next/link'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { loginAction, type AuthState } from '@/actions/auth'
@@ -58,6 +59,11 @@ export function LoginForm() {
         />
       </div>
       <SubmitButton />
+      <p className="text-center text-sm text-gray-700">
+        <Link href="/auth/recuperar" className="font-semibold text-vimet-orange hover:underline">
+          ¿Olvidaste tu contraseña?
+        </Link>
+      </p>
     </form>
   )
 }

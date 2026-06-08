@@ -97,7 +97,7 @@ export default async function PacientesPage() {
                           href={`https://wa.me/54${p.telefono.replace(/\D/g, '')}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-[#25D366] hover:underline font-semibold"
+                          className="inline-flex items-center gap-1.5 text-vimet-orange hover:underline font-semibold"
                         >
                           <Phone className="size-3.5" /> {p.telefono}
                         </a>
