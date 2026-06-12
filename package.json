@@ -6,7 +6,8 @@
     "dev": "cross-env NODE_OPTIONS=--max-http-header-size=65536 next dev",
     "build": "next build",
     "start": "cross-env NODE_OPTIONS=--max-http-header-size=65536 next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
