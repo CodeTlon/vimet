@@ -29,11 +29,12 @@ type TurnoRow = {
   paciente: { nombre: string; apellido: string } | null
 }
 
-export default async function AdminCalendario({
-  searchParams,
-}: {
-  searchParams: { year?: string; month?: string }
-}) {
+export default async function AdminCalendario(
+  props: {
+    searchParams: Promise<{ year?: string; month?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const now = new Date()
   const year = Number(searchParams?.year) || now.getFullYear()
   const month = Number(searchParams?.month) || now.getMonth() + 1

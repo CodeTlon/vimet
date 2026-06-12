@@ -43,7 +43,8 @@ type TurnoDetail = {
   profesional: { nombre: string; apellido: string } | null
 }
 
-export default async function TurnoDetallePage({ params }: { params: { id: string } }) {
+export default async function TurnoDetallePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   if (!Number.isFinite(id) || id <= 0) notFound()
 
@@ -74,7 +75,6 @@ export default async function TurnoDetallePage({ params }: { params: { id: strin
           <ArrowLeft className="size-4" /> Volver
         </Link>
       </header>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
@@ -175,7 +175,7 @@ export default async function TurnoDetallePage({ params }: { params: { id: strin
         </aside>
       </div>
     </div>
-  )
+  );
 }
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {

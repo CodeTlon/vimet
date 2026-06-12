@@ -24,7 +24,8 @@ type Plan = {
   updated_at: string
 }
 
-export default async function PlanesPage({ params }: { params: { id: string } }) {
+export default async function PlanesPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const supabase = createClient()
   const { data } = await supabase
     .from('planes')
