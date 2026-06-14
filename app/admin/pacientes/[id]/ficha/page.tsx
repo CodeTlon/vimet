@@ -3,11 +3,12 @@ import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
-export default async function PacienteFichaPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default async function PacienteFichaPage(
+  props: {
+    params: Promise<{ id: string }>
+  }
+) {
+  const params = await props.params;
   const supabase = createClient()
   const { data: ficha } = await supabase
     .from('fichas_paciente')

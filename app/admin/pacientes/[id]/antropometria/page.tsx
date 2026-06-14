@@ -22,11 +22,12 @@ type Medicion = {
   observaciones: string | null
 }
 
-export default async function AntropometriaPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default async function AntropometriaPage(
+  props: {
+    params: Promise<{ id: string }>
+  }
+) {
+  const params = await props.params;
   const supabase = createClient()
   const { data } = await supabase
     .from('mediciones_antropometricas')

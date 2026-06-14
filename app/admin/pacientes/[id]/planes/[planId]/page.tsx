@@ -7,11 +7,12 @@ import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
-export default async function EditarPlanPage({
-  params,
-}: {
-  params: { id: string; planId: string }
-}) {
+export default async function EditarPlanPage(
+  props: {
+    params: Promise<{ id: string; planId: string }>
+  }
+) {
+  const params = await props.params;
   const supabase = createClient()
   const { data: plan } = await supabase
     .from('planes')

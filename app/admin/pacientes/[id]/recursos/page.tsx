@@ -54,7 +54,8 @@ function TipoIcon({ tipo, className }: { tipo: string; className?: string }) {
   return <Video className={cls} />
 }
 
-export default async function RecursosPage({ params }: { params: { id: string } }) {
+export default async function RecursosPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const supabase = createClient()
 
   const { data } = await supabase
@@ -81,7 +82,6 @@ export default async function RecursosPage({ params }: { params: { id: string } 
   return (
     <div className="space-y-5">
       <RecursoForm pacienteId={params.id} />
-
       {recursosConUrl.length === 0 ? (
         <p className="text-center text-sm text-gray-500 italic py-6">
           Aún no hay recursos cargados para este paciente.
@@ -98,11 +98,11 @@ export default async function RecursosPage({ params }: { params: { id: string } 
                 <div className="shrink-0">
                   {r.tipo === 'imagen' && r.signedUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    (<img
                       src={r.signedUrl}
                       alt={r.titulo}
                       className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl border border-gray-100"
-                    />
+                    />)
                   ) : (
                     <div
                       className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-xl ${TIPO_COLORS[r.tipo] ?? 'bg-gray-50 text-gray-400'}`}
@@ -224,5 +224,5 @@ export default async function RecursosPage({ params }: { params: { id: string } 
         </ul>
       )}
     </div>
-  )
+  );
 }

@@ -8,13 +8,18 @@ import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
-export default async function PacienteLayout({
-  children,
-  params,
-}: {
-  children: ReactNode
-  params: { id: string }
-}) {
+export default async function PacienteLayout(
+  props: {
+    children: ReactNode
+    params: Promise<{ id: string }>
+  }
+) {
+  const params = await props.params;
+
+  const {
+    children
+  } = props;
+
   const supabase = createClient()
   const { data: paciente } = await supabase
     .from('profiles')
@@ -76,10 +81,8 @@ export default async function PacienteLayout({
           </div>
         </div>
       </header>
-
       <Tabs items={tabs} />
-
       {children}
     </div>
-  )
+  );
 }
