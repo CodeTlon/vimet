@@ -198,6 +198,7 @@ npx playwright test  # Tests E2E
 ## Historial de Cambios
 | Fecha | Rama | Cambio |
 |-------|------|--------|
+| 2026-06-14 | chore/next15-upgrade | v0.3.0 — Next 14.2.35→15.5.19 (codemod params Promise + cookies UnsafeUnwrap) + smoke E2E Playwright (`e2e/global-setup.ts` crea staff efímero por service role, `e2e/smoke.spec.ts`). audit 5(4 high)→2 moderate (postcss-en-Next) |
 | 2026-05-09 | dev | Bootstrap proyecto + repo CodeTlon/vimet + .claude/ |
 | 2026-05-10 | dev | Módulo seguimiento integral: 7 tablas nuevas + bucket `planes` + áreas paciente/admin (ficha, antrop, eval funcional, planes PDF+estructurados, feedback semanal, evolución, objetivos) |
 | 2026-05-15 | dev | Fix timezone (`lib/datetime.ts` con `hoyArgentina`/`lunesDeSemanaArgentina`) en dashboards, calendario, booking, slots y forms de seguimiento + slot mínimo de hoy ahora usa hora local Córdoba + cancelar-turno bloquea fechas pasadas + plan update borra PDF previo automáticamente |
