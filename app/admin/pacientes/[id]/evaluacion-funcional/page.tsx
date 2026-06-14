@@ -28,11 +28,12 @@ type Eval = {
   observaciones: string | null
 }
 
-export default async function EvalFuncionalPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default async function EvalFuncionalPage(
+  props: {
+    params: Promise<{ id: string }>
+  }
+) {
+  const params = await props.params;
   const supabase = createClient()
   const { data } = await supabase
     .from('evaluaciones_funcionales')

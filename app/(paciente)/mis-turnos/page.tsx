@@ -39,11 +39,12 @@ const ESTADO_BADGE: Record<string, string> = {
 
 export const metadata = { title: 'Mis turnos' }
 
-export default async function MisTurnosPage({
-  searchParams,
-}: {
-  searchParams: { nuevo?: string }
-}) {
+export default async function MisTurnosPage(
+  props: {
+    searchParams: Promise<{ nuevo?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const supabase = createClient()
   const {
     data: { user },

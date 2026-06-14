@@ -5,7 +5,8 @@ import { PlanForm } from '@/components/seguimiento/plan-form'
 
 export const metadata = { title: 'Nuevo plan' }
 
-export default function NuevoPlanPage({ params }: { params: { id: string } }) {
+export default async function NuevoPlanPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   return (
     <div className="space-y-4">
       <Link
