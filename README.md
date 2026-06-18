@@ -48,3 +48,8 @@ Vercel + Supabase. Configurar las variables de entorno en el panel de Vercel.
 | v0.3.0 | 2026-06-14 | Seguridad/upgrade: Next 14.2.35 → 15.5.19 (codemod `next-async-request-api`: `params` como Promise + `cookies()` con `UnsafeUnwrappedCookies`). Smoke E2E nuevo con Playwright (login staff + rutas `/admin` + ruta `[id]` inexistente → notFound). `npm audit` 5 (4 high) → 2 moderate (postcss-en-Next). `npm run test:e2e` |
 | v0.2.0 | 2026-06-02 | Flujo de invitación para staff: `/auth/confirmar` (implicit + PKCE), `/auth/nueva-contrasena`, `nuevaContrasenaAction`. `HashInviteHandler` detecta tokens de invite en el hash y redirige automáticamente. Layout refactorizado: route group `(public)` con Navbar/Footer; admin y auth sin navbar pública. |
 | v0.1.0 | 2026-06-02 | Página `/admin/configuracion`: configurar profesional (asigna rol + linkea servicios/horarios), cambiar contraseña. Registro de pacientes deja cuenta inactiva hasta activación manual desde listado de pacientes admin. |
+
+## Licencia
+
+© 2026 CodeTlon. Todos los derechos reservados. Software propietario del cliente/CodeTlon.
+Prohibida su copia, redistribución o reuso sin autorización escrita. Ver [LICENSE](./LICENSE).
