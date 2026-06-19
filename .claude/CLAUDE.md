@@ -206,3 +206,18 @@ npx playwright test  # Tests E2E
 | 2026-05-23 | dev | Módulo de recursos multimedia: migración `0005` + bucket `recursos` (privado) + tabla `recursos_paciente` (link/pdf/imagen/video con categoría y visibilidad) + tab "Recursos" en admin + sección "Mis recursos" en área paciente + adjunto opcional en feedback semanal (imagen/PDF, 15 MB, signed URLs 1h). |
 | 2026-06-02 | feat/configuracion-staff | `/admin/configuracion`: `configurarProfesionalAction` (asigna rol + linkea servicios/horarios en un paso), `cambiarPasswordAction`, `toggleActivoAction`. Registro deja `activo=false`; admin activa desde listado de pacientes. `lib/supabase/admin.ts` (service role client). |
 | 2026-06-02 | feat/invite-flow | Flujo de invitación staff: `app/auth/confirmar/page.tsx` (implicit + PKCE), `app/auth/nueva-contrasena/page.tsx`, `nuevaContrasenaAction`, `app/auth/callback/route.ts`. `components/hash-invite-handler.tsx` detecta `#access_token&type=invite` en cualquier página y llama `setSession` manualmente (@supabase/ssr no procesa hash automático). Layout refactorizado: route group `app/(public)/` con Navbar+Footer; admin y auth sin navbar pública. `app/(paciente)/layout.tsx` incluye ahora Navbar+Footer propio. |
+---
+
+## Módulos de la fábrica — consultar en `/cambio` según lo que toques
+
+Estos módulos viven en `codetlon-cloud/.claude/modules/` (desde este repo: `../../codetlon-cloud/.claude/modules/`). NO están copiados acá: leé el que aplique al iniciar una sesión de mantenimiento que toque cada tema.
+
+| Si el `/cambio` toca… | Módulo a leer |
+|---|---|
+| deps / vulnerabilidades (`npm audit`, actualizar libs, upgrade de major) | `security-maintenance.md` |
+| auth / DB / RLS / route handler / form / env / secrets (seguridad de **código**) | `security-owasp.md` |
+| UI / componentes / forms / páginas (accesibilidad WCAG, Lighthouse a11y > 90) | `accessibility.md` |
+| pipeline / `.github/workflows` / Dockerfile / env vars (CI = gate de calidad) | `ci-cd.md` |
+| dejar el proyecto live / incidente en producción (monitoreo) | `observability.md` |
+
+Regla: leer SOLO el módulo que la tarea pide (disciplina de tokens), no todos por las dudas.
