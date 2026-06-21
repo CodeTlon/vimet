@@ -4,9 +4,9 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=--max-http-header-size=65536 next dev",
+    "dev": "next dev",
     "build": "next build",
-    "start": "cross-env NODE_OPTIONS=--max-http-header-size=65536 next start",
+    "start": "next start",
     "lint": "next lint",
     "test:e2e": "playwright test"
   },
