@@ -212,6 +212,7 @@ npx playwright test  # Tests E2E
 ## Historial de Cambios
 | Fecha | Rama | Cambio |
 |-------|------|--------|
+| 2026-06-21 | fix/remove-header-size-bandaid | v0.4.0 — Quitado el parche `NODE_OPTIONS=--max-http-header-size=65536` de `dev`/`start` (innecesario y **verificado**: sesión de auth ~3-6KB << default 16KB de Node; probado con `next start` sin el flag → cookies hasta 15KB dan 200, 431 recién a ≥16KB; además el flag nunca aplicaba en Vercel, solo en `next start` local). Era cruft sumado junto al `bodySizeLimit:16mb` de uploads en `d246650`. ⚠️ El Supabase **dev** (`qwzlhbecpgysgophpbyf.supabase.co`) ya **no resuelve** (DNS ENOTFOUND) → el e2e no puede correr hasta reapuntar a un dev vivo. |
 | 2026-06-14 | chore/next15-upgrade | v0.3.0 — Next 14.2.35→15.5.19 (codemod params Promise + cookies UnsafeUnwrap) + smoke E2E Playwright (`e2e/global-setup.ts` crea staff efímero por service role, `e2e/smoke.spec.ts`). audit 5(4 high)→2 moderate (postcss-en-Next) |
 | 2026-05-09 | dev | Bootstrap proyecto + repo CodeTlon/vimet + .claude/ |
 | 2026-05-10 | dev | Módulo seguimiento integral: 7 tablas nuevas + bucket `planes` + áreas paciente/admin (ficha, antrop, eval funcional, planes PDF+estructurados, feedback semanal, evolución, objetivos) |
@@ -220,3 +221,18 @@ npx playwright test  # Tests E2E
 | 2026-05-23 | dev | Módulo de recursos multimedia: migración `0005` + bucket `recursos` (privado) + tabla `recursos_paciente` (link/pdf/imagen/video con categoría y visibilidad) + tab "Recursos" en admin + sección "Mis recursos" en área paciente + adjunto opcional en feedback semanal (imagen/PDF, 15 MB, signed URLs 1h). |
 | 2026-06-02 | feat/configuracion-staff | `/admin/configuracion`: `configurarProfesionalAction` (asigna rol + linkea servicios/horarios en un paso), `cambiarPasswordAction`, `toggleActivoAction`. Registro deja `activo=false`; admin activa desde listado de pacientes. `lib/supabase/admin.ts` (service role client). |
 | 2026-06-02 | feat/invite-flow | Flujo de invitación staff: `app/auth/confirmar/page.tsx` (implicit + PKCE), `app/auth/nueva-contrasena/page.tsx`, `nuevaContrasenaAction`, `app/auth/callback/route.ts`. `components/hash-invite-handler.tsx` detecta `#access_token&type=invite` en cualquier página y llama `setSession` manualmente (@supabase/ssr no procesa hash automático). Layout refactorizado: route group `app/(public)/` con Navbar+Footer; admin y auth sin navbar pública. `app/(paciente)/layout.tsx` incluye ahora Navbar+Footer propio. |
+---
+
+## Módulos de la fábrica — consultar en `/cambio` según lo que toques
+
+Estos módulos viven en `codetlon-cloud/.claude/modules/` (desde este repo: `../../codetlon-cloud/.claude/modules/`). NO están copiados acá: leé el que aplique al iniciar una sesión de mantenimiento que toque cada tema.
+
+| Si el `/cambio` toca… | Módulo a leer |
+|---|---|
+| deps / vulnerabilidades (`npm audit`, actualizar libs, upgrade de major) | `security-maintenance.md` |
+| auth / DB / RLS / route handler / form / env / secrets (seguridad de **código**) | `security-owasp.md` |
+| UI / componentes / forms / páginas (accesibilidad WCAG, Lighthouse a11y > 90) | `accessibility.md` |
+| pipeline / `.github/workflows` / Dockerfile / env vars (CI = gate de calidad) | `ci-cd.md` |
+| dejar el proyecto live / incidente en producción (monitoreo) | `observability.md` |
+
+Regla: leer SOLO el módulo que la tarea pide (disciplina de tokens), no todos por las dudas.

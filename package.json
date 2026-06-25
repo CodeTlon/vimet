@@ -2,13 +2,14 @@
   "name": "vimet",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "engines": {
     "node": "22.x"
   },
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=--max-http-header-size=65536 next dev",
+    "dev": "next dev",
     "build": "next build",
-    "start": "cross-env NODE_OPTIONS=--max-http-header-size=65536 next start",
+    "start": "next start",
     "lint": "next lint",
     "test:e2e": "playwright test"
   },
