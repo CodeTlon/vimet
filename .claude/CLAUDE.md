@@ -13,7 +13,7 @@
 - **Generado:** 2026-05-09
 - **URL Producción:** pendiente
 - **Repo GitHub:** CodeTlon/vimet
-- **Deploy:** Vercel + Supabase
+- **Deploy:** Dokku en VPS (146.181.35.182) — apps `vimet-dev` (rama `dev`) y `vimet` (rama `main`/prod). Builder **nixpacks**. Auto-deploy via GitHub Actions; tras cada deploy el contenedor se **apaga** (`ps:stop`) para no consumir recursos — prender con `dokku ps:start <app>`. Supabase aparte.
 
 ## Origen del proyecto
 Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corría sobre Laragon + MySQL. Ver `docs/migration-report.md` para mapeo legacy → nuevo stack.
