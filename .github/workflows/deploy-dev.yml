@@ -1,0 +1,34 @@
+name: Deploy dev to Dokku
+
+on:
+  push:
+    branches: [dev]
+
+# Cancela un deploy en curso si llega un commit nuevo
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dokku/github-action@master
+        with:
+          git_remote_url: 'ssh://dokku@146.181.35.182/vimet-dev'
+          ssh_private_key: ${{ secrets.DOKKU_SSH_PRIVATE_KEY }}
+          branch: 'main'
+          git_push_flags: '--force'
+
+      # La imagen ya quedó construida; apagamos el contenedor para no gastar
+      # recursos. Cuando hagas `dokku ps:start vimet-dev` arranca al día.
+      - name: Apagar contenedor (dejar imagen lista, sin consumir)
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DOKKU_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 146.181.35.182 >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/id_ed25519 dokku@146.181.35.182 ps:stop vimet-dev
