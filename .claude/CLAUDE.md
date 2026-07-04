@@ -212,6 +212,7 @@ npx playwright test  # Tests E2E
 ## Historial de Cambios
 | Fecha | Rama | Cambio |
 |-------|------|--------|
+| 2026-07-04 | feat/hero-video | v0.5.0 — Panel derecho del hero (`app/(public)/page.tsx`) pasa de foto estática a `<video autoPlay muted loop playsInline>`. Clip de 10s (720p, CRF18 libx264, sin audio, faststart, 9MB) en `public/videos/hero-training.mp4` + poster (`public/images/hero/training-video-poster.jpg`) para evitar flash negro mientras carga. |
 | 2026-06-21 | fix/remove-header-size-bandaid | v0.4.0 — Quitado el parche `NODE_OPTIONS=--max-http-header-size=65536` de `dev`/`start` (innecesario y **verificado**: sesión de auth ~3-6KB << default 16KB de Node; probado con `next start` sin el flag → cookies hasta 15KB dan 200, 431 recién a ≥16KB; además el flag nunca aplicaba en Vercel, solo en `next start` local). Era cruft sumado junto al `bodySizeLimit:16mb` de uploads en `d246650`. ⚠️ El Supabase **dev** (`qwzlhbecpgysgophpbyf.supabase.co`) ya **no resuelve** (DNS ENOTFOUND) → el e2e no puede correr hasta reapuntar a un dev vivo. |
 | 2026-06-14 | chore/next15-upgrade | v0.3.0 — Next 14.2.35→15.5.19 (codemod params Promise + cookies UnsafeUnwrap) + smoke E2E Playwright (`e2e/global-setup.ts` crea staff efímero por service role, `e2e/smoke.spec.ts`). audit 5(4 high)→2 moderate (postcss-en-Next) |
 | 2026-05-09 | dev | Bootstrap proyecto + repo CodeTlon/vimet + .claude/ |
