@@ -71,7 +71,7 @@ const serviciosDestacados = [
 export default function HomePage() {
   return (
     <>
-      <section className="h-screen flex overflow-hidden">
+      <section className="h-dvh flex overflow-hidden">
         {/* Panel izquierdo — oscuro, contenido */}
         <div className="flex flex-col bg-[#111111] px-8 sm:px-12 lg:px-16 xl:px-20 w-full lg:w-1/2 shrink-0">
           <div className="flex-none h-20 lg:h-24" />
@@ -257,7 +257,7 @@ export default function HomePage() {
                   <h3 className="font-heading text-2xl font-semibold text-gray-900">
                     {prof.nombre}
                   </h3>
-                  <p className="text-sm text-vimet-orange font-medium mt-1">{prof.titulo}</p>
+                  <p className="text-sm text-vimet-red font-medium mt-1">{prof.titulo}</p>
                   <p className="text-sm text-gray-700 mt-3 leading-relaxed">{prof.bioCorta}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {prof.especialidades.slice(0, 3).map((esp) => (
@@ -332,7 +332,7 @@ export default function HomePage() {
                       href={social.whatsapp}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-vimet-orange hover:underline"
+                      className="text-sm text-vimet-red hover:underline"
                     >
                       Escribinos por WhatsApp
                     </a>
@@ -348,7 +348,7 @@ export default function HomePage() {
                       href={social.instagram}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-vimet-orange hover:underline"
+                      className="text-sm text-vimet-red hover:underline"
                     >
                       {social.instagramHandle}
                     </a>

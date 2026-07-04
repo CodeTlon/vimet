@@ -51,9 +51,9 @@ export function Footer() {
 
           {/* 2 — Contacto */}
           <div>
-            <h4 className="font-heading font-semibold text-xs uppercase tracking-widest text-white/35 mb-5">
+            <h3 className="font-heading font-semibold text-xs uppercase tracking-widest text-white/50 mb-5">
               Contacto
-            </h4>
+            </h3>
             <ul className="space-y-3 text-sm">
               <li className="flex items-center gap-2.5 text-white/55">
                 <MapPin className="size-4 text-vimet-orange shrink-0" />
@@ -88,9 +88,9 @@ export function Footer() {
 
           {/* 3 — Quick links */}
           <div>
-            <h4 className="font-heading font-semibold text-xs uppercase tracking-widest text-white/35 mb-5">
+            <h3 className="font-heading font-semibold text-xs uppercase tracking-widest text-white/50 mb-5">
               Accesos
-            </h4>
+            </h3>
             <ul className="space-y-2.5 text-sm">
               {quickLinks.map((l) => (
                 <li key={l.href}>
@@ -104,9 +104,9 @@ export function Footer() {
 
           {/* 4 — Redes */}
           <div>
-            <h4 className="font-heading font-semibold text-xs uppercase tracking-widest text-white/35 mb-5">
+            <h3 className="font-heading font-semibold text-xs uppercase tracking-widest text-white/50 mb-5">
               Seguinos
-            </h4>
+            </h3>
             <ul className="space-y-3 text-sm">
               <li>
                 <Link
@@ -147,13 +147,13 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/30">
+        <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/50">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1">
             <span>© {new Date().getFullYear()} VIMET — Vida y Metabolismo</span>
-            <Link href="/privacidad" className="hover:text-white/60 transition-colors">
+            <Link href="/privacidad" className="hover:text-white/80 transition-colors">
               Política de privacidad
             </Link>
-            <Link href="/terminos" className="hover:text-white/60 transition-colors">
+            <Link href="/terminos" className="hover:text-white/80 transition-colors">
               Términos y condiciones
             </Link>
           </div>
@@ -161,7 +161,7 @@ export function Footer() {
             href="https://codetlon.com.ar"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 hover:text-white/60 transition-colors"
+            className="inline-flex items-center gap-1.5 hover:text-white/80 transition-colors"
           >
             Desarrollado por <span className="font-semibold text-white/50">CodeTlon</span>
           </Link>

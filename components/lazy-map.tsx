@@ -38,14 +38,13 @@ export function LazyMap({
       type="button"
       onClick={() => setShow(true)}
       style={{ height }}
-      aria-label={`Cargar ${title}`}
       className="group relative w-full overflow-hidden rounded-xl bg-vimet-sand flex flex-col items-center justify-center gap-3 text-gray-700 hover:bg-vimet-cream transition-colors"
     >
       <span className="inline-flex size-14 items-center justify-center rounded-full bg-vimet-gradient text-white shadow-md group-hover:scale-105 transition-transform">
         <MapPin className="size-6" />
       </span>
       <span className="font-medium">Ver mapa</span>
-      <span className="text-xs text-gray-500">Instituto VIANETT · Córdoba</span>
+      <span className="text-xs text-gray-600">Instituto VIANETT · Córdoba</span>
     </button>
   )
 }
