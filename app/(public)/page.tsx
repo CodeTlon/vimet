@@ -110,16 +110,16 @@ export default function HomePage() {
 
         </div>
 
-        {/* Panel derecho — foto (solo desktop) */}
+        {/* Panel derecho — video (solo desktop) */}
         <div className="hidden lg:block relative flex-1">
-          <Image
-            src="/images/hero/training.jpg"
-            alt="Entrenamiento personalizado en VIMET"
-            fill
-            priority
-            quality={85}
-            sizes="50vw"
-            className="object-cover"
+          <video
+            src="/videos/hero-training.mp4"
+            poster="/images/hero/training-video-poster.jpg"
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 size-full object-cover"
           />
           <div className="absolute inset-0 bg-black/15" />
         </div>
