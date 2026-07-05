@@ -71,9 +71,25 @@ const serviciosDestacados = [
 export default function HomePage() {
   return (
     <>
-      <section className="h-dvh flex overflow-hidden">
-        {/* Panel izquierdo — oscuro, contenido */}
-        <div className="flex flex-col bg-[#111111] px-8 sm:px-12 lg:px-16 xl:px-20 w-full lg:w-1/2 shrink-0">
+      <section className="relative h-dvh overflow-hidden">
+        {/* Video de fondo — cubre todo el hero */}
+        <video
+          src="/videos/hero-training.mp4"
+          poster="/images/hero/training-video-poster.jpg"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          className="absolute inset-0 size-full object-cover"
+        />
+        {/* Scrim: oscuro a la izquierda para legibilidad del texto */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/25 lg:to-transparent" />
+        {/* Contrastado superior (negro casi transparente) */}
+        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/70 to-transparent" />
+
+        {/* Contenido */}
+        <div className="relative flex flex-col h-full px-8 sm:px-12 lg:px-16 xl:px-20 w-full lg:w-1/2">
           <div className="flex-none h-20 lg:h-24" />
           <div className="flex-1 flex flex-col justify-center py-8">
             <div className="w-10 h-[3px] rounded-full bg-vimet-gradient mb-8" />
@@ -87,7 +103,7 @@ export default function HomePage() {
               </span>
             </h1>
 
-            <p className="mt-5 text-white/50 text-[15px] max-w-[360px] leading-relaxed">
+            <p className="mt-5 text-white/75 text-[15px] max-w-[360px] leading-relaxed">
               Especialistas en alteraciones metabólicas. Plan nutricional y
               entrenamiento adaptado a cada persona.
             </p>
@@ -107,21 +123,6 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-
-        </div>
-
-        {/* Panel derecho — video (solo desktop) */}
-        <div className="hidden lg:block relative flex-1">
-          <video
-            src="/videos/hero-training.mp4"
-            poster="/images/hero/training-video-poster.jpg"
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 size-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/15" />
         </div>
       </section>
 
