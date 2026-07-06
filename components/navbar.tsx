@@ -46,7 +46,7 @@ export function Navbar() {
 
   useEffect(() => {
     const onScroll = () => {
-      const threshold = window.innerHeight * 0.8
+      const threshold = window.innerHeight * 0.3
       setHeroDarkness(Math.min(window.scrollY / threshold, 1))
     }
     onScroll()

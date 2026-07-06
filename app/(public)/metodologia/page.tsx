@@ -93,7 +93,7 @@ export default async function MetodologiaPage() {
           sizes="100vw"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-black/45" />
+        <div className="absolute inset-0 bg-black/65" />
         <div className="relative h-full container-vimet flex items-center justify-center text-center">
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
             Cada plan es <span className="text-gradient">único</span>, como vos

@@ -166,7 +166,7 @@ export default function HomePage() {
           sizes="100vw"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-black/45" />
+        <div className="absolute inset-0 bg-black/65" />
         <div className="relative h-full container-vimet flex items-center justify-center text-center">
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
             Transformá tu <span className="text-gradient">relación</span> con la salud
@@ -225,7 +225,7 @@ export default function HomePage() {
           sizes="100vw"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-black/45" />
+        <div className="absolute inset-0 bg-black/65" />
         <div className="relative h-full container-vimet flex items-center justify-center text-center">
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-white max-w-3xl">
             Alimentación como aliada clave del <span className="text-gradient">rendimiento</span>
