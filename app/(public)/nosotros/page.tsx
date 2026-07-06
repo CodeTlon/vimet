@@ -13,7 +13,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { PageHeader } from '@/components/page-header'
-import { brand, team, type Profesional } from '@/lib/config/team'
+import { getProfesionales } from '@/lib/config/contenido'
+import { brand, type Profesional } from '@/lib/config/team'
 
 const ICONS: Record<string, LucideIcon> = {
   Activity,
@@ -100,7 +101,9 @@ function ProfileSection({ prof, reverse }: { prof: Profesional; reverse: boolean
   )
 }
 
-export default function NosotrosPage() {
+export default async function NosotrosPage() {
+  const profesionales = await getProfesionales()
+
   return (
     <>
       <PageHeader
@@ -113,8 +116,8 @@ export default function NosotrosPage() {
         description={brand.description}
       />
 
-      <ProfileSection prof={team.avril} reverse={false} />
-      <ProfileSection prof={team.gero} reverse={true} />
+      <ProfileSection prof={profesionales.avril} reverse={false} />
+      <ProfileSection prof={profesionales.gero} reverse={true} />
 
       <section className="bg-vimet-gradient py-16 lg:py-20 text-center">
         <div className="container-vimet text-white">

@@ -41,11 +41,14 @@ export function Navbar() {
   const isHome = pathname === '/'
 
   const [open, setOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
+  const [heroDarkness, setHeroDarkness] = useState(0)
   const [user, setUser] = useState<{ id: string; rol: string } | null>(null)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.8)
+    const onScroll = () => {
+      const threshold = window.innerHeight * 0.8
+      setHeroDarkness(Math.min(window.scrollY / threshold, 1))
+    }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
@@ -88,17 +91,17 @@ export function Navbar() {
   }, [])
 
   const isStaff = user && ['nutricionista', 'entrenador', 'admin'].includes(user.rol)
+  const scrolled = heroDarkness >= 1
   const transparent = isHome && !scrolled && !open
 
   if (hidden) return null
 
   return (
     <header
+      style={transparent ? { backgroundColor: `rgba(0,0,0,${heroDarkness * 0.85})` } : undefined}
       className={cn(
-        'fixed top-0 left-0 right-0 z-40 transition-all duration-300',
-        transparent
-          ? 'bg-transparent text-white'
-          : 'bg-white/95 backdrop-blur-md text-gray-900 shadow-sm',
+        'fixed top-0 left-0 right-0 z-40 transition-colors duration-300',
+        transparent ? 'text-white' : 'bg-white/95 backdrop-blur-md text-gray-900 shadow-sm',
       )}
     >
       <div className="container-vimet flex items-center justify-between h-16 lg:h-20">

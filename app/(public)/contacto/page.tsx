@@ -4,11 +4,13 @@ import Link from 'next/link'
 import { ContactoForm } from '@/components/contacto-form'
 import { LazyMap } from '@/components/lazy-map'
 import { PageHeader } from '@/components/page-header'
-import { location, social, team } from '@/lib/config/team'
+import { getContenidoSitio, getProfesionales } from '@/lib/config/contenido'
 
 export const metadata = { title: 'Contacto' }
 
-export default function ContactoPage() {
+export default async function ContactoPage() {
+  const [contenido, profesionales] = await Promise.all([getContenidoSitio(), getProfesionales()])
+
   return (
     <>
       <PageHeader
@@ -35,14 +37,14 @@ export default function ContactoPage() {
                   iconColor="text-vimet-orange"
                   iconBg="bg-vimet-cream"
                   label="Ubicación"
-                  value={`${location.address} · ${location.place}, ${location.city}`}
+                  value={`${contenido.direccion} · ${contenido.lugar}, ${contenido.ciudad}`}
                 />
                 <ContactItem
                   icon={MessageCircle}
                   iconColor="text-vimet-orange"
                   iconBg="bg-vimet-cream"
                   label="WhatsApp · Avril (Nutrición)"
-                  href={team.avril.whatsappUrl}
+                  href={profesionales.avril.whatsappUrl}
                   value="Escribir a Avril"
                 />
                 <ContactItem
@@ -50,7 +52,7 @@ export default function ContactoPage() {
                   iconColor="text-vimet-orange"
                   iconBg="bg-vimet-cream"
                   label="WhatsApp · Gero (Entrenamiento)"
-                  href={team.gero.whatsappUrl}
+                  href={profesionales.gero.whatsappUrl}
                   value="Escribir a Gero"
                 />
                 <ContactItem
@@ -58,8 +60,8 @@ export default function ContactoPage() {
                   iconColor="text-vimet-orange"
                   iconBg="bg-vimet-cream"
                   label="Instagram"
-                  href={social.instagram}
-                  value={social.instagramHandle}
+                  href={contenido.instagramUrl}
+                  value={contenido.instagramHandle}
                 />
               </ul>
             </div>
@@ -82,7 +84,7 @@ export default function ContactoPage() {
           <div className="rounded-2xl bg-white p-2 shadow-lg">
             <LazyMap
               title="Mapa VIMET — Instituto VIANETT"
-              src={location.mapEmbed}
+              src={contenido.mapEmbed}
               height={420}
             />
           </div>

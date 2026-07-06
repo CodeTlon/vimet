@@ -18,7 +18,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { PageHeader } from '@/components/page-header'
-import { metodologia } from '@/lib/config/team'
+import { getContenidoSitio } from '@/lib/config/contenido'
 
 const ICONS: Record<string, LucideIcon> = {
   ClipboardCheck,
@@ -37,7 +37,9 @@ const ICONS: Record<string, LucideIcon> = {
 
 export const metadata = { title: 'Metodología' }
 
-export default function MetodologiaPage() {
+export default async function MetodologiaPage() {
+  const { metodologia } = await getContenidoSitio()
+
   return (
     <>
       <PageHeader

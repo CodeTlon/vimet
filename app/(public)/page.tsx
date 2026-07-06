@@ -74,7 +74,6 @@ export default function HomePage() {
       <section className="relative h-dvh overflow-hidden">
         {/* Video de fondo — cubre todo el hero */}
         <video
-          src="/videos/hero-training.mp4"
           poster="/images/hero/training-video-poster.jpg"
           autoPlay
           muted
@@ -82,7 +81,10 @@ export default function HomePage() {
           playsInline
           preload="auto"
           className="absolute inset-0 size-full object-cover"
-        />
+        >
+          <source media="(max-width: 767px)" src="/videos/hero-training-mobile.mp4" type="video/mp4" />
+          <source src="/videos/hero-training.mp4" type="video/mp4" />
+        </video>
         {/* Scrim: oscuro a la izquierda para legibilidad del texto */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/25 lg:to-transparent" />
         {/* Contrastado superior (negro casi transparente) */}
