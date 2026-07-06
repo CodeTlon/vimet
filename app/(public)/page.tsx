@@ -85,44 +85,48 @@ export default function HomePage() {
           <source media="(max-width: 767px)" src="/videos/hero-training-mobile.mp4" type="video/mp4" />
           <source src="/videos/hero-training.mp4" type="video/mp4" />
         </video>
-        {/* Scrim: oscuro a la izquierda para legibilidad del texto */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/25 lg:to-transparent" />
+        {/* Scrim: sólido en mobile (el texto ocupa todo el ancho), a la izquierda en desktop */}
+        <div className="absolute inset-0 bg-black/90 lg:bg-gradient-to-r lg:from-black/90 lg:via-black/60 lg:to-transparent" />
         {/* Contrastado superior (negro casi transparente) */}
-        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/70 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-40 lg:h-48 bg-gradient-to-b from-black/70 lg:from-black/80 to-transparent" />
 
         {/* Contenido */}
-        <div className="relative flex flex-col h-full px-8 sm:px-12 lg:px-16 xl:px-20 w-full lg:w-1/2">
+        <div className="relative flex flex-col h-full">
           <div className="flex-none h-20 lg:h-24" />
-          <div className="flex-1 flex flex-col justify-center py-8">
-            <div className="w-10 h-[3px] rounded-full bg-vimet-gradient mb-8" />
+          <div className="flex-1 flex items-center py-8">
+            <div className="container-vimet">
+              <div className="w-full lg:w-1/2">
+                <div className="w-10 h-[3px] rounded-full bg-vimet-gradient mb-8" />
 
-            <h1 className="font-heading font-extrabold tracking-tight">
-              <span className="block text-white text-5xl sm:text-6xl xl:text-[4rem] leading-[1.04]">
-                Nutrición y<br />entrenamiento
-              </span>
-              <span className="block text-gradient text-3xl sm:text-[2.1rem] xl:text-[2.6rem] mt-2 pb-2 leading-snug">
-                para tu salud
-              </span>
-            </h1>
+                <h1 className="font-heading font-extrabold tracking-tight">
+                  <span className="block text-white text-5xl sm:text-6xl xl:text-[4rem] leading-[1.04]">
+                    Nutrición y<br />entrenamiento
+                  </span>
+                  <span className="block text-gradient text-3xl sm:text-[2.1rem] xl:text-[2.6rem] mt-2 pb-2 leading-snug">
+                    para tu salud
+                  </span>
+                </h1>
 
-            <p className="mt-5 text-white/75 text-[15px] max-w-[360px] leading-relaxed">
-              Especialistas en alteraciones metabólicas. Plan nutricional y
-              entrenamiento adaptado a cada persona.
-            </p>
+                <p className="mt-5 text-white/75 text-[15px] max-w-[360px] leading-relaxed">
+                  Especialistas en alteraciones metabólicas. Plan nutricional y
+                  entrenamiento adaptado a cada persona.
+                </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="/turnos/nuevo"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-lg hover:shadow-xl transition-all text-sm"
-              >
-                <CalendarPlus className="size-4" /> Reservar turno
-              </Link>
-              <Link
-                href="/metodologia"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/20 text-white/80 font-semibold hover:bg-white/10 transition-colors text-sm"
-              >
-                Cómo trabajamos <ArrowRight className="size-4" />
-              </Link>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Link
+                    href="/turnos/nuevo"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-lg hover:shadow-xl transition-all text-sm"
+                  >
+                    <CalendarPlus className="size-4" /> Reservar turno
+                  </Link>
+                  <Link
+                    href="/metodologia"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/20 text-white/80 font-semibold hover:bg-white/10 transition-colors text-sm"
+                  >
+                    Cómo trabajamos <ArrowRight className="size-4" />
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
