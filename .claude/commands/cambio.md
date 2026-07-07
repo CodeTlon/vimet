@@ -18,6 +18,7 @@ A partir de ahora, en CADA prompt de la sesión:
 - Implementás lo pedido leyendo solo los archivos necesarios.
 - `git add` + `git commit` granular y convencional (`fix:`/`feat:`/...), **sin `Co-Authored-By: Claude`**.
 - Si el cambio fue estructural (archivo/tabla/env nuevos), actualizás `.claude/CLAUDE.md` y `ARCHITECTURE.md` en el mismo commit.
+- Si el cambio tiene riesgo real de bug que los tests automáticos no van a atrapar (UI con criterio humano, timing/concurrencia, credenciales externas, auth), sumá su sección a `MANUAL-PRUEBAS.md` en el mismo commit.
 - **NO** `git push`, **NO** merge a main. Quedás en la rama esperando el próximo pedido.
 
 Regla: si ya estás parado en una rama de trabajo (cualquier prefijo `feat/`/`fix/`/`perf/`/..., no `main`), seguís en la misma sesión — no abras otra rama salvo que el usuario lo pida.
