@@ -15,6 +15,7 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { HeroVideo } from '@/components/hero-video'
 import { LazyMap } from '@/components/lazy-map'
 import { location, social, team } from '@/lib/config/team'
 
@@ -73,20 +74,9 @@ export default function HomePage() {
     <>
       <section className="relative h-dvh overflow-hidden">
         {/* Video de fondo — cubre todo el hero */}
-        <video
-          poster="/images/hero/training-video-poster.jpg"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          className="absolute inset-0 size-full object-cover"
-        >
-          <source media="(max-width: 767px)" src="/videos/hero-training-mobile.mp4" type="video/mp4" />
-          <source src="/videos/hero-training.mp4" type="video/mp4" />
-        </video>
+        <HeroVideo />
         {/* Scrim: sólido en mobile (el texto ocupa todo el ancho), a la izquierda en desktop */}
-        <div className="absolute inset-0 bg-black/90 lg:bg-gradient-to-r lg:from-black/90 lg:via-black/60 lg:to-transparent" />
+        <div className="absolute inset-0 bg-black/90 lg:bg-gradient-to-r lg:from-black/70 lg:via-black/40 lg:to-transparent" />
         {/* Contrastado superior (negro casi transparente) */}
         <div className="absolute inset-x-0 top-0 h-40 lg:h-48 bg-gradient-to-b from-black/70 lg:from-black/80 to-transparent" />
 
