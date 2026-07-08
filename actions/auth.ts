@@ -128,18 +128,71 @@ export async function recuperarContrasenaAction(
   }
 
   const supabase = createClient()
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-  // Pasamos por /auth/callback para que intercambie el `code` (PKCE) por sesión
-  // ANTES de llegar al form; si no, updateUser no tiene sesión y Supabase
-  // responde "link expirado". `next` lleva flow=recovery → la pantalla muestra
-  // "Cambiar contraseña" (cuenta existente) sin pedir nombre/apellido.
-  const next = encodeURIComponent('/auth/nueva-contrasena?flow=recovery')
-  await supabase.auth.resetPasswordForEmail(parsed.data, {
-    redirectTo: `${siteUrl}/auth/callback?next=${next}`,
-  })
+  // Código de 6 dígitos en vez de link clickeable: un link de un solo uso se
+  // puede quemar solo con que el cliente de mail lo pre-visite (link preview),
+  // dejándolo "vencido" antes de que el usuario lo toque. El código no tiene
+  // ese problema. Requiere que la plantilla de mail "Reset Password" en
+  // Supabase muestre {{ .Token }} en vez de {{ .ConfirmationURL }}.
+  await supabase.auth.resetPasswordForEmail(parsed.data)
 
   // Siempre devolvemos ok: no revelamos si el email existe o no.
-  return { ok: true }
+  return { ok: true, fields: { email: parsed.data } }
+}
+
+const codigoRecuperacionSchema = z
+  .object({
+    email: z.string().email(),
+    token: z.string().min(6, 'Código inválido').max(6, 'Código inválido'),
+    password: z.string().min(6, 'Mínimo 6 caracteres'),
+    confirm: z.string(),
+  })
+  .refine((d) => d.password === d.confirm, {
+    message: 'Las contraseñas no coinciden',
+    path: ['confirm'],
+  })
+
+export async function confirmarRecuperacionAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<AuthState> {
+  const email = String(formData.get('email') ?? '')
+  const parsed = codigoRecuperacionSchema.safeParse({
+    email,
+    token: formData.get('token'),
+    password: formData.get('password'),
+    confirm: formData.get('confirm'),
+  })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos', fields: { email } }
+  }
+
+  const supabase = createClient()
+  const { error: otpError } = await supabase.auth.verifyOtp({
+    email: parsed.data.email,
+    token: parsed.data.token,
+    type: 'recovery',
+  })
+  if (otpError) {
+    return { error: 'Código inválido o vencido.', fields: { email } }
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({ password: parsed.data.password })
+  if (updateError) {
+    return { error: 'No se pudo guardar la contraseña.', fields: { email } }
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('rol')
+    .eq('id', user?.id ?? '')
+    .maybeSingle()
+
+  revalidatePath('/', 'layout')
+  const isStaff = profile?.rol && ['nutricionista', 'entrenador', 'admin'].includes(profile.rol)
+  redirect(isStaff ? '/admin/dashboard' : '/mis-turnos')
 }
 
 export async function nuevaContrasenaAction(_prev: unknown, formData: FormData): Promise<AuthState> {
