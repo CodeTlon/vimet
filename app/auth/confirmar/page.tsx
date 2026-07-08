@@ -9,6 +9,21 @@ import type { EmailOtpType } from '@supabase/supabase-js'
 import { AuthShell } from '@/components/auth-shell'
 import { createClient } from '@/lib/supabase/client'
 
+// Signup: solo confirma el email, la cuenta sigue activo=false hasta que un
+// admin la active — no tiene sentido pedir contraseña de nuevo ni dejar
+// sesión abierta.
+async function resolveDestino(
+  supabase: ReturnType<typeof createClient>,
+  type: EmailOtpType | null,
+) {
+  if (type === 'signup') {
+    await supabase.auth.signOut()
+    return '/login?confirmado=1'
+  }
+  const flow = type === 'recovery' ? 'recovery' : 'invite'
+  return `/auth/nueva-contrasena?flow=${flow}`
+}
+
 function ConfirmarInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -20,23 +35,24 @@ function ConfirmarInner() {
     const type = searchParams.get('type') as EmailOtpType | null
 
     if (tokenHash && type) {
-      // PKCE OTP flow: Supabase envía ?token_hash=...&type=invite
-      supabase.auth.verifyOtp({ token_hash: tokenHash, type }).then(({ error }) => {
+      // PKCE OTP flow: Supabase envía ?token_hash=...&type=signup|invite
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type }).then(async ({ error }) => {
         if (error) {
           setError('El link es inválido o ya expiró.')
         } else {
-          const flow = type === 'recovery' ? 'recovery' : 'invite'
-          router.replace(`/auth/nueva-contrasena?flow=${flow}`)
+          router.replace(await resolveDestino(supabase, type))
         }
       })
       return
     }
 
-    // Implicit flow: Supabase redirige con #access_token=...&type=invite en el hash.
+    // Implicit flow: Supabase redirige con #access_token=...&type=... en el hash.
     // createBrowserClient procesa el hash automáticamente al inicializarse.
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        router.replace('/auth/nueva-contrasena')
+        resolveDestino(supabase, session.user.app_metadata?.type ?? null).then((dest) =>
+          router.replace(dest),
+        )
         return
       }
 
@@ -50,7 +66,7 @@ function ConfirmarInner() {
 
       const timeout = setTimeout(() => {
         subscription.unsubscribe()
-        setError('La invitación venció o ya fue usada.')
+        setError('El link venció o ya fue usado.')
       }, 6000)
 
       return () => {
@@ -64,7 +80,7 @@ function ConfirmarInner() {
     return (
       <AuthShell
         title="Link inválido"
-        description="Verificación de invitación"
+        description="Verificación de cuenta"
         footer={
           <Link href="/login" className="font-semibold text-vimet-orange hover:underline">
             Ir al inicio de sesión
@@ -80,7 +96,7 @@ function ConfirmarInner() {
 
   return (
     <AuthShell
-      title="Verificando invitación"
+      title="Verificando enlace"
       description="Un momento…"
       footer={<span className="text-gray-400">Esto solo tarda un segundo</span>}
     >
@@ -96,7 +112,7 @@ export default function ConfirmarPage() {
     <Suspense
       fallback={
         <AuthShell
-          title="Verificando invitación"
+          title="Verificando enlace"
           description="Un momento…"
           footer={<span className="text-gray-400">Esto solo tarda un segundo</span>}
         >
