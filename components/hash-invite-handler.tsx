@@ -27,7 +27,8 @@ export function HashInviteHandler() {
     createClient()
       .auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
       .then(({ data: { session } }) => {
-        if (session) router.replace(`/auth/nueva-contrasena?flow=${flow}`)
+        // Token vencido o ya usado: no dejar al usuario varado sin feedback.
+        router.replace(session ? `/auth/nueva-contrasena?flow=${flow}` : '/auth/recuperar?expired=1')
       })
   }, [router])
 

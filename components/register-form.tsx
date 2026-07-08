@@ -38,7 +38,7 @@ export function RegisterForm() {
       <div role="status" className="rounded-xl bg-vimet-orange/10 border border-vimet-orange/30 px-6 py-8 text-center space-y-2">
         <p className="font-semibold text-gray-900">¡Cuenta creada!</p>
         <p className="text-sm text-gray-700">
-          Tu solicitud fue recibida. El equipo VIMET va a activar tu cuenta y te avisará cuando esté lista para usar.
+          El equipo VIMET va a activar tu cuenta a la brevedad.
         </p>
       </div>
     )

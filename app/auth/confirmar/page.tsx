@@ -50,7 +50,7 @@ function ConfirmarInner() {
 
       const timeout = setTimeout(() => {
         subscription.unsubscribe()
-        setError('No se encontró una invitación válida. El link puede haber expirado.')
+        setError('La invitación venció o ya fue usada.')
       }, 6000)
 
       return () => {

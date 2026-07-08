@@ -13,7 +13,7 @@ export function AuthShell({
   title: string
   description: string
   children: ReactNode
-  footer: ReactNode
+  footer?: ReactNode
   backHref?: string
   backLabel?: string
 }) {
@@ -40,7 +40,7 @@ export function AuthShell({
           <div className="p-7">
             <h1 className="font-heading text-xl font-semibold text-gray-900 mb-4">{title}</h1>
             {children}
-            <div className="mt-6 text-center text-sm text-gray-700">{footer}</div>
+            {footer && <div className="mt-6 text-center text-sm text-gray-700">{footer}</div>}
           </div>
           </div>
         </div>

@@ -61,7 +61,7 @@ export async function loginAction(_prev: unknown, formData: FormData): Promise<A
 
   if (profile && !profile.activo) {
     await supabase.auth.signOut()
-    return { error: 'Tu cuenta está pendiente de activación. El equipo VIMET te avisará cuando esté lista.' }
+    return { error: 'Tu cuenta está pendiente de activación.' }
   }
 
   const isStaff = profile?.rol && ['nutricionista', 'entrenador', 'admin'].includes(profile.rol)

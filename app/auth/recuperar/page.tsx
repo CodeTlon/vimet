@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { recuperarContrasenaAction } from '@/actions/auth'
@@ -19,8 +21,9 @@ function SubmitButton() {
   )
 }
 
-export default function RecuperarPage() {
+function RecuperarInner() {
   const [state, formAction] = useFormState(recuperarContrasenaAction, {})
+  const expired = useSearchParams().get('expired') === '1'
 
   return (
     <AuthShell
@@ -42,11 +45,18 @@ export default function RecuperarPage() {
           role="status"
           className="rounded-lg bg-vimet-orange/10 border border-vimet-orange/20 px-4 py-3 text-sm text-gray-800"
         >
-          Si existe una cuenta con ese email, te enviamos un link para restablecer la contraseña.
-          Revisá tu casilla (y la carpeta de spam).
+          Si existe una cuenta con ese email, te enviamos un link. Revisá tu casilla (y spam).
         </div>
       ) : (
         <form action={formAction} className="space-y-4">
+          {expired && (
+            <div
+              role="alert"
+              className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red"
+            >
+              Ese link venció. Pedí uno nuevo abajo.
+            </div>
+          )}
           {state.error && (
             <div
               role="alert"
@@ -69,5 +79,13 @@ export default function RecuperarPage() {
         </form>
       )}
     </AuthShell>
+  )
+}
+
+export default function RecuperarPage() {
+  return (
+    <Suspense fallback={null}>
+      <RecuperarInner />
+    </Suspense>
   )
 }
