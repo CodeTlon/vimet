@@ -44,10 +44,10 @@ function CodigoForm({ email }: { email: string }) {
           type="text"
           name="token"
           required
-          minLength={6}
-          maxLength={6}
+          minLength={8}
+          maxLength={8}
           inputMode="numeric"
-          placeholder="123456"
+          placeholder="12345678"
           className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
         />
       </div>

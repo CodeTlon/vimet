@@ -130,12 +130,13 @@ export async function recuperarContrasenaAction(
   }
 
   const supabase = createClient()
-  // Código de 6 dígitos en vez de link clickeable: un link de un solo uso se
+  // Código de 8 dígitos en vez de link clickeable: un link de un solo uso se
   // puede quemar solo con que el cliente de mail lo pre-visite (link preview),
   // dejándolo "vencido" antes de que el usuario lo toque. El código no tiene
   // ese problema. Requiere que la plantilla de mail "Reset Password" en
   // Supabase muestre {{ .Token }} en vez de {{ .ConfirmationURL }}.
-  await supabase.auth.resetPasswordForEmail(parsed.data)
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data)
+  if (error) console.error('resetPasswordForEmail:', error.message)
 
   // Siempre devolvemos ok: no revelamos si el email existe o no.
   return { ok: true, fields: { email: parsed.data } }
@@ -144,7 +145,7 @@ export async function recuperarContrasenaAction(
 const codigoRecuperacionSchema = z
   .object({
     email: z.string().email(),
-    token: z.string().min(6, 'Código inválido').max(6, 'Código inválido'),
+    token: z.string().min(8, 'Código inválido').max(8, 'Código inválido'),
     password: z.string().min(6, 'Mínimo 6 caracteres'),
     confirm: z.string(),
   })
