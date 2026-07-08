@@ -176,12 +176,16 @@ export async function confirmarRecuperacionAction(
     type: 'recovery',
   })
   if (otpError) {
+    console.error('verifyOtp:', otpError.message)
     return { error: 'Código inválido o vencido.', fields: { email } }
   }
 
   const { error: updateError } = await supabase.auth.updateUser({ password: parsed.data.password })
   if (updateError) {
-    return { error: 'No se pudo guardar la contraseña.', fields: { email } }
+    // verifyOtp ya autenticó la sesión; si falla el guardado no la dejamos
+    // colgada (usuario "logueado" sin haber puesto contraseña nueva).
+    await supabase.auth.signOut({ scope: 'local' })
+    return { error: `No se pudo guardar la contraseña: ${updateError.message}`, fields: { email } }
   }
 
   const {
