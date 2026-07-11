@@ -1,7 +1,7 @@
 import { ClipboardList, FileWarning } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/server'
-import { formatearFechaCorta } from '@/lib/seguimiento'
+import { formatearFechaCorta, SEXO_LABEL, ACTIVIDAD_DIARIA_LABEL } from '@/lib/seguimiento'
 
 export const metadata = { title: 'Mi ficha' }
 export const dynamic = 'force-dynamic'
@@ -43,7 +43,7 @@ export default async function MiFichaPage() {
       ) : (
         <div className="space-y-5">
           <Section title="Datos personales" icon={ClipboardList}>
-            <Row label="Sexo" value={ficha.sexo} />
+            <Row label="Sexo" value={ficha.sexo ? SEXO_LABEL[ficha.sexo] ?? ficha.sexo : null} />
             <Row label="Fecha de nacimiento" value={formatearFechaCorta(ficha.fecha_nacimiento)} />
             <Row label="Ocupación" value={ficha.ocupacion} />
             <Row
@@ -57,7 +57,14 @@ export default async function MiFichaPage() {
             <Row label="Bebe alcohol" value={bool(ficha.bebe)} />
             <Row label="Otras drogas" value={bool(ficha.drogas)} />
             <Row label="Entrena actualmente" value={bool(ficha.entrena)} />
-            <Row label="Actividad diaria" value={ficha.actividad_diaria} />
+            <Row
+              label="Actividad diaria"
+              value={
+                ficha.actividad_diaria
+                  ? ACTIVIDAD_DIARIA_LABEL[ficha.actividad_diaria] ?? ficha.actividad_diaria
+                  : null
+              }
+            />
             <Row
               label="Horas de sueño"
               value={ficha.horas_sueno != null ? `${ficha.horas_sueno} hs` : null}

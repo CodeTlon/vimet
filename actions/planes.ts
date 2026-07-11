@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export type PlanState = { ok?: boolean; error?: string; planId?: number }
 
-const baseSchema = z.object({
+const planObjectSchema = z.object({
   paciente_id: z.string().uuid(),
   tipo: z.enum(['nutricion', 'entrenamiento', 'combo']),
   titulo: z.string().min(1, 'Indicá un título').max(200),
@@ -34,6 +34,15 @@ const baseSchema = z.object({
   disponibilidad_sabado: z.string().max(200).optional().or(z.literal('')),
   notas: z.string().max(4000).optional().or(z.literal('')),
 })
+
+const vigenciaRefine = (d: { fecha_desde: string; fecha_hasta?: string }) =>
+  !d.fecha_hasta || d.fecha_hasta >= d.fecha_desde
+const vigenciaRefineOpts = {
+  message: 'La vigencia hasta no puede ser anterior a la vigencia desde',
+  path: ['fecha_hasta'] as string[],
+}
+
+const baseSchema = planObjectSchema.refine(vigenciaRefine, vigenciaRefineOpts)
 
 const toStr = (v: string | undefined) => (v && v.trim() !== '' ? v.trim() : null)
 
@@ -129,9 +138,9 @@ export async function crearPlanAction(
   return { ok: true, planId: created.id }
 }
 
-const updateSchema = baseSchema.extend({
-  id: z.string().regex(/^\d+$/),
-})
+const updateSchema = planObjectSchema
+  .extend({ id: z.string().regex(/^\d+$/) })
+  .refine(vigenciaRefine, vigenciaRefineOpts)
 
 export async function actualizarPlanAction(
   _prev: unknown,

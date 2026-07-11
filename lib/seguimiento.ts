@@ -54,14 +54,26 @@ export const ESTADO_PLAN_LABEL: Record<string, string> = {
 
 export const ESTADO_PLAN_BADGE: Record<string, string> = {
   vigente: 'bg-green-100 text-green-800',
-  archivado: 'bg-gray-100 text-gray-700',
-  borrador: 'bg-yellow-100 text-yellow-800',
+  archivado: 'bg-vimet-tint1 text-vimet-tint5',
+  borrador: 'bg-vimet-tint2 text-vimet-tint6',
 }
 
 export const TIPO_PLAN_LABEL: Record<string, string> = {
   nutricion: 'Nutrición',
   entrenamiento: 'Entrenamiento',
   combo: 'Combo',
+}
+
+export const SEXO_LABEL: Record<string, string> = {
+  femenino: 'Femenino',
+  masculino: 'Masculino',
+  otro: 'Otro',
+}
+
+export const ACTIVIDAD_DIARIA_LABEL: Record<string, string> = {
+  poca: 'Poca',
+  normal: 'Normal',
+  mucha: 'Mucha',
 }
 
 // Lunes de la semana calendario de Argentina — formato YYYY-MM-DD

@@ -4,8 +4,11 @@ import { Save } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { guardarFichaAction, type FichaState } from '@/actions/ficha'
+import { useRemountKeyOnSuccess } from '@/components/seguimiento/use-reset-on-success'
+import { hoyArgentina } from '@/lib/datetime'
 
 const initial: FichaState = {}
+const hoy = hoyArgentina()
 
 type Ficha = {
   paciente_id: string
@@ -61,10 +64,11 @@ export function FichaForm({
   ficha: Ficha | null
 }) {
   const [state, action] = useFormState(guardarFichaAction, initial)
+  const remountKey = useRemountKeyOnSuccess(state)
   const f = ficha
 
   return (
-    <form action={action} className="space-y-8">
+    <form key={remountKey} action={action} className="space-y-8">
       <input type="hidden" name="paciente_id" value={pacienteId} />
 
       {state.error ? (
@@ -84,6 +88,7 @@ export function FichaForm({
             type="date"
             name="fecha_nacimiento"
             defaultValue={f?.fecha_nacimiento ?? ''}
+            max={hoy}
             className={inputBase}
           />
         </Field>
@@ -103,6 +108,7 @@ export function FichaForm({
             type="date"
             name="fecha_primera_consulta"
             defaultValue={f?.fecha_primera_consulta ?? ''}
+            max={hoy}
             className={inputBase}
           />
         </Field>

@@ -4,15 +4,26 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 import { createClient } from '@/lib/supabase/server'
+import { hoyArgentina } from '@/lib/datetime'
 
 export type FichaState = { ok?: boolean; error?: string }
 
+const fechaNoFutura = (v: string) => v === '' || v <= hoyArgentina()
+
 const fichaSchema = z.object({
   paciente_id: z.string().uuid(),
-  fecha_nacimiento: z.string().optional().or(z.literal('')),
+  fecha_nacimiento: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine((v) => fechaNoFutura(v ?? ''), 'La fecha de nacimiento no puede ser futura'),
   sexo: z.enum(['femenino', 'masculino', 'otro']).optional().or(z.literal('')),
   ocupacion: z.string().max(200).optional().or(z.literal('')),
-  fecha_primera_consulta: z.string().optional().or(z.literal('')),
+  fecha_primera_consulta: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine((v) => fechaNoFutura(v ?? ''), 'La fecha de primera consulta no puede ser futura'),
   fuma: z.enum(['true', 'false', '']).optional(),
   bebe: z.enum(['true', 'false', '']).optional(),
   drogas: z.enum(['true', 'false', '']).optional(),

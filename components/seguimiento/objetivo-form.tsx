@@ -6,8 +6,10 @@ import { useFormState, useFormStatus } from 'react-dom'
 import { crearObjetivoAction, type ObjetivoState } from '@/actions/objetivos'
 import { useResetOnSuccess } from '@/components/seguimiento/use-reset-on-success'
 import { CATEGORIA_OBJETIVO_LABEL } from '@/lib/seguimiento'
+import { hoyArgentina } from '@/lib/datetime'
 
 const initial: ObjetivoState = {}
+const hoy = hoyArgentina()
 const inputBase =
   'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
 
@@ -70,7 +72,7 @@ export function ObjetivoForm({ pacienteId }: { pacienteId: string }) {
         </label>
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Fecha objetivo</span>
-          <input type="date" name="fecha_objetivo" className={inputBase} />
+          <input type="date" name="fecha_objetivo" min={hoy} className={inputBase} />
         </label>
       </div>
 

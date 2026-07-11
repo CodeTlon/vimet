@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 import { createClient } from '@/lib/supabase/server'
+import { hoyArgentina } from '@/lib/datetime'
 
 export type ObjetivoState = { ok?: boolean; error?: string }
 
@@ -12,7 +13,11 @@ const schema = z.object({
   categoria: z.enum(['nutricional', 'antropometrico', 'clinico', 'entrenamiento', 'rendimiento']),
   descripcion: z.string().min(1, 'Escribí el objetivo').max(500),
   estado: z.enum(['pendiente', 'en_progreso', 'cumplido', 'descartado']).default('pendiente'),
-  fecha_objetivo: z.string().optional().or(z.literal('')),
+  fecha_objetivo: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine((v) => !v || v >= hoyArgentina(), 'La fecha objetivo no puede ser pasada'),
 })
 
 async function getStaff() {

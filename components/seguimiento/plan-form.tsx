@@ -1,6 +1,7 @@
 'use client'
 
 import { Save } from 'lucide-react'
+import { useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import {
@@ -8,6 +9,7 @@ import {
   crearPlanAction,
   type PlanState,
 } from '@/actions/planes'
+import { useRemountKeyOnSuccess } from '@/components/seguimiento/use-reset-on-success'
 import { hoyArgentina } from '@/lib/datetime'
 
 const initial: PlanState = {}
@@ -69,9 +71,11 @@ export function PlanForm({
     initial,
   )
   const p = plan
+  const remountKey = useRemountKeyOnSuccess(state)
+  const [fechaDesde, setFechaDesde] = useState(p?.fecha_desde ?? hoyArgentina())
 
   return (
-    <form action={action} className="space-y-6" encType="multipart/form-data">
+    <form key={remountKey} action={action} className="space-y-6" encType="multipart/form-data">
       <input type="hidden" name="paciente_id" value={pacienteId} />
       {editing ? <input type="hidden" name="id" value={p!.id} /> : null}
 
@@ -114,7 +118,8 @@ export function PlanForm({
           <input
             type="date"
             name="fecha_desde"
-            defaultValue={p?.fecha_desde ?? hoyArgentina()}
+            defaultValue={fechaDesde}
+            onChange={(e) => setFechaDesde(e.target.value)}
             required
             className={inputBase}
           />
@@ -124,6 +129,7 @@ export function PlanForm({
             type="date"
             name="fecha_hasta"
             defaultValue={p?.fecha_hasta ?? ''}
+            min={fechaDesde}
             className={inputBase}
           />
         </Field>
