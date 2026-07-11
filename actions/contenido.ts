@@ -38,6 +38,18 @@ function extractRows(formData: FormData, prefix: string, count: number, fields: 
   })
 }
 
+// Variante sin tope fijo: el cliente renumera sus filas 1..N al agregar/quitar,
+// así que alcanza con detectar el índice más alto presente en el FormData.
+function extractDynamicRows(formData: FormData, prefix: string, fields: string[]) {
+  const re = new RegExp(`^${prefix}_(\\d+)_`)
+  let max = 0
+  for (const key of formData.keys()) {
+    const m = key.match(re)
+    if (m) max = Math.max(max, Number(m[1]))
+  }
+  return extractRows(formData, prefix, max, fields)
+}
+
 // ─────────────────────────────────────────────────────────
 // Ubicación y contacto
 // ─────────────────────────────────────────────────────────
@@ -84,9 +96,9 @@ export async function actualizarMetodologiaAction(
   const ctx = await requireAdmin()
   if ('error' in ctx) return { error: ctx.error }
 
-  const pasos = extractRows(formData, 'paso', 8, ['titulo', 'desc', 'icon'])
-  const pilares = extractRows(formData, 'pilar', 4, ['titulo', 'desc', 'icon'])
-  const dirigidoA = extractRows(formData, 'dirigido', 4, ['text', 'icon'])
+  const pasos = extractDynamicRows(formData, 'paso', ['titulo', 'desc', 'icon'])
+  const pilares = extractDynamicRows(formData, 'pilar', ['titulo', 'desc', 'icon'])
+  const dirigidoA = extractDynamicRows(formData, 'dirigido', ['text', 'icon'])
 
   if (pasos.some((p) => !p.titulo || !p.desc) || pilares.some((p) => !p.titulo || !p.desc) || dirigidoA.some((d) => !d.text)) {
     return { error: 'Completá todos los campos.' }
