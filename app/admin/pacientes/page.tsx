@@ -52,7 +52,81 @@ export default async function PacientesPage() {
             Todavía no hay pacientes registrados.
           </p>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <ul className="sm:hidden divide-y divide-gray-100">
+            {pacientes.map((p) => (
+              <li key={p.id} className={`p-4 space-y-2 ${p.activo ? '' : 'bg-amber-50/60'}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 font-semibold text-gray-900">
+                    {p.activo ? (
+                      <Link href={`/admin/pacientes/${p.id}`} className="hover:text-vimet-orange">
+                        {p.nombre} {p.apellido}
+                      </Link>
+                    ) : (
+                      <span>{p.nombre} {p.apellido}</span>
+                    )}
+                  </div>
+                  {!p.activo && (
+                    <span className="text-xs font-medium text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
+                      Pendiente
+                    </span>
+                  )}
+                </div>
+                {p.email ? (
+                  <a href={`mailto:${p.email}`} className="flex items-center gap-1.5 text-sm text-gray-700 hover:text-vimet-orange">
+                    <Mail className="size-3.5 shrink-0" /> {p.email}
+                  </a>
+                ) : null}
+                {p.telefono ? (
+                  <a
+                    href={`https://wa.me/54${p.telefono.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-sm text-vimet-orange hover:underline font-semibold"
+                  >
+                    <Phone className="size-3.5 shrink-0" /> {p.telefono}
+                  </a>
+                ) : null}
+                <p className="text-xs text-gray-500">
+                  Registrado el {new Date(p.created_at).toLocaleDateString('es-AR')}
+                </p>
+                <div className="flex items-center gap-3 pt-1">
+                  {!p.activo ? (
+                    <form action={toggleActivoAction}>
+                      <input type="hidden" name="id" value={p.id} />
+                      <input type="hidden" name="activo" value="true" />
+                      <button
+                        type="submit"
+                        className="text-xs font-semibold text-white bg-vimet-orange hover:bg-vimet-red px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        Activar
+                      </button>
+                    </form>
+                  ) : (
+                    <>
+                      <Link
+                        href={`/admin/pacientes/${p.id}`}
+                        className="inline-flex items-center gap-1 text-vimet-orange font-semibold text-sm hover:underline"
+                      >
+                        Abrir <ArrowRight className="size-3.5" />
+                      </Link>
+                      <form action={toggleActivoAction}>
+                        <input type="hidden" name="id" value={p.id} />
+                        <input type="hidden" name="activo" value="false" />
+                        <button
+                          type="submit"
+                          className="text-xs font-medium text-gray-500 hover:text-red-600 transition-colors"
+                        >
+                          Desactivar
+                        </button>
+                      </form>
+                    </>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr className="text-left text-gray-700">
@@ -148,6 +222,7 @@ export default async function PacientesPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
     </div>
