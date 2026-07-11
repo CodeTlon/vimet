@@ -9,7 +9,7 @@ Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio 
 - Público: home, nosotros, metodologia, servicios, faq, contacto, login, registro, legales
 - `app/(paciente)/` — área paciente (turnos, ficha, progreso, planes, feedback, objetivos, recursos)
 - `app/admin/` — dashboard, calendario, turnos, pacientes (ficha/antropometría/eval/planes/feedback/evolución/objetivos/recursos)
-- `app/turnos/nuevo/` — wizard de reserva (fuera del grupo paciente, sin subnav)
+- `app/(public)/turnos/nuevo/` — wizard de reserva (dentro del grupo público, fuera del grupo paciente — sin subnav; hereda `(public)/loading.tsx`)
 - `app/api/slots/` — Route Handler GET de disponibilidad (lo consume el wizard)
 
 ## Para cambios comunes, leé solo esto
@@ -39,3 +39,6 @@ Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio 
 - Server Components por defecto; interactivos `'use client'` con `useFormState` de `react-dom`.
 - El wizard de reserva hace fetch a `/api/slots` (Route Handler GET), no Server Action.
 - Subnav del paciente vive en `app/(paciente)/layout.tsx`.
+- Headers de seguridad (`X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS) van centralizados en `next.config.mjs` → `headers()`, no por ruta.
+- Redirects post-auth con `next`/`token` en query: siempre pasar por un allowlist de paths relativos (ver `safeNextPath` en `app/auth/callback/route.ts`) — nunca `new URL(paramCrudo, origin)`.
+- `error.tsx` (dentro del layout) vs `global-error.tsx` (reemplaza el layout raíz, trae su propio `<html>/<body>`) — ambos con fallback de marca VIMET.
