@@ -4,6 +4,7 @@ import { CheckCheck } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { responderFeedbackAction, type FeedbackState } from '@/actions/feedback'
+import { useRemountKeyOnSuccess } from '@/components/seguimiento/use-reset-on-success'
 
 const initial: FeedbackState = {}
 const inputBase =
@@ -33,8 +34,9 @@ export function ResponderFeedbackForm({
   respuestaActual: string | null
 }) {
   const [state, action] = useFormState(responderFeedbackAction, initial)
+  const remountKey = useRemountKeyOnSuccess(state)
   return (
-    <form action={action} className="space-y-2">
+    <form key={remountKey} action={action} className="space-y-2">
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="paciente_id" value={pacienteId} />
 

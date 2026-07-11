@@ -4,6 +4,7 @@ import { Paperclip, Send } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { enviarFeedbackAction, type FeedbackState } from '@/actions/feedback'
+import { useRemountKeyOnSuccess } from '@/components/seguimiento/use-reset-on-success'
 import { lunesDeSemana } from '@/lib/seguimiento'
 
 const initial: FeedbackState = {}
@@ -44,10 +45,12 @@ export function FeedbackForm({
   adjuntoUrl: string | null
 }) {
   const [state, action] = useFormState(enviarFeedbackAction, initial)
+  const remountKey = useRemountKeyOnSuccess(state)
   const semana = existente?.semana_inicio ?? lunesDeSemana()
 
   return (
     <form
+      key={remountKey}
       action={action}
       encType="multipart/form-data"
       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6"

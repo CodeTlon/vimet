@@ -90,27 +90,43 @@ export default async function MisRecursosPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-10">
-          {CATEGORIAS.map((cat) => {
-            const items = recursosConUrl.filter((r) => r.categoria === cat.key)
-            if (items.length === 0) return null
-            const CatIcon = cat.icon
-            return (
-              <section key={cat.key}>
-                <div className="flex items-center gap-2 mb-4">
-                  <CatIcon className="size-5 text-vimet-orange" />
-                  <h2 className="font-heading text-xl font-semibold text-gray-900">{cat.label}</h2>
-                  <span className="text-xs text-gray-400 font-normal">({items.length})</span>
-                </div>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {items.map((r) => (
-                    <RecursoCard key={r.id} r={r} />
-                  ))}
-                </ul>
-              </section>
-            )
-          })}
-        </div>
+        <>
+          <div className="flex flex-wrap gap-2 mb-8">
+            {CATEGORIAS.filter((cat) =>
+              recursosConUrl.some((r) => r.categoria === cat.key),
+            ).map((cat) => (
+              <a
+                key={cat.key}
+                href={`#cat-${cat.key}`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-vimet-tint4 text-vimet-tint5 text-sm font-medium hover:bg-vimet-tint1 transition-colors"
+              >
+                <cat.icon className="size-3.5" />
+                {cat.label}
+              </a>
+            ))}
+          </div>
+          <div className="space-y-10">
+            {CATEGORIAS.map((cat) => {
+              const items = recursosConUrl.filter((r) => r.categoria === cat.key)
+              if (items.length === 0) return null
+              const CatIcon = cat.icon
+              return (
+                <section key={cat.key} id={`cat-${cat.key}`} className="scroll-mt-24">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CatIcon className="size-5 text-vimet-orange" />
+                    <h2 className="font-heading text-xl font-semibold text-gray-900">{cat.label}</h2>
+                    <span className="text-xs text-gray-400 font-normal">({items.length})</span>
+                  </div>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {items.map((r) => (
+                      <RecursoCard key={r.id} r={r} />
+                    ))}
+                  </ul>
+                </section>
+              )
+            })}
+          </div>
+        </>
       )}
     </>
   )
