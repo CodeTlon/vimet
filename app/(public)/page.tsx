@@ -65,7 +65,7 @@ const serviciosDestacados = [
     descripcion:
       'Nuestro abordaje más completo. Combinamos nutrición y entrenamiento trabajando en equipo para vos.',
     tipo: 'Plan Integral',
-    color: 'from-gray-900/10 to-gray-900/5 text-gray-900',
+    color: 'from-vimet-tint5/15 to-vimet-tint5/5 text-vimet-tint5',
   },
 ] as const
 

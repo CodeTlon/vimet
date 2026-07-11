@@ -90,7 +90,7 @@ export default async function MisPlanesPage() {
               <div className="mt-4 flex flex-wrap gap-2 items-center">
                 <Link
                   href={`/mis-planes/${p.id}`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 text-gray-800 text-sm font-semibold hover:bg-gray-50"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-vimet-tint4 text-vimet-tint5 text-sm font-semibold hover:bg-vimet-tint1"
                 >
                   Ver detalles <ArrowRight className="size-3.5" />
                 </Link>
