@@ -149,11 +149,11 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/50">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1">
-            <span>© {new Date().getFullYear()} VIMET — Vida y Metabolismo</span>
-            <Link href="/privacidad" className="hover:text-white/80 transition-colors">
+            <span>© {new Date().getFullYear()} VIMET — Vida y Metabolismo. Todos los derechos reservados.</span>
+            <Link href="/privacidad" className="hover:text-white transition-colors">
               Política de privacidad
             </Link>
-            <Link href="/terminos" className="hover:text-white/80 transition-colors">
+            <Link href="/terminos" className="hover:text-white transition-colors">
               Términos y condiciones
             </Link>
           </div>
@@ -161,9 +161,9 @@ export function Footer() {
             href="https://codetlon.com.ar"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 hover:text-white/80 transition-colors"
+            className="inline-flex items-center gap-1.5 text-white/50 transition-all duration-300 hover:text-vimet-orange hover:[text-shadow:0_0_14px_rgba(232,97,26,0.65)]"
           >
-            Desarrollado por <span className="font-semibold text-white/50">CodeTlon</span>
+            Desarrollado por <span className="font-semibold">CodeTlon</span>
           </Link>
         </div>
       </div>

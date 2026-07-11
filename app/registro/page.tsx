@@ -15,7 +15,7 @@ export default function RegistroPage() {
       footer={
         <>
           ¿Ya tenés cuenta?{' '}
-          <Link href="/login" className="font-semibold text-vimet-orange hover:underline">
+          <Link href="/login" className="font-semibold text-vimet-orange hover:text-vimet-red transition-colors">
             Iniciar sesión
           </Link>
         </>

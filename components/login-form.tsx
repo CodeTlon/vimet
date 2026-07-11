@@ -59,11 +59,11 @@ export function LoginForm() {
         />
       </div>
       <SubmitButton />
-      <div className="flex items-center justify-between text-sm">
-        <Link href="/auth/recuperar" className="font-semibold text-vimet-orange hover:underline">
+      <div className="flex items-center justify-between text-sm border-t border-gray-100 mt-2 pt-3">
+        <Link href="/auth/recuperar" className="text-gray-500 hover:text-vimet-orange transition-colors">
           ¿Olvidaste tu contraseña?
         </Link>
-        <Link href="/registro" className="font-semibold text-vimet-orange hover:underline">
+        <Link href="/registro" className="text-gray-500 hover:text-vimet-orange transition-colors">
           Crear cuenta
         </Link>
       </div>
