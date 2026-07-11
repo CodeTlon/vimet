@@ -41,7 +41,15 @@ export function Navbar() {
   const isHome = pathname === '/'
 
   const [open, setOpen] = useState(false)
-  const [heroDarkness, setHeroDarkness] = useState(0)
+  // Lazy init: lee el scroll real del browser al montar (hidratación) en vez
+  // de arrancar siempre en 0 y corregir recién en un useEffect post-paint —
+  // eso es lo que causaba el parpadeo transparente/blanco al recargar con
+  // scroll restaurado por el navegador.
+  const [heroDarkness, setHeroDarkness] = useState(() => {
+    if (typeof window === 'undefined') return 0
+    const threshold = window.innerHeight * 0.3
+    return Math.min(window.scrollY / threshold, 1)
+  })
   const [user, setUser] = useState<{ id: string; rol: string } | null>(null)
 
   useEffect(() => {
@@ -49,7 +57,6 @@ export function Navbar() {
       const threshold = window.innerHeight * 0.3
       setHeroDarkness(Math.min(window.scrollY / threshold, 1))
     }
-    onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
