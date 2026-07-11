@@ -16,7 +16,7 @@ function toHHMM(total: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
-function diaSemana(fechaISO: string): number {
+export function diaSemana(fechaISO: string): number {
   // Postgres: 0=domingo. Date.getUTCDay() también devuelve 0=domingo.
   return new Date(`${fechaISO}T00:00:00Z`).getUTCDay()
 }

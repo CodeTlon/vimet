@@ -1,8 +1,14 @@
 'use server'
 
+import { Resend } from 'resend'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import TurnoCanceladoEmail from '@/emails/turno-cancelado'
+import { brand } from '@/lib/config/team'
+import { diaSemana } from '@/lib/booking/slots'
+import { formatearFechaCorta } from '@/lib/seguimiento'
+import { hoyArgentina } from '@/lib/datetime'
 import { requireStaff } from '@/lib/supabase/auth-helpers'
 import { createClient } from '@/lib/supabase/server'
 
@@ -35,6 +41,21 @@ export async function agregarHorarioAction(
   }
 
   const supabase = createClient()
+
+  const { data: existentes } = await supabase
+    .from('horarios_disponibles')
+    .select('hora_inicio, hora_fin')
+    .eq('profesional_id', user.id)
+    .eq('dia_semana', parsed.data.dia_semana)
+    .eq('activo', true)
+
+  const seSolapa = (existentes ?? []).some(
+    (h) => parsed.data.hora_inicio < h.hora_fin.slice(0, 5) && parsed.data.hora_fin > h.hora_inicio.slice(0, 5),
+  )
+  if (seSolapa) {
+    return { error: 'Esa franja se superpone con otra que ya tenés cargada ese día.' }
+  }
+
   const { error } = await supabase.from('horarios_disponibles').insert({
     profesional_id: user.id,
     dia_semana: parsed.data.dia_semana,
@@ -56,6 +77,14 @@ export async function eliminarHorarioAction(formData: FormData): Promise<void> {
   if (!id) return
 
   const supabase = createClient()
+
+  const { data: horario } = await supabase
+    .from('horarios_disponibles')
+    .select('dia_semana, hora_inicio, hora_fin')
+    .eq('id', id)
+    .eq('profesional_id', user.id)
+    .maybeSingle()
+
   // El filtro por profesional_id asegura que solo borre franjas propias.
   await supabase
     .from('horarios_disponibles')
@@ -63,5 +92,81 @@ export async function eliminarHorarioAction(formData: FormData): Promise<void> {
     .eq('id', id)
     .eq('profesional_id', user.id)
 
+  if (horario) {
+    await cancelarTurnosSinHorario(supabase, user.id, horario)
+  }
+
   revalidatePath('/admin/horarios')
+  revalidatePath('/admin/calendario')
+  revalidatePath('/admin/dashboard')
+  revalidatePath('/mis-turnos')
+}
+
+// Cancela los turnos futuros que quedaron sin cobertura horaria tras borrar
+// una franja, y avisa por email a cada paciente afectado. Best-effort: si un
+// email falla no revierte la cancelación (el turno ya no tiene horario real).
+async function cancelarTurnosSinHorario(
+  supabase: ReturnType<typeof createClient>,
+  profesionalId: string,
+  horario: { dia_semana: number; hora_inicio: string; hora_fin: string },
+) {
+  const { data: turnos } = await supabase
+    .from('turnos')
+    .select('id, paciente_id, fecha, hora_inicio, hora_fin, servicios(nombre)')
+    .eq('profesional_id', profesionalId)
+    .in('estado', ['pendiente', 'confirmado'])
+    .gte('fecha', hoyArgentina())
+
+  const hIni = horario.hora_inicio.slice(0, 5)
+  const hFin = horario.hora_fin.slice(0, 5)
+
+  const afectados = (turnos ?? []).filter(
+    (t) =>
+      diaSemana(t.fecha) === horario.dia_semana &&
+      t.hora_inicio.slice(0, 5) < hFin &&
+      t.hora_fin.slice(0, 5) > hIni,
+  )
+  if (afectados.length === 0) return
+
+  await supabase
+    .from('turnos')
+    .update({ estado: 'cancelado' })
+    .in('id', afectados.map((t) => t.id))
+
+  const pacienteIds = [...new Set(afectados.map((t) => t.paciente_id))]
+  const { data: pacientes } = await supabase
+    .from('profiles')
+    .select('id, nombre, apellido, email')
+    .in('id', pacienteIds)
+  const pacientesById = new Map((pacientes ?? []).map((p) => [p.id, p]))
+
+  const apiKey = process.env.RESEND_API_KEY
+  const from = process.env.RESEND_FROM_EMAIL
+  if (!apiKey || !from) return
+
+  const resend = new Resend(apiKey)
+  await Promise.all(
+    afectados.map(async (t) => {
+      const paciente = pacientesById.get(t.paciente_id)
+      if (!paciente?.email) return
+      const servicioRow = Array.isArray(t.servicios) ? t.servicios[0] : t.servicios
+      const servicio = (servicioRow as { nombre: string } | undefined)?.nombre ?? 'tu turno'
+      try {
+        await resend.emails.send({
+          from: `${brand.name} <${from}>`,
+          to: [paciente.email],
+          subject: 'Tu turno fue cancelado — cambio en la agenda',
+          react: TurnoCanceladoEmail({
+            nombre: `${paciente.nombre} ${paciente.apellido}`.trim(),
+            fecha: formatearFechaCorta(t.fecha),
+            horaInicio: t.hora_inicio.slice(0, 5),
+            horaFin: t.hora_fin.slice(0, 5),
+            servicioNombre: servicio,
+          }),
+        })
+      } catch {
+        // best-effort: el turno ya quedó cancelado, no revertimos por un fallo de email
+      }
+    }),
+  )
 }
