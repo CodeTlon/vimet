@@ -86,16 +86,6 @@ export function FeedbackForm() {
         />
       </label>
 
-      <label className="block text-sm">
-        <span className="block font-medium text-gray-800 mb-1">Dudas / preguntas para tu equipo</span>
-        <textarea
-          name="dudas"
-          rows={3}
-          placeholder="¿Alguna duda o pregunta para Avril o Gero?"
-          className={inputBase}
-        />
-      </label>
-
       {/* Adjunto */}
       <div className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Foto o adjunto (opcional)</span>

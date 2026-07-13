@@ -21,16 +21,18 @@ Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio 
 | Crear / cancelar / actualizar turno | `actions/turnos.ts` |
 | Auth (login/registro/logout) + gating | `actions/auth.ts` + `lib/supabase/auth-helpers.ts` + `middleware.ts` |
 | Módulo seguimiento (ficha, mediciones, eval, planes, feedback, evolución, objetivos, recursos) | `actions/<modulo>.ts` + `components/seguimiento/<form>.tsx` + página admin correspondiente |
+| Chat de feedback semanal (mensajes ida y vuelta, se cierra el lunes siguiente) | `actions/feedback.ts` (`enviarMensajeFeedbackAction`/`editarMensajeFeedbackAction`) + `components/seguimiento/feedback-chat.tsx` + tabla `feedback_mensajes` |
 | Planes PDF (subida / signed URL) | `actions/planes.ts` (borra PDF previo al reemplazar) + bucket `planes` |
 | Recursos multimedia del paciente | `actions/recursos.ts` + bucket `recursos` |
+| Imágenes subidas por usuarios (foto perfil, recursos, adjuntos) | `lib/storage/optimize-image.ts` (resize + webp vía `sharp`) antes de subir |
 | Formulario de contacto | `components/contacto-form.tsx` + `actions/contacto.ts` (Resend, sin DB) |
 | Catálogo de servicios / equipo (estático) | `lib/config/servicios.ts` / `lib/config/team.ts` |
-| Schema / columna / tabla / RLS | **nueva** migración numerada en `supabase/migrations/` (última: `0005_recursos.sql`) |
+| Schema / columna / tabla / RLS | **nueva** migración numerada en `supabase/migrations/` (última: `0009_feedback_chat.sql`) |
 
 ## Dónde NO meterse sin pensar
 - **`lib/datetime.ts`** — el server (Vercel) es UTC; representar "hoy" con UTC corre un día. Usar siempre los helpers AR (server y client).
 - **RLS / migración `0004`** — triggers BEFORE UPDATE bloquean que el paciente cambie su rol, modifique turnos arbitrariamente o falsifique respuestas de feedback. `is_staff()` cortocircuita. Si agregás columnas sensibles, sumalas al chequeo.
-- **`supabase/migrations/`** — nunca editar una aplicada. Crear nueva (última: `0005`).
+- **`supabase/migrations/`** — nunca editar una aplicada. Crear nueva (última: `0009`).
 - **Storage** buckets `planes` y `recursos` son privados → acceso solo vía signed URL (server actions con verificación de permisos). No exponer paths.
 - `crearTurnoAction` revalida `fecha >= hoyArgentina()` server-side (el `min` del input es solo defensa en profundidad).
 - IMC se calcula al guardar la medición; `puntaje_total` de eval funcional es columna `GENERATED ... STORED`.

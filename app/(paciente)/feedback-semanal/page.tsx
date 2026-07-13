@@ -1,6 +1,7 @@
-import { CheckCheck, ClipboardList, FileText, Lock, MessageCircleQuestion, Paperclip } from 'lucide-react'
+import { CheckCheck, ClipboardList, FileText, Lock, Paperclip } from 'lucide-react'
 import Link from 'next/link'
 
+import { FeedbackChat, type MensajeFeedback } from '@/components/seguimiento/feedback-chat'
 import { FeedbackForm } from '@/components/seguimiento/feedback-form'
 import { createClient } from '@/lib/supabase/server'
 import { formatearFechaCorta, lunesDeSemana } from '@/lib/seguimiento'
@@ -87,6 +88,24 @@ export default async function FeedbackSemanalPage() {
     }),
   )
 
+  const feedbackIds = [actual?.id, ...historico.map((f) => f.id)].filter(
+    (id): id is number => id != null,
+  )
+  const { data: mensajesData } = feedbackIds.length
+    ? await supabase
+        .from('feedback_mensajes')
+        .select('id, feedback_id, autor_id, contenido, created_at, edited_at')
+        .in('feedback_id', feedbackIds)
+        .order('id', { ascending: true })
+    : { data: [] }
+
+  const mensajesPorFeedback = new Map<number, MensajeFeedback[]>()
+  for (const m of mensajesData ?? []) {
+    const arr = mensajesPorFeedback.get(m.feedback_id) ?? []
+    arr.push(m)
+    mensajesPorFeedback.set(m.feedback_id, arr)
+  }
+
   return (
     <>
       <header className="mb-6">
@@ -133,31 +152,13 @@ export default async function FeedbackSemanalPage() {
               </a>
             ) : null}
 
-            {actual.dudas ? (
-              <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-1">
-                  Tu duda
-                </p>
-                <p className="text-sm text-gray-800 whitespace-pre-line">{actual.dudas}</p>
-              </div>
-            ) : null}
-
-            {actual.dudas ? (
-              actual.respuesta_profesional ? (
-                <div className="rounded-xl bg-vimet-cream border border-vimet-orange/20 px-4 py-3">
-                  <p className="text-xs uppercase tracking-wide font-semibold text-vimet-red mb-1">
-                    Respuesta de tu equipo
-                  </p>
-                  <p className="text-sm text-gray-800 whitespace-pre-line">
-                    {actual.respuesta_profesional}
-                  </p>
-                </div>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
-                  <MessageCircleQuestion className="size-3.5" /> Tu equipo todavía no respondió
-                </span>
-              )
-            ) : null}
+            <FeedbackChat
+              feedbackId={actual.id}
+              mensajes={mensajesPorFeedback.get(actual.id) ?? []}
+              currentUserId={user.id}
+              pacienteId={user.id}
+              abierto
+            />
           </div>
         ) : (
           <FeedbackForm />
@@ -228,30 +229,16 @@ export default async function FeedbackSemanalPage() {
           </h2>
           <ul className="space-y-3">
             {historico.map((f) => {
-              const tieneDudas = Boolean(f.dudas?.trim())
-              const respondido = Boolean(f.respondido_at)
+              const mensajes = mensajesPorFeedback.get(f.id) ?? []
               return (
                 <li
                   key={f.id}
                   className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5"
                 >
-                  <header className="flex flex-wrap items-start justify-between gap-2 mb-3">
+                  <header className="mb-3">
                     <h3 className="font-heading font-semibold text-gray-900">
                       Semana del {formatearFechaCorta(f.semana_inicio)}
                     </h3>
-                    {tieneDudas ? (
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          respondido ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {respondido ? (
-                          <><CheckCheck className="size-3.5" /> Respondido</>
-                        ) : (
-                          <><MessageCircleQuestion className="size-3.5" /> Pendiente</>
-                        )}
-                      </span>
-                    ) : null}
                   </header>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
@@ -285,7 +272,17 @@ export default async function FeedbackSemanalPage() {
                     </div>
                   ) : null}
 
-                  {f.respuesta_profesional ? (
+                  {mensajes.length > 0 ? (
+                    <div className="mt-3">
+                      <FeedbackChat
+                        feedbackId={f.id}
+                        mensajes={mensajes}
+                        currentUserId={user.id}
+                        pacienteId={user.id}
+                        abierto={false}
+                      />
+                    </div>
+                  ) : f.respuesta_profesional ? (
                     <div className="mt-3 rounded-xl bg-vimet-cream border border-vimet-orange/20 px-4 py-3">
                       <p className="text-xs uppercase tracking-wide font-semibold text-vimet-red mb-1">
                         Respuesta de tu equipo
