@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { optimizeImage } from '@/lib/storage/optimize-image'
 import { createClient } from '@/lib/supabase/server'
 
 export type FeedbackState = { ok?: boolean; error?: string }
@@ -106,13 +107,21 @@ export async function enviarFeedbackAction(
       .eq('semana_inicio', d.semana_inicio)
       .maybeSingle()
 
-    const safeName   = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-    adjunto_path     = `${user.id}/f/${d.semana_inicio}_${Date.now()}_${safeName}`
-    const buf        = Buffer.from(await file.arrayBuffer())
+    const esImagen = file.type.startsWith('image/')
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+    let buf: Buffer<ArrayBufferLike> = Buffer.from(await file.arrayBuffer())
+    let contentType = file.type
+    adjunto_path    = `${user.id}/f/${d.semana_inicio}_${Date.now()}_${safeName}`
+
+    if (esImagen) {
+      buf = await optimizeImage(buf)
+      contentType = 'image/webp'
+      adjunto_path = adjunto_path.replace(/\.\w+$/, '') + '.webp'
+    }
 
     const { error: upErr } = await supabase.storage
       .from('recursos')
-      .upload(adjunto_path, buf, { contentType: file.type, upsert: false })
+      .upload(adjunto_path, Buffer.from(buf), { contentType, upsert: false })
     if (upErr) return { error: 'No se pudo subir el adjunto.' }
 
     // Borrar el adjunto previo después de subir el nuevo con éxito

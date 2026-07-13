@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { optimizeImage } from '@/lib/storage/optimize-image'
 import { createClient } from '@/lib/supabase/server'
 
 export type ContenidoState = { ok?: boolean; error?: string }
@@ -250,9 +251,10 @@ export async function actualizarPerfilPublicoAction(
       .eq('id', profileId)
       .maybeSingle()
 
-    const ext = file.name.split('.').pop() ?? 'jpg'
-    const path = `staff/${profileId}/${Date.now()}.${ext}`
-    const { error: uploadError } = await ctx.supabase.storage.from('sitio').upload(path, file, {
+    const buf = await optimizeImage(Buffer.from(await file.arrayBuffer()))
+    const path = `staff/${profileId}/${Date.now()}.webp`
+    const { error: uploadError } = await ctx.supabase.storage.from('sitio').upload(path, buf, {
+      contentType: 'image/webp',
       upsert: true,
     })
     if (uploadError) return { error: 'No se pudo subir la foto.' }
