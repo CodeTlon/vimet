@@ -1,10 +1,11 @@
 'use client'
 
-import { Clock, MessageCircle, Plus, Trash2 } from 'lucide-react'
+import { Clock, MessageCircle, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import {
+  actualizarHorarioAction,
   agregarHorarioAction,
   eliminarHorarioAction,
   type CanceladoInfo,
@@ -46,7 +47,7 @@ function hhmm(t: string) {
   return t.slice(0, 5)
 }
 
-function AddBtn() {
+function SubmitBtn({ editing }: { editing: boolean }) {
   const { pending } = useFormStatus()
   return (
     <button
@@ -55,7 +56,7 @@ function AddBtn() {
       className="inline-flex items-center gap-2 rounded-lg bg-vimet-orange px-5 py-2 text-sm font-semibold text-white hover:bg-vimet-red transition-colors disabled:opacity-60"
     >
       <Plus className="size-4" />
-      {pending ? 'Agregando…' : 'Agregar franja'}
+      {pending ? 'Guardando…' : editing ? 'Guardar cambios' : 'Agregar franja'}
     </button>
   )
 }
@@ -130,9 +131,18 @@ function TurnosCanceladosAviso({ cancelados }: { cancelados: CanceladoInfo[] }) 
 }
 
 export function HorariosEditor({ horarios }: { horarios: Horario[] }) {
-  const [state, action] = useFormState<HorarioState, FormData>(agregarHorarioAction, {})
+  const [editing, setEditing] = useState<Horario | null>(null)
+  const [state, action] = useFormState<HorarioState, FormData>(
+    editing ? actualizarHorarioAction : agregarHorarioAction,
+    {},
+  )
   const formRef = useResetOnSuccess(state)
   const [cancelados, setCancelados] = useState<CanceladoInfo[]>([])
+
+  useEffect(() => {
+    if (state.ok) setEditing(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state])
 
   const porDia = new Map<number, Horario[]>()
   for (const h of horarios) {
@@ -173,6 +183,14 @@ export function HorariosEditor({ horarios }: { horarios: Horario[] }) {
                           {hhmm(f.hora_inicio)}–{hhmm(f.hora_fin)}
                         </span>
                         <span className="text-xs text-gray-500">{MODALIDAD_LABEL[f.modalidad]}</span>
+                        <button
+                          type="button"
+                          aria-label="Editar franja"
+                          onClick={() => setEditing(f)}
+                          className="inline-flex items-center justify-center size-6 rounded-full text-gray-400 hover:text-vimet-orange hover:bg-white transition-colors"
+                        >
+                          <Pencil className="size-3.5" />
+                        </button>
                         <EliminarFranjaForm
                           id={f.id}
                           onCancelados={(c) => setCancelados((prev) => [...prev, ...c])}
@@ -187,25 +205,39 @@ export function HorariosEditor({ horarios }: { horarios: Horario[] }) {
         </div>
       </div>
 
-      {/* Agregar franja */}
+      {/* Agregar / editar franja */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-1">Agregar franja horaria</h2>
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <h2 className="text-base font-semibold text-gray-900">
+            {editing ? 'Editar franja horaria' : 'Agregar franja horaria'}
+          </h2>
+          {editing ? (
+            <button
+              type="button"
+              onClick={() => setEditing(null)}
+              className="text-sm font-medium text-gray-500 hover:text-vimet-orange transition-colors"
+            >
+              Cancelar edición
+            </button>
+          ) : null}
+        </div>
         <p className="text-sm text-gray-500 mb-5">
           Elegí el día, el rango de horas y la modalidad en la que atendés.
         </p>
 
-        <form ref={formRef} action={action} className="space-y-4">
+        <form key={editing?.id ?? 'new'} ref={formRef} action={action} className="space-y-4">
+          {editing ? <input type="hidden" name="id" value={editing.id} /> : null}
           {state.error ? (
             <p className="text-sm text-red-600">{state.error}</p>
           ) : null}
           {state.ok ? (
-            <p className="text-sm text-green-600">Franja agregada.</p>
+            <p className="text-sm text-green-600">{editing ? 'Franja actualizada.' : 'Franja agregada.'}</p>
           ) : null}
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <label className="block text-sm">
               <span className="block font-medium text-gray-700 mb-1">Día</span>
-              <select name="dia_semana" defaultValue="1" className={`${inputBase} w-full`}>
+              <select name="dia_semana" defaultValue={String(editing?.dia_semana ?? 1)} className={`${inputBase} w-full`}>
                 {DIAS.map((d) => (
                   <option key={d.value} value={d.value}>
                     {d.label}
@@ -215,15 +247,27 @@ export function HorariosEditor({ horarios }: { horarios: Horario[] }) {
             </label>
             <label className="block text-sm">
               <span className="block font-medium text-gray-700 mb-1">Desde</span>
-              <input type="time" name="hora_inicio" defaultValue="09:00" required className={`${inputBase} w-full`} />
+              <input
+                type="time"
+                name="hora_inicio"
+                defaultValue={editing ? hhmm(editing.hora_inicio) : '09:00'}
+                required
+                className={`${inputBase} w-full`}
+              />
             </label>
             <label className="block text-sm">
               <span className="block font-medium text-gray-700 mb-1">Hasta</span>
-              <input type="time" name="hora_fin" defaultValue="13:00" required className={`${inputBase} w-full`} />
+              <input
+                type="time"
+                name="hora_fin"
+                defaultValue={editing ? hhmm(editing.hora_fin) : '13:00'}
+                required
+                className={`${inputBase} w-full`}
+              />
             </label>
             <label className="block text-sm">
               <span className="block font-medium text-gray-700 mb-1">Modalidad</span>
-              <select name="modalidad" defaultValue="ambas" className={`${inputBase} w-full`}>
+              <select name="modalidad" defaultValue={editing?.modalidad ?? 'ambas'} className={`${inputBase} w-full`}>
                 <option value="ambas">Ambas</option>
                 <option value="presencial">Presencial</option>
                 <option value="virtual">Virtual</option>
@@ -231,7 +275,7 @@ export function HorariosEditor({ horarios }: { horarios: Horario[] }) {
             </label>
           </div>
 
-          <AddBtn />
+          <SubmitBtn editing={Boolean(editing)} />
         </form>
       </div>
     </div>

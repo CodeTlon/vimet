@@ -31,6 +31,10 @@ const horarioSchema = z.object({
   modalidad: z.enum(['presencial', 'virtual', 'ambas'], { message: 'Modalidad inválida' }),
 })
 
+const horarioUpdateSchema = horarioSchema.extend({
+  id: z.coerce.number().int().positive(),
+})
+
 // El profesional administra SU propia agenda: profesional_id = usuario logueado.
 export async function agregarHorarioAction(
   _prev: unknown,
@@ -105,7 +109,10 @@ export async function eliminarHorarioAction(
     .eq('id', id)
     .eq('profesional_id', user.id)
 
-  const cancelados = horario ? await cancelarTurnosSinHorario(supabase, user.id, horario) : []
+  const afectados = horario
+    ? await turnosSinCobertura(supabase, user.id, [horario.dia_semana])
+    : []
+  const cancelados = await cancelarYNotificar(supabase, afectados)
 
   revalidatePath('/admin/horarios')
   revalidatePath('/admin/calendario')
@@ -115,14 +122,92 @@ export async function eliminarHorarioAction(
   return { ok: true, cancelados }
 }
 
-// Cancela los turnos futuros que quedaron sin cobertura horaria tras borrar
-// una franja, y avisa por email a cada paciente afectado. Best-effort: si un
-// email falla no revierte la cancelación (el turno ya no tiene horario real).
-async function cancelarTurnosSinHorario(
+export async function actualizarHorarioAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<HorarioState> {
+  const { user } = await requireStaff()
+
+  const parsed = horarioUpdateSchema.safeParse({
+    id: formData.get('id'),
+    dia_semana: formData.get('dia_semana'),
+    hora_inicio: formData.get('hora_inicio'),
+    hora_fin: formData.get('hora_fin'),
+    modalidad: formData.get('modalidad'),
+  })
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+
+  if (parsed.data.hora_inicio >= parsed.data.hora_fin) {
+    return { error: 'La hora de inicio debe ser anterior a la de fin.' }
+  }
+
+  const supabase = createClient()
+
+  const { data: actual } = await supabase
+    .from('horarios_disponibles')
+    .select('dia_semana')
+    .eq('id', parsed.data.id)
+    .eq('profesional_id', user.id)
+    .maybeSingle()
+  if (!actual) return { error: 'Franja no encontrada.' }
+
+  const { data: existentes } = await supabase
+    .from('horarios_disponibles')
+    .select('hora_inicio, hora_fin')
+    .eq('profesional_id', user.id)
+    .eq('dia_semana', parsed.data.dia_semana)
+    .eq('activo', true)
+    .neq('id', parsed.data.id)
+
+  const seSolapa = (existentes ?? []).some(
+    (h) => parsed.data.hora_inicio < h.hora_fin.slice(0, 5) && parsed.data.hora_fin > h.hora_inicio.slice(0, 5),
+  )
+  if (seSolapa) {
+    return { error: 'Esa franja se superpone con otra que ya tenés cargada ese día.' }
+  }
+
+  const { error } = await supabase
+    .from('horarios_disponibles')
+    .update({
+      dia_semana: parsed.data.dia_semana,
+      hora_inicio: parsed.data.hora_inicio,
+      hora_fin: parsed.data.hora_fin,
+      modalidad: parsed.data.modalidad,
+    })
+    .eq('id', parsed.data.id)
+    .eq('profesional_id', user.id)
+  if (error) return { error: 'No se pudo guardar la franja horaria.' }
+
+  const dias = [...new Set([actual.dia_semana, parsed.data.dia_semana])]
+  const afectados = await turnosSinCobertura(supabase, user.id, dias)
+  const cancelados = await cancelarYNotificar(supabase, afectados)
+
+  revalidatePath('/admin/horarios')
+  revalidatePath('/admin/calendario')
+  revalidatePath('/admin/dashboard')
+  revalidatePath('/mis-turnos')
+
+  return { ok: true, cancelados }
+}
+
+type TurnoAfectado = {
+  id: number
+  paciente_id: string
+  fecha: string
+  hora_inicio: string
+  hora_fin: string
+  servicios: { nombre: string } | { nombre: string }[] | null
+}
+
+// Turnos futuros del profesional, en los días dados, que ya no están
+// contenidos en ninguna franja activa (no alcanza con "se solapaba con la
+// franja que se tocó": si otra franja del mismo día lo sigue cubriendo, el
+// turno queda cubierto igual y no hay que cancelarlo).
+async function turnosSinCobertura(
   supabase: ReturnType<typeof createClient>,
   profesionalId: string,
-  horario: { dia_semana: number; hora_inicio: string; hora_fin: string },
-): Promise<CanceladoInfo[]> {
+  dias: number[],
+): Promise<TurnoAfectado[]> {
   const { data: turnos } = await supabase
     .from('turnos')
     .select('id, paciente_id, fecha, hora_inicio, hora_fin, servicios(nombre)')
@@ -130,15 +215,36 @@ async function cancelarTurnosSinHorario(
     .in('estado', ['pendiente', 'confirmado'])
     .gte('fecha', hoyArgentina())
 
-  const hIni = horario.hora_inicio.slice(0, 5)
-  const hFin = horario.hora_fin.slice(0, 5)
+  const relevantes = (turnos ?? []).filter((t) => dias.includes(diaSemana(t.fecha)))
+  if (relevantes.length === 0) return []
 
-  const afectados = (turnos ?? []).filter(
-    (t) =>
-      diaSemana(t.fecha) === horario.dia_semana &&
-      t.hora_inicio.slice(0, 5) < hFin &&
-      t.hora_fin.slice(0, 5) > hIni,
-  )
+  const { data: horarios } = await supabase
+    .from('horarios_disponibles')
+    .select('dia_semana, hora_inicio, hora_fin')
+    .eq('profesional_id', profesionalId)
+    .eq('activo', true)
+    .in('dia_semana', dias)
+
+  return relevantes.filter((t) => {
+    const tIni = t.hora_inicio.slice(0, 5)
+    const tFin = t.hora_fin.slice(0, 5)
+    const cubierto = (horarios ?? []).some(
+      (h) =>
+        h.dia_semana === diaSemana(t.fecha) &&
+        tIni >= h.hora_inicio.slice(0, 5) &&
+        tFin <= h.hora_fin.slice(0, 5),
+    )
+    return !cubierto
+  })
+}
+
+// Cancela los turnos dados y avisa por email a cada paciente afectado.
+// Best-effort: si un email falla no revierte la cancelación (el turno ya no
+// tiene horario real).
+async function cancelarYNotificar(
+  supabase: ReturnType<typeof createClient>,
+  afectados: TurnoAfectado[],
+): Promise<CanceladoInfo[]> {
   if (afectados.length === 0) return []
 
   await supabase
