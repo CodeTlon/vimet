@@ -4,7 +4,7 @@ import { CalendarPlus, ChartLine, LayoutDashboard, LogIn, LogOut, Menu, X } from
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 
 import { LogoutButton } from '@/components/logout-button'
 import { createClient } from '@/lib/supabase/client'
@@ -41,24 +41,21 @@ export function Navbar() {
   const isHome = pathname === '/'
 
   const [open, setOpen] = useState(false)
-  // Lazy init: lee el scroll real del browser al montar (hidratación) en vez
-  // de arrancar siempre en 0 y corregir recién en un useEffect post-paint —
-  // eso es lo que causaba el parpadeo transparente/blanco al recargar con
-  // scroll restaurado por el navegador.
-  const [heroDarkness, setHeroDarkness] = useState(() => {
-    if (typeof window === 'undefined') return 0
-    const threshold = window.innerHeight * 0.3
-    return Math.min(window.scrollY / threshold, 1)
-  })
+  // Arranca en 0 siempre, igual que el servidor, para que el render de
+  // hidratación coincida exacto con el HTML de SSR (sin esto, un valor
+  // calculado del scroll real en el mismo render de hidratación puede
+  // aplicarse de forma no atómica entre el header y los links anidados).
+  const [heroDarkness, setHeroDarkness] = useState(0)
   // undefined = todavía no se resolvió la sesión (evita mostrar "Ingresar" un
   // instante antes de corregir a "Salir" cuando el usuario sí está logueado).
   const [user, setUser] = useState<{ id: string; rol: string } | null | undefined>(undefined)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const onScroll = () => {
       const threshold = window.innerHeight * 0.3
       setHeroDarkness(Math.min(window.scrollY / threshold, 1))
     }
+    onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])

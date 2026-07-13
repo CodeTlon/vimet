@@ -19,9 +19,9 @@ export function AuthShell({
   backLabel?: string
 }) {
   return (
-    <div className="lg:flex lg:min-h-screen">
-      {/* Panel de imagen: la mitad del viewport, solo desktop */}
-      <div className="hidden lg:block lg:w-1/2 lg:h-screen lg:sticky lg:top-0 relative">
+    <div className="md:flex md:min-h-screen">
+      {/* Panel de imagen: desaparece solo en mobile, crece de 40% a 50% */}
+      <div className="hidden md:block md:w-2/5 lg:w-1/2 md:h-screen md:sticky md:top-0 relative">
         <Image
           src="/images/hero/training.jpg"
           alt=""
@@ -39,9 +39,9 @@ export function AuthShell({
       </div>
 
       {/* Panel del form */}
-      <div className="flex-1 pt-24 pb-16 lg:pt-0 lg:pb-0 bg-gradient-to-br from-vimet-sand to-vimet-cream flex items-center">
-        <div className="container-vimet lg:mx-0 lg:max-w-none lg:px-12 xl:px-20">
-          <div className="max-w-md lg:max-w-lg">
+      <div className="flex-1 pt-24 pb-16 md:pt-0 md:pb-0 bg-gradient-to-br from-vimet-sand to-vimet-cream flex items-center">
+        <div className="container-vimet md:mx-0 md:max-w-none md:px-8 lg:px-12 xl:px-20">
+          <div className="max-w-md lg:max-w-lg mx-auto md:mx-0">
             <Link
               href={backHref}
               className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-vimet-orange transition-colors mb-4"
@@ -49,7 +49,7 @@ export function AuthShell({
               <ArrowLeft className="size-4" /> {backLabel}
             </Link>
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            <div className="bg-vimet-gradient text-white px-7 py-7 text-center lg:text-left">
+            <div className="bg-vimet-gradient text-white px-7 py-7 text-center md:text-left">
               <Link
                 href="/"
                 className="inline-block font-heading text-3xl font-extrabold tracking-tight"

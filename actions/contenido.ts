@@ -8,14 +8,18 @@ import { createClient } from '@/lib/supabase/server'
 
 export type ContenidoState = { ok?: boolean; error?: string }
 
-async function requireAdmin() {
+const STAFF_ROLES = ['nutricionista', 'entrenador', 'admin']
+
+// Todo el staff (no solo admin) administra el contenido del sitio: hoy los
+// únicos usuarios staff son Avril y Gero, y ambos cumplen ese rol.
+async function requireStaffAction() {
   const supabase = createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' as const }
   const { data: profile } = await supabase.from('profiles').select('rol').eq('id', user.id).maybeSingle()
-  if (!profile || profile.rol !== 'admin') return { error: 'No autorizado' as const }
+  if (!profile || !STAFF_ROLES.includes(profile.rol)) return { error: 'No autorizado' as const }
   return { user, supabase }
 }
 
@@ -27,7 +31,7 @@ async function requireSelfOrAdmin(profileId: string) {
   if (!user) return { error: 'No autenticado' as const }
   const { data: profile } = await supabase.from('profiles').select('rol').eq('id', user.id).maybeSingle()
   if (!profile) return { error: 'No autorizado' as const }
-  if (profile.rol !== 'admin' && user.id !== profileId) return { error: 'No autorizado' as const }
+  if (!STAFF_ROLES.includes(profile.rol) && user.id !== profileId) return { error: 'No autorizado' as const }
   return { user, supabase }
 }
 
@@ -69,7 +73,7 @@ export async function actualizarUbicacionAction(
   _prev: unknown,
   formData: FormData,
 ): Promise<ContenidoState> {
-  const ctx = await requireAdmin()
+  const ctx = await requireStaffAction()
   if ('error' in ctx) return { error: ctx.error }
 
   const parsed = ubicacionSchema.safeParse(Object.fromEntries(formData))
@@ -94,7 +98,7 @@ export async function actualizarMetodologiaAction(
   _prev: unknown,
   formData: FormData,
 ): Promise<ContenidoState> {
-  const ctx = await requireAdmin()
+  const ctx = await requireStaffAction()
   if ('error' in ctx) return { error: ctx.error }
 
   const pasos = extractDynamicRows(formData, 'paso', ['titulo', 'desc', 'icon'])
@@ -137,7 +141,7 @@ export async function crearServicioAction(
   _prev: unknown,
   formData: FormData,
 ): Promise<ContenidoState> {
-  const ctx = await requireAdmin()
+  const ctx = await requireStaffAction()
   if ('error' in ctx) return { error: ctx.error }
 
   const parsed = servicioSchema.safeParse(Object.fromEntries(formData))
@@ -163,7 +167,7 @@ export async function actualizarServicioAction(
   _prev: unknown,
   formData: FormData,
 ): Promise<ContenidoState> {
-  const ctx = await requireAdmin()
+  const ctx = await requireStaffAction()
   if ('error' in ctx) return { error: ctx.error }
 
   const id = Number(formData.get('id'))
@@ -192,7 +196,7 @@ export async function actualizarServicioAction(
 }
 
 export async function toggleServicioActivoAction(formData: FormData) {
-  const ctx = await requireAdmin()
+  const ctx = await requireStaffAction()
   if ('error' in ctx) return
 
   const id = Number(formData.get('id'))

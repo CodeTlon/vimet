@@ -43,7 +43,12 @@ export const metadata: Metadata = {
     'composición corporal',
     'patologías metabólicas',
   ],
-  icons: { icon: '/favicon.ico' },
+  icons: {
+    icon: [
+      { url: '/icons/favicon-light.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: light)' },
+      { url: '/icons/favicon-dark.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: dark)' },
+    ],
+  },
   openGraph: {
     title: 'VIMET — Vida y Metabolismo',
     description: 'Nutrición y entrenamiento especializado en alteraciones metabólicas.',
