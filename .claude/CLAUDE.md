@@ -75,10 +75,10 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `app/(paciente)/mis-recursos/page.tsx` | Vista de recursos visibles para el paciente |
 | `actions/recursos.ts` | CRUD recursos: crear (link/pdf/imagen/video), eliminar, toggle visibilidad |
 | `actions/staff.ts` | Server Actions admin: `configurarProfesionalAction` (rol + servicios + horarios), `toggleActivoAction`, `cambiarPasswordAction` |
-| `actions/horarios.ts` | Server Actions: `agregarHorarioAction` / `eliminarHorarioAction` — el profesional gestiona SU propia agenda (profesional_id = usuario logueado). Al borrar una franja, `cancelarTurnosSinHorario` cancela los turnos que quedan sin cobertura, avisa por mail (Resend) y devuelve la lista de afectados (con teléfono) para mostrar en el UI con links de WhatsApp |
+| `actions/horarios.ts` | Server Actions: `agregarHorarioAction` / `actualizarHorarioAction` / `eliminarHorarioAction` — el profesional gestiona SU propia agenda (profesional_id = usuario logueado). Tras agregar/editar/borrar, `turnosSinCobertura` recalcula qué turnos futuros ya no están contenidos en NINGUNA franja activa del día (no solo la tocada) y `cancelarYNotificar` los cancela, avisa por mail (Resend) y devuelve la lista de afectados (con teléfono) para mostrar en el UI con links de WhatsApp — así editar un horario (ej. correrlo 1 hora) no cancela turnos que el nuevo rango sigue cubriendo |
 | `app/admin/configuracion/page.tsx` | Configuración admin: configurar profesional + cambiar contraseña |
 | `app/admin/horarios/page.tsx` | "Mis horarios": el profesional logueado edita sus franjas de atención por día |
-| `components/horarios-editor.tsx` | Editor de agenda (lista por día + form para agregar/eliminar franjas). Al eliminar una franja muestra debajo la lista de turnos cancelados con link de WhatsApp por paciente |
+| `components/horarios-editor.tsx` | Editor de agenda (lista por día + form para agregar/editar/eliminar franjas). El botón de editar precarga el mismo form de abajo en modo edición (mismo patrón que `PlanForm`: action dinámica + `key` por id para remount de `defaultValue`). Al eliminar o editar una franja muestra debajo la lista de turnos cancelados con link de WhatsApp por paciente |
 | `lib/supabase/admin.ts` | Cliente Supabase con service role key (bypass RLS, Admin Auth API) |
 | `components/seguimiento/recurso-form.tsx` | Form admin para subir/linkear recursos (tipo selector dinámico) |
 | `app/api/slots/route.ts` | GET slots disponibles (lo consume el wizard) |
@@ -137,6 +137,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `supabase/migrations/0007_contenido_editable.sql` | Tabla `contenido_sitio` singleton (RLS admin-write/public-read) + columnas de perfil público en `profiles` + bucket `sitio` |
 | `supabase/migrations/0008_turnos_no_solapado.sql` | Exclusion constraint (`btree_gist` + `tsrange`) que impide dos turnos activos solapados del mismo profesional a nivel Postgres |
 | `supabase/migrations/0009_feedback_chat.sql` | Tabla `feedback_mensajes` (hilo de chat del feedback semanal) + RLS |
+| `supabase/migrations/0010_contenido_staff.sql` | Relaja las policies de `servicios`, `contenido_sitio` y el bucket `sitio` de `is_admin()` a `is_staff()` — cualquier staff (no solo admin) administra servicios, ubicación, metodología y perfiles públicos |
 | `emails/contacto.tsx` | Template Resend del formulario contacto |
 
 ## Base de Datos (Supabase)
@@ -157,7 +158,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `objetivos` | categoría (5), descripción, estado (4), fecha_objetivo | paciente lee + staff escribe |
 | `recursos_paciente` | tipo (link/pdf/imagen/video), categoria (5), titulo, descripcion, url, storage_path, `visible_paciente`, plan_id | staff CRUD + paciente lee solo los visibles |
 
-**Roles** (campo `rol` en `profiles`): `paciente` (default), `nutricionista`, `entrenador`, `admin`.
+**Roles** (campo `rol` en `profiles`): `paciente` (default), `nutricionista`, `entrenador`, `admin`. `admin` ya no es un nivel de permiso distinto para el contenido del sitio: desde la migración `0010`, cualquier staff (`nutricionista`/`entrenador`/`admin`, vía `is_staff()`) puede crear/editar servicios, ubicación, metodología y perfiles públicos — `admin` sigue siendo el único que puede reasignar el `rol` de otro usuario (trigger de `0006`, sigue en `is_admin()`).
 **Trigger:** `on_auth_user_created` → inserta fila en `profiles`. Rol por defecto `paciente`; si el usuario fue **invitado** (`auth.users.invited_at` no null) y trae `rol` válido en `user_metadata`, respeta ese rol (registro público siempre cae en `paciente`). El dashboard de Supabase no expone metadata al invitar → para staff, invitar y luego setear `rol` en `profiles` desde el Table/SQL editor.
 **Storage bucket** `planes` (privado): paths `{paciente_id}/{filename}`. Staff todo, paciente solo lee su propia carpeta. Acceso vía signed URL (5 min TTL).
 **Storage bucket** `recursos` (privado): paths `{paciente_id}/r/{ts}_{file}` (staff) y `{paciente_id}/f/{semana}_{ts}_{file}` (adjuntos de feedback, subidos por el paciente). Signed URLs con TTL 1 hora. Paciente puede insertar/borrar solo en subcarpeta `f/`; staff full access.
