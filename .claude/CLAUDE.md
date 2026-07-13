@@ -20,7 +20,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 
 ## Stack
 - Next.js 14 (App Router), TypeScript, Tailwind CSS, Shadcn/UI, Lucide React
-- Supabase: sí — tablas: `profiles`, `servicios`, `horarios_disponibles`, `turnos`, `bloqueos_horario`, `fichas_paciente`, `mediciones_antropometricas`, `evaluaciones_funcionales`, `planes`, `feedback_semanal`, `evolucion_entradas`, `objetivos`, `recursos_paciente`. Bucket Storage: `planes` (privado, PDFs) + `recursos` (privado, multimedia + adjuntos de feedback).
+- Supabase: sí — tablas: `profiles`, `servicios`, `horarios_disponibles`, `turnos`, `bloqueos_horario`, `fichas_paciente`, `mediciones_antropometricas`, `evaluaciones_funcionales`, `planes`, `feedback_semanal`, `feedback_mensajes`, `evolucion_entradas`, `objetivos`, `recursos_paciente`, `contenido_sitio`. Bucket Storage: `planes` (privado, PDFs) + `recursos` (privado, multimedia + adjuntos de feedback) + `sitio` (público, fotos de perfil + contenido).
 - Resend: sí — solo formulario de contacto público (sin almacenamiento en DB)
 - Fuentes: Outfit (headings) + DM Sans (body) — vía `next/font`
 
@@ -68,21 +68,21 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `app/admin/pacientes/[id]/antropometria/page.tsx` | Mediciones + gráficos de evolución |
 | `app/admin/pacientes/[id]/evaluacion-funcional/page.tsx` | Tests + score + categoría |
 | `app/admin/pacientes/[id]/planes/* ` | CRUD planes (PDF + campos estructurados) |
-| `app/admin/pacientes/[id]/feedback/page.tsx` | Feedback recibido + responder dudas |
+| `app/admin/pacientes/[id]/feedback/page.tsx` | Feedback recibido + chat con el paciente (`FeedbackChat`) |
 | `app/admin/pacientes/[id]/evolucion/page.tsx` | Notas timeline (visible/interna) |
 | `app/admin/pacientes/[id]/objetivos/page.tsx` | CRUD objetivos por categoría |
 | `app/admin/pacientes/[id]/recursos/page.tsx` | CRUD recursos multimedia del paciente (admin) |
 | `app/(paciente)/mis-recursos/page.tsx` | Vista de recursos visibles para el paciente |
 | `actions/recursos.ts` | CRUD recursos: crear (link/pdf/imagen/video), eliminar, toggle visibilidad |
 | `actions/staff.ts` | Server Actions admin: `configurarProfesionalAction` (rol + servicios + horarios), `toggleActivoAction`, `cambiarPasswordAction` |
-| `actions/horarios.ts` | Server Actions: `agregarHorarioAction` / `eliminarHorarioAction` — el profesional gestiona SU propia agenda (profesional_id = usuario logueado) |
+| `actions/horarios.ts` | Server Actions: `agregarHorarioAction` / `eliminarHorarioAction` — el profesional gestiona SU propia agenda (profesional_id = usuario logueado). Al borrar una franja, `cancelarTurnosSinHorario` cancela los turnos que quedan sin cobertura, avisa por mail (Resend) y devuelve la lista de afectados (con teléfono) para mostrar en el UI con links de WhatsApp |
 | `app/admin/configuracion/page.tsx` | Configuración admin: configurar profesional + cambiar contraseña |
 | `app/admin/horarios/page.tsx` | "Mis horarios": el profesional logueado edita sus franjas de atención por día |
-| `components/horarios-editor.tsx` | Editor de agenda (lista por día + form para agregar/eliminar franjas) |
+| `components/horarios-editor.tsx` | Editor de agenda (lista por día + form para agregar/eliminar franjas). Al eliminar una franja muestra debajo la lista de turnos cancelados con link de WhatsApp por paciente |
 | `lib/supabase/admin.ts` | Cliente Supabase con service role key (bypass RLS, Admin Auth API) |
 | `components/seguimiento/recurso-form.tsx` | Form admin para subir/linkear recursos (tipo selector dinámico) |
 | `app/api/slots/route.ts` | GET slots disponibles (lo consume el wizard) |
-| `components/navbar.tsx` | Navbar pública (transparente en home) |
+| `components/navbar.tsx` | Navbar pública (transparente en home). `user` es three-state (`undefined` mientras resuelve la sesión client-side, `null` deslogueado) para no mostrar "Ingresar" un instante antes de corregir a "Salir" |
 | `components/auth-shell.tsx` | Shell visual de las pantallas login/registro |
 | `components/login-form.tsx` | Form cliente del login (useFormState) |
 | `components/register-form.tsx` | Form cliente del registro (incluye chequeo de password match) |
@@ -94,6 +94,8 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `components/tabs.tsx` | Tabs underline para admin paciente |
 | `components/evolution-chart.tsx` | Gráfico SVG nativo (multi-serie) |
 | `components/seguimiento/*.tsx` | Forms del módulo (ficha, medición, eval, plan, feedback, evolución, objetivo) |
+| `components/seguimiento/feedback-chat.tsx` | Chat de feedback semanal (paciente izquierda, staff derecha). Solo admite mensajes nuevos mientras `feedback_semanal.semana_inicio` es la semana en curso; solo se puede editar el último mensaje propio del hilo |
+| `lib/storage/optimize-image.ts` | `optimizeImage(buf)` — resize + reencode a webp (`sharp`) antes de subir fotos de usuario a Storage (foto de perfil, recursos tipo imagen, adjuntos de feedback) |
 | `components/page-header.tsx` | Hero/header genérico de páginas internas |
 | `components/whatsapp-fab.tsx` | FAB flotante de WhatsApp en páginas públicas |
 | `components/lazy-map.tsx` | Mapa de Google que solo monta el iframe on-click (perf en home/contacto) |
@@ -132,6 +134,9 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `supabase/migrations/0004_security_hardening.sql` | Triggers que bloquean cambios sensibles por parte del paciente (rol/activo, fecha/hora del turno, respuesta de feedback) + SELECT de profiles requiere auth |
 | `supabase/migrations/0005_recursos.sql` | Tabla `recursos_paciente` + bucket `recursos` + `adjunto_path` en feedback |
 | `supabase/migrations/0006_invited_role.sql` | `handle_new_user` respeta `rol` del metadata para invitados (`invited_at`) + relaja trigger de profiles para permitir asignar rol desde service role / SQL editor |
+| `supabase/migrations/0007_contenido_editable.sql` | Tabla `contenido_sitio` singleton (RLS admin-write/public-read) + columnas de perfil público en `profiles` + bucket `sitio` |
+| `supabase/migrations/0008_turnos_no_solapado.sql` | Exclusion constraint (`btree_gist` + `tsrange`) que impide dos turnos activos solapados del mismo profesional a nivel Postgres |
+| `supabase/migrations/0009_feedback_chat.sql` | Tabla `feedback_mensajes` (hilo de chat del feedback semanal) + RLS |
 | `emails/contacto.tsx` | Template Resend del formulario contacto |
 
 ## Base de Datos (Supabase)
@@ -146,7 +151,8 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `mediciones_antropometricas` | histórico: peso, talla, IMC (calculado), %grasa, %músc, kg grasa/músc, dx | paciente lee + staff escribe |
 | `evaluaciones_funcionales` | 8 tests (4×10 + 1×10 + 2×15 + 1×20 = 100) + `puntaje_total` generated | paciente lee + staff escribe |
 | `planes` | tipo (nutri/entreno/combo), título, estado, fecha_desde/hasta, archivo_path, campos estructurados nutri + entreno | paciente lee los suyos + staff escribe |
-| `feedback_semanal` | unique(paciente,semana_inicio): estado físico, ánimo, energía, adherencias, peso, dudas, respuesta profesional | paciente CRUD propio + staff lee/responde |
+| `feedback_semanal` | unique(paciente,semana_inicio): estado físico, ánimo, energía, adherencias, peso. `dudas`/`respuesta_profesional`/`respondido_*` quedan legacy (el Q&A nuevo vive en `feedback_mensajes`) | paciente CRUD propio + staff lee/responde |
+| `feedback_mensajes` | Chat de la semana: `feedback_id`, `autor_id`, `contenido`, `created_at`, `edited_at`. Solo se escribe mientras `feedback_semanal.semana_inicio` es la semana actual (chequeo en la Server Action, no en RLS); solo se edita el último mensaje propio | select/insert propio o staff (ownership vía `feedback_semanal`); update solo `autor_id = auth.uid()` |
 | `evolucion_entradas` | timeline: origen, tipo, contenido, `visible_paciente` | staff CRUD + paciente lee solo las visibles |
 | `objetivos` | categoría (5), descripción, estado (4), fecha_objetivo | paciente lee + staff escribe |
 | `recursos_paciente` | tipo (link/pdf/imagen/video), categoria (5), titulo, descripcion, url, storage_path, `visible_paciente`, plan_id | staff CRUD + paciente lee solo los visibles |
@@ -156,6 +162,8 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 **Storage bucket** `planes` (privado): paths `{paciente_id}/{filename}`. Staff todo, paciente solo lee su propia carpeta. Acceso vía signed URL (5 min TTL).
 **Storage bucket** `recursos` (privado): paths `{paciente_id}/r/{ts}_{file}` (staff) y `{paciente_id}/f/{semana}_{ts}_{file}` (adjuntos de feedback, subidos por el paciente). Signed URLs con TTL 1 hora. Paciente puede insertar/borrar solo en subcarpeta `f/`; staff full access.
 **`feedback_semanal.adjunto_path`**: columna opcional (text) para el archivo que el paciente adjunta a su feedback semanal. Se sube al bucket `recursos` desde `enviarFeedbackAction`. Al re-subir se borra el anterior del bucket antes de sobrescribir la columna.
+**Storage bucket** `sitio` (público): paths `staff/{profileId}/{ts}.webp`. `actualizarPerfilPublicoAction` borra la foto de perfil anterior del bucket al reemplazarla (parsea el path desde la `foto_url` guardada).
+**Optimización de imágenes**: toda foto que sube un usuario (foto de perfil, recursos tipo imagen, adjuntos de feedback que sean imagen) pasa por `optimizeImage()` (`lib/storage/optimize-image.ts`, `sharp`) antes de ir a Storage — resize a max 1600px + reencode a webp calidad 80. Video de recursos NO se transcodifica server-side (sin ffmpeg en el proyecto) — solo se bajó el tope de subida a 40MB.
 
 ## Variables de Entorno
 ```
@@ -216,6 +224,7 @@ npx playwright test  # Tests E2E
 ## Historial de Cambios
 | Fecha | Rama | Cambio |
 |-------|------|--------|
+| 2026-07-13 | feat/feedback-chat-y-mejoras | v0.8.0 — Chat de feedback semanal: migración `0009_feedback_chat.sql` (tabla `feedback_mensajes`, RLS ownership vía `feedback_semanal` + `autor_id = auth.uid()` para update), `enviarMensajeFeedbackAction`/`editarMensajeFeedbackAction` en `actions/feedback.ts` (el chequeo de "semana abierta" y "solo el último mensaje" vive en la Server Action, no en RLS), `components/seguimiento/feedback-chat.tsx`. `dudas`/`respuesta_profesional`/`respondido_*` de `feedback_semanal` quedan legacy (se leen para semanas viejas, no se escriben más); se borró `responder-feedback-form.tsx`/`responderFeedbackAction`. Turnos: `cancelarTurnosSinHorario` (`actions/horarios.ts`) ahora devuelve la lista de afectados con teléfono; `eliminarHorarioAction` pasa a `useFormState` y `horarios-editor.tsx` muestra esa lista con links `wa.me`. Navbar: `user` pasa a three-state (`undefined`/`null`/perfil) para no mostrar "Ingresar" antes de resolver la sesión. `lib/storage/optimize-image.ts` (resize + webp vía `sharp`) aplicado a foto de perfil, recursos tipo imagen y adjuntos de feedback; tope de video en `actions/recursos.ts` baja de 100MB a 40MB (sin transcodificación server-side). `actualizarPerfilPublicoAction` borra la foto de perfil anterior del bucket `sitio` al reemplazarla. Colores por tipo de servicio: entrenamiento pasa de `vimet-red` a `info` (azul), combo/integral de `gray-900`/`vimet-tint5` a `success` (verde), reusando los tokens ya definidos en `tailwind.config.ts`. |
 | 2026-07-11 | chore/security-headers-loading-states | Baseline de seguridad + perf percibida: `next.config.mjs` agrega `headers()` (X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy, Permissions-Policy, HSTS). Auditoría de RLS sobre las 7 tablas del módulo seguimiento + `turnos`/`profiles`: sin gaps (RLS habilitado + policy por operación en todas, sin IDOR — `cancelarTurnoAction`/`obtenerUrlPlanAction` ya escopeaban por `paciente_id`/`user.id`). Único hallazgo: **open redirect** en `app/auth/callback/route.ts` (`next` param pasaba directo a `new URL(next, origin)`, una URL absoluta pisaba el origin) — fix con allowlist (`safeNextPath`, solo paths relativos). CORS: única API route (`app/api/slots`) no seteaba headers CORS — sin cambios, default same-origin ya es seguro. Progresivo: `components/ui/skeleton.tsx` (shadcn) + `loading.tsx` en `(public)` (incl. wizard turno), `login`, `registro`, `auth` + `app/error.tsx`/`app/global-error.tsx` con fallback de marca. |
 | 2026-07-06 | main | v0.6.1 — Hero: clips nuevos (desktop 1280×720/24fps CRF23 5.2MB, mobile 540×960/24fps CRF28 3.3MB) reemplazan `hero-training.mp4`/`hero-training-mobile.mp4` + poster regenerado. Scrim mobile pasa a negro sólido `/90` (antes gradiente lateral, insuficiente porque el texto ocupa todo el ancho en mobile); degradé superior más oscuro/alto en desktop para legibilidad del navbar sobre el nuevo clip. Contenido del hero pasa a vivir dentro de `.container-vimet` (max-w 1280px) en vez de padding propio, para alinear con el resto de las secciones del sitio. |
 | 2026-07-04 | feat/hero-video | v0.5.0 — Panel derecho del hero (`app/(public)/page.tsx`) pasa de foto estática a `<video autoPlay muted loop playsInline>`. Clip de 10s (720p, CRF18 libx264, sin audio, faststart, 9MB) en `public/videos/hero-training.mp4` + poster (`public/images/hero/training-video-poster.jpg`) para evitar flash negro mientras carga. |

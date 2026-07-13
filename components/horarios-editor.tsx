@@ -1,14 +1,17 @@
 'use client'
 
-import { Clock, Plus, Trash2 } from 'lucide-react'
+import { Clock, MessageCircle, Plus, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import {
   agregarHorarioAction,
   eliminarHorarioAction,
+  type CanceladoInfo,
   type HorarioState,
 } from '@/actions/horarios'
 import { useResetOnSuccess } from '@/components/seguimiento/use-reset-on-success'
+import { formatearFechaCorta } from '@/lib/seguimiento'
 
 export type Horario = {
   id: number
@@ -57,9 +60,79 @@ function AddBtn() {
   )
 }
 
+function EliminarFranjaForm({
+  id,
+  onCancelados,
+}: {
+  id: number
+  onCancelados: (cancelados: CanceladoInfo[]) => void
+}) {
+  const [state, action] = useFormState<HorarioState, FormData>(eliminarHorarioAction, {})
+
+  useEffect(() => {
+    if (state.cancelados?.length) onCancelados(state.cancelados)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state])
+
+  return (
+    <form action={action}>
+      <input type="hidden" name="id" value={id} />
+      <button
+        type="submit"
+        aria-label="Eliminar franja"
+        className="inline-flex items-center justify-center size-6 rounded-full text-gray-400 hover:text-vimet-red hover:bg-white transition-colors"
+      >
+        <Trash2 className="size-3.5" />
+      </button>
+    </form>
+  )
+}
+
+function TurnosCanceladosAviso({ cancelados }: { cancelados: CanceladoInfo[] }) {
+  return (
+    <div className="bg-amber-50 rounded-xl border border-amber-200 p-6">
+      <h2 className="text-base font-semibold text-gray-900 mb-1">
+        Turnos cancelados por el cambio de agenda
+      </h2>
+      <p className="text-sm text-gray-600 mb-4">
+        Ya se les avisó por mail. Podés escribirles también por WhatsApp:
+      </p>
+      <ul className="space-y-2">
+        {cancelados.map((c) => {
+          const mensaje = `Hola ${c.pacienteNombre.split(' ')[0]}, tu turno del ${formatearFechaCorta(
+            c.fecha,
+          )} a las ${c.horaInicio} fue cancelado por un cambio de agenda. ¿Coordinamos otro horario?`
+          return (
+            <li
+              key={c.id}
+              className="flex flex-wrap items-center justify-between gap-2 text-sm bg-white rounded-lg border border-gray-200 px-3 py-2"
+            >
+              <span>
+                <strong>{c.pacienteNombre}</strong> — {c.servicioNombre} ·{' '}
+                {formatearFechaCorta(c.fecha)} {c.horaInicio}–{c.horaFin}
+              </span>
+              {c.pacienteTelefono ? (
+                <a
+                  href={`https://wa.me/54${c.pacienteTelefono.replace(/\D/g, '')}?text=${encodeURIComponent(mensaje)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-green-700 hover:underline"
+                >
+                  <MessageCircle className="size-3.5" /> WhatsApp
+                </a>
+              ) : null}
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
+
 export function HorariosEditor({ horarios }: { horarios: Horario[] }) {
   const [state, action] = useFormState<HorarioState, FormData>(agregarHorarioAction, {})
   const formRef = useResetOnSuccess(state)
+  const [cancelados, setCancelados] = useState<CanceladoInfo[]>([])
 
   const porDia = new Map<number, Horario[]>()
   for (const h of horarios) {
@@ -70,6 +143,8 @@ export function HorariosEditor({ horarios }: { horarios: Horario[] }) {
 
   return (
     <div className="space-y-6">
+      {cancelados.length > 0 ? <TurnosCanceladosAviso cancelados={cancelados} /> : null}
+
       {/* Agenda actual */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-base font-semibold text-gray-900 mb-4">Agenda actual</h2>
@@ -98,16 +173,10 @@ export function HorariosEditor({ horarios }: { horarios: Horario[] }) {
                           {hhmm(f.hora_inicio)}–{hhmm(f.hora_fin)}
                         </span>
                         <span className="text-xs text-gray-500">{MODALIDAD_LABEL[f.modalidad]}</span>
-                        <form action={eliminarHorarioAction}>
-                          <input type="hidden" name="id" value={f.id} />
-                          <button
-                            type="submit"
-                            aria-label="Eliminar franja"
-                            className="inline-flex items-center justify-center size-6 rounded-full text-gray-400 hover:text-vimet-red hover:bg-white transition-colors"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
-                        </form>
+                        <EliminarFranjaForm
+                          id={f.id}
+                          onCancelados={(c) => setCancelados((prev) => [...prev, ...c])}
+                        />
                       </li>
                     ))}
                   </ul>

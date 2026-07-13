@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { optimizeImage } from '@/lib/storage/optimize-image'
 import { createClient } from '@/lib/supabase/server'
 
 export type RecursoState = { ok?: boolean; error?: string }
@@ -16,7 +17,11 @@ const ALLOWED_MIME = {
 const MAX_BYTES = {
   pdf:    20 * 1024 * 1024,
   imagen: 10 * 1024 * 1024,
-  video: 100 * 1024 * 1024,
+  // ponytail: sin transcodificación server-side (requeriría ffmpeg + infra
+  // serverless que este proyecto no tiene). Techo: si el tamaño sigue siendo
+  // un problema, la solución real es un servicio externo (Mux/Cloudinary) o
+  // un worker con ffmpeg aparte.
+  video: 40 * 1024 * 1024,
 } as const
 
 async function requireStaff() {
@@ -100,13 +105,20 @@ export async function crearRecursoAction(
       return { error: `El archivo supera el límite de ${MAX_BYTES[t] / 1024 / 1024} MB.` }
     }
 
-    const safeName    = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-    const storage_path = `${d.paciente_id}/r/${Date.now()}_${safeName}`
-    const buf         = Buffer.from(await file.arrayBuffer())
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+    let buf: Buffer<ArrayBufferLike> = Buffer.from(await file.arrayBuffer())
+    let contentType = file.type
+    let storage_path = `${d.paciente_id}/r/${Date.now()}_${safeName}`
+
+    if (t === 'imagen') {
+      buf = await optimizeImage(buf)
+      contentType = 'image/webp'
+      storage_path = storage_path.replace(/\.\w+$/, '') + '.webp'
+    }
 
     const { error: upErr } = await ctx.supabase.storage
       .from('recursos')
-      .upload(storage_path, buf, { contentType: file.type, upsert: false })
+      .upload(storage_path, Buffer.from(buf), { contentType, upsert: false })
     if (upErr) return { error: 'No se pudo subir el archivo.' }
 
     const { error } = await ctx.supabase.from('recursos_paciente').insert({

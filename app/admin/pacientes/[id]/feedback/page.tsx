@@ -1,8 +1,8 @@
-import { CheckCheck, MessageCircleQuestion, Paperclip } from 'lucide-react'
+import { Paperclip } from 'lucide-react'
 
-import { ResponderFeedbackForm } from '@/components/seguimiento/responder-feedback-form'
+import { FeedbackChat, type MensajeFeedback } from '@/components/seguimiento/feedback-chat'
 import { createClient } from '@/lib/supabase/server'
-import { formatearFechaCorta } from '@/lib/seguimiento'
+import { formatearFechaCorta, lunesDeSemana } from '@/lib/seguimiento'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,6 +29,10 @@ export default async function FeedbackPacientePage(
 ) {
   const params = await props.params;
   const supabase = createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   const { data } = await supabase
     .from('feedback_semanal')
     .select(
@@ -38,6 +42,22 @@ export default async function FeedbackPacientePage(
     .order('semana_inicio', { ascending: false })
 
   const feedback = (data ?? []) as Feedback[]
+  const semanaActual = lunesDeSemana()
+
+  const { data: mensajesData } = feedback.length
+    ? await supabase
+        .from('feedback_mensajes')
+        .select('id, feedback_id, autor_id, contenido, created_at, edited_at')
+        .in('feedback_id', feedback.map((f) => f.id))
+        .order('id', { ascending: true })
+    : { data: [] }
+
+  const mensajesPorFeedback = new Map<number, MensajeFeedback[]>()
+  for (const m of mensajesData ?? []) {
+    const arr = mensajesPorFeedback.get(m.feedback_id) ?? []
+    arr.push(m)
+    mensajesPorFeedback.set(m.feedback_id, arr)
+  }
 
   // URLs firmadas para adjuntos de feedback (1 hora de vigencia)
   const feedbackConUrl = await Promise.all(
@@ -58,34 +78,18 @@ export default async function FeedbackPacientePage(
         </div>
       ) : (
         feedbackConUrl.map((f) => {
-          const tieneDudas = Boolean(f.dudas?.trim())
-          const respondido  = Boolean(f.respondido_at)
+          const mensajes = mensajesPorFeedback.get(f.id) ?? []
+          const abierto  = f.semana_inicio === semanaActual
+
           return (
             <article
               key={f.id}
               className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5"
             >
-              <header className="flex flex-wrap items-start justify-between gap-3 mb-3">
-                <div>
-                  <h3 className="font-heading font-semibold text-gray-900">
-                    Semana del {formatearFechaCorta(f.semana_inicio)}
-                  </h3>
-                </div>
-                {tieneDudas ? (
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      respondido
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}
-                  >
-                    {respondido ? (
-                      <><CheckCheck className="size-3.5" /> Respondido</>
-                    ) : (
-                      <><MessageCircleQuestion className="size-3.5" /> Pendiente</>
-                    )}
-                  </span>
-                ) : null}
+              <header className="mb-3">
+                <h3 className="font-heading font-semibold text-gray-900">
+                  Semana del {formatearFechaCorta(f.semana_inicio)}
+                </h3>
               </header>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
@@ -118,15 +122,6 @@ export default async function FeedbackPacientePage(
                 </div>
               ) : null}
 
-              {f.dudas ? (
-                <div className="mt-4 rounded-xl bg-vimet-cream border border-vimet-orange/20 px-4 py-3">
-                  <p className="text-xs uppercase tracking-wide text-vimet-red mb-1 font-semibold">
-                    Dudas del paciente
-                  </p>
-                  <p className="text-sm text-gray-800 whitespace-pre-line">{f.dudas}</p>
-                </div>
-              ) : null}
-
               {/* Adjunto del paciente */}
               {f.adjuntoUrl ? (
                 <div className="mt-3">
@@ -144,34 +139,41 @@ export default async function FeedbackPacientePage(
                 </div>
               ) : null}
 
-              {f.respuesta_profesional ? (
-                <div className="mt-4 rounded-xl bg-blue-50 border border-blue-100 px-4 py-3">
-                  <p className="text-xs uppercase tracking-wide font-semibold text-blue-700 mb-1">
-                    Tu respuesta
-                    {f.respondido_at
-                      ? ` · ${new Date(f.respondido_at).toLocaleDateString('es-AR', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })}`
-                      : ''}
-                  </p>
-                  <p className="text-sm text-gray-800 whitespace-pre-line">
-                    {f.respuesta_profesional}
-                  </p>
+              {/* Semanas de antes de este chat: dudas/respuesta quedaron como texto fijo */}
+              {mensajes.length === 0 && (f.dudas || f.respuesta_profesional) ? (
+                <div className="mt-4 space-y-3">
+                  {f.dudas ? (
+                    <div className="rounded-xl bg-vimet-cream border border-vimet-orange/20 px-4 py-3">
+                      <p className="text-xs uppercase tracking-wide text-vimet-red mb-1 font-semibold">
+                        Dudas del paciente
+                      </p>
+                      <p className="text-sm text-gray-800 whitespace-pre-line">{f.dudas}</p>
+                    </div>
+                  ) : null}
+                  {f.respuesta_profesional ? (
+                    <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3">
+                      <p className="text-xs uppercase tracking-wide font-semibold text-blue-700 mb-1">
+                        Tu respuesta
+                      </p>
+                      <p className="text-sm text-gray-800 whitespace-pre-line">
+                        {f.respuesta_profesional}
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-
-              <div className="mt-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500 mb-1.5">
-                  {f.respuesta_profesional ? 'Editar respuesta' : 'Responder al paciente'}
-                </p>
-                <ResponderFeedbackForm
-                  id={f.id}
-                  pacienteId={params.id}
-                  respuestaActual={f.respuesta_profesional}
-                />
-              </div>
+              ) : (
+                <div className="mt-4">
+                  {user ? (
+                    <FeedbackChat
+                      feedbackId={f.id}
+                      mensajes={mensajes}
+                      currentUserId={user.id}
+                      pacienteId={params.id}
+                      abierto={abierto}
+                    />
+                  ) : null}
+                </div>
+              )}
             </article>
           )
         })

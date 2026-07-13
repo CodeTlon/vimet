@@ -57,7 +57,7 @@ const serviciosDestacados = [
     descripcion:
       'Rutinas diseñadas según tu nivel físico, asegurando una progresión segura y constante.',
     tipo: 'Entrenamiento',
-    color: 'from-vimet-red/15 to-vimet-red/5 text-vimet-red',
+    color: 'from-info/15 to-info/5 text-info',
   },
   {
     icon: HandHeart,
@@ -65,7 +65,7 @@ const serviciosDestacados = [
     descripcion:
       'Nuestro abordaje más completo. Combinamos nutrición y entrenamiento trabajando en equipo para vos.',
     tipo: 'Plan Integral',
-    color: 'from-vimet-tint5/15 to-vimet-tint5/5 text-vimet-tint5',
+    color: 'from-success/15 to-success/5 text-success',
   },
 ] as const
 

@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { lunesDeSemanaArgentina } from '@/lib/datetime'
+import { optimizeImage } from '@/lib/storage/optimize-image'
 import { createClient } from '@/lib/supabase/server'
 
 export type FeedbackState = { ok?: boolean; error?: string }
@@ -31,7 +33,6 @@ const schema = z.object({
     })
     .refine((v) => v === null || (v > 20 && v < 400), 'Peso inválido'),
   observaciones: z.string().max(4000).optional().or(z.literal('')),
-  dudas:         z.string().max(2000).optional().or(z.literal('')),
 })
 
 const FEEDBACK_ALLOWED_MIME = [
@@ -106,13 +107,21 @@ export async function enviarFeedbackAction(
       .eq('semana_inicio', d.semana_inicio)
       .maybeSingle()
 
-    const safeName   = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-    adjunto_path     = `${user.id}/f/${d.semana_inicio}_${Date.now()}_${safeName}`
-    const buf        = Buffer.from(await file.arrayBuffer())
+    const esImagen = file.type.startsWith('image/')
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+    let buf: Buffer<ArrayBufferLike> = Buffer.from(await file.arrayBuffer())
+    let contentType = file.type
+    adjunto_path    = `${user.id}/f/${d.semana_inicio}_${Date.now()}_${safeName}`
+
+    if (esImagen) {
+      buf = await optimizeImage(buf)
+      contentType = 'image/webp'
+      adjunto_path = adjunto_path.replace(/\.\w+$/, '') + '.webp'
+    }
 
     const { error: upErr } = await supabase.storage
       .from('recursos')
-      .upload(adjunto_path, buf, { contentType: file.type, upsert: false })
+      .upload(adjunto_path, Buffer.from(buf), { contentType, upsert: false })
     if (upErr) return { error: 'No se pudo subir el adjunto.' }
 
     // Borrar el adjunto previo después de subir el nuevo con éxito
@@ -131,7 +140,6 @@ export async function enviarFeedbackAction(
     adherencia_alimentacion:  d.adherencia_alimentacion,
     peso_autoreporte_kg:      d.peso_autoreporte_kg,
     observaciones:            toStr(d.observaciones),
-    dudas:                    toStr(d.dudas),
   }
 
   // Solo incluir adjunto_path en el upsert cuando hay un archivo nuevo
@@ -156,18 +164,21 @@ export async function enviarFeedbackAction(
   return { ok: true }
 }
 
-const responderSchema = z.object({
-  id:                    z.coerce.number().int().positive(),
-  paciente_id:           z.string().uuid(),
-  respuesta_profesional: z.string().min(1).max(4000),
+const mensajeSchema = z.object({
+  feedback_id: z.coerce.number().int().positive(),
+  contenido:   z.string().trim().min(1, 'Escribí un mensaje').max(2000),
 })
 
-export async function responderFeedbackAction(
+// El chat solo admite mensajes nuevos mientras feedback_semanal.semana_inicio
+// sigue siendo la semana en curso — apenas pasa el lunes, la fila ya no es
+// "la actual" y la conversación queda congelada (misma fuente de verdad que
+// usa la UI para separar semana actual de histórico).
+export async function enviarMensajeFeedbackAction(
   _prev: unknown,
   formData: FormData,
 ): Promise<FeedbackState> {
-  const parsed = responderSchema.safeParse(Object.fromEntries(formData))
-  if (!parsed.success) return { error: 'Datos inválidos' }
+  const parsed = mensajeSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
   const supabase = createClient()
   const {
@@ -175,27 +186,88 @@ export async function responderFeedbackAction(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('rol')
-    .eq('id', user.id)
+  const { data: feedback } = await supabase
+    .from('feedback_semanal')
+    .select('paciente_id, semana_inicio')
+    .eq('id', parsed.data.feedback_id)
     .maybeSingle()
-  if (!profile || !['nutricionista', 'entrenador', 'admin'].includes(profile.rol)) {
-    return { error: 'No autorizado' }
+  if (!feedback) return { error: 'No se encontró el feedback de esa semana.' }
+
+  const { data: profile } = await supabase.from('profiles').select('rol').eq('id', user.id).maybeSingle()
+  const esStaff = Boolean(profile && ['nutricionista', 'entrenador', 'admin'].includes(profile.rol))
+  if (feedback.paciente_id !== user.id && !esStaff) return { error: 'No autorizado' }
+
+  if (feedback.semana_inicio !== lunesDeSemanaArgentina()) {
+    return { error: 'Esta conversación ya se cerró, fue de una semana anterior.' }
+  }
+
+  const { error } = await supabase.from('feedback_mensajes').insert({
+    feedback_id: parsed.data.feedback_id,
+    autor_id:    user.id,
+    contenido:   parsed.data.contenido,
+  })
+  if (error) return { error: 'No se pudo enviar el mensaje.' }
+
+  revalidatePath('/feedback-semanal')
+  revalidatePath(`/admin/pacientes/${feedback.paciente_id}/feedback`)
+  return { ok: true }
+}
+
+const editarMensajeSchema = z.object({
+  id:        z.coerce.number().int().positive(),
+  contenido: z.string().trim().min(1, 'Escribí un mensaje').max(2000),
+})
+
+// Como en un chat: solo se puede editar el último mensaje del hilo, y solo el
+// propio — una vez que el otro lado respondió, ese mensaje queda congelado.
+export async function editarMensajeFeedbackAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<FeedbackState> {
+  const parsed = editarMensajeSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+
+  const supabase = createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { data: mensaje } = await supabase
+    .from('feedback_mensajes')
+    .select('id, feedback_id, autor_id')
+    .eq('id', parsed.data.id)
+    .maybeSingle()
+  if (!mensaje) return { error: 'Mensaje no encontrado.' }
+  if (mensaje.autor_id !== user.id) return { error: 'Solo podés editar tus propios mensajes.' }
+
+  const { data: ultimo } = await supabase
+    .from('feedback_mensajes')
+    .select('id')
+    .eq('feedback_id', mensaje.feedback_id)
+    .order('id', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (ultimo?.id !== mensaje.id) {
+    return { error: 'Solo se puede editar el último mensaje de la conversación.' }
+  }
+
+  const { data: feedback } = await supabase
+    .from('feedback_semanal')
+    .select('paciente_id, semana_inicio')
+    .eq('id', mensaje.feedback_id)
+    .maybeSingle()
+  if (feedback?.semana_inicio !== lunesDeSemanaArgentina()) {
+    return { error: 'Esta conversación ya se cerró.' }
   }
 
   const { error } = await supabase
-    .from('feedback_semanal')
-    .update({
-      respuesta_profesional: parsed.data.respuesta_profesional,
-      respondido_por:        user.id,
-      respondido_at:         new Date().toISOString(),
-    })
-    .eq('id', parsed.data.id)
+    .from('feedback_mensajes')
+    .update({ contenido: parsed.data.contenido, edited_at: new Date().toISOString() })
+    .eq('id', mensaje.id)
+  if (error) return { error: 'No se pudo editar el mensaje.' }
 
-  if (error) return { error: 'No se pudo guardar la respuesta.' }
-
-  revalidatePath(`/admin/pacientes/${parsed.data.paciente_id}/feedback`)
   revalidatePath('/feedback-semanal')
+  revalidatePath(`/admin/pacientes/${feedback.paciente_id}/feedback`)
   return { ok: true }
 }

@@ -50,7 +50,9 @@ export function Navbar() {
     const threshold = window.innerHeight * 0.3
     return Math.min(window.scrollY / threshold, 1)
   })
-  const [user, setUser] = useState<{ id: string; rol: string } | null>(null)
+  // undefined = todavía no se resolvió la sesión (evita mostrar "Ingresar" un
+  // instante antes de corregir a "Salir" cuando el usuario sí está logueado).
+  const [user, setUser] = useState<{ id: string; rol: string } | null | undefined>(undefined)
 
   useEffect(() => {
     const onScroll = () => {
@@ -149,7 +151,9 @@ export function Navbar() {
         </nav>
 
         <div className="hidden lg:flex items-center gap-2">
-          {user ? (
+          {user === undefined ? (
+            <div className="h-9 w-56" />
+          ) : user ? (
             <>
               {isStaff ? (
                 <Link
@@ -241,7 +245,7 @@ export function Navbar() {
               )
             })}
             <div className="border-t border-gray-100 mt-2 pt-3 flex flex-col gap-2">
-              {user ? (
+              {user === undefined ? null : user ? (
                 <>
                   <Link
                     href={isStaff ? '/admin/dashboard' : '/mis-turnos'}
