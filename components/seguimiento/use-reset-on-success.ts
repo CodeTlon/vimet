@@ -31,3 +31,16 @@ export function useRemountKeyOnSuccess(state: { ok?: boolean } | undefined) {
   }, [state])
   return key
 }
+
+/**
+ * Devuelve un ref para el contenedor de los carteles de éxito/error: al
+ * guardar, si el form es largo y el submit quedó fuera de vista, el cartel
+ * arriba del todo pasaba desapercibido. Este hook lo trae a la vista solo.
+ */
+export function useScrollToMessage(state: { ok?: boolean; error?: string } | undefined) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (state?.ok || state?.error) ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [state])
+  return ref
+}

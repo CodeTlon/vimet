@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { hoyArgentina } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 
 export type EvalState = { ok?: boolean; error?: string }
@@ -16,7 +17,10 @@ const intInRange = (max: number) =>
 
 const schema = z.object({
   paciente_id: z.string().uuid(),
-  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  fecha: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .refine((v) => v <= hoyArgentina(), 'La fecha no puede ser futura'),
   test_wells_adams: intInRange(10),
   test_thomas: intInRange(10),
   test_dorsiflexion: intInRange(10),

@@ -164,8 +164,9 @@ async function cancelarTurnosSinHorario(
             servicioNombre: servicio,
           }),
         })
-      } catch {
+      } catch (err) {
         // best-effort: el turno ya quedó cancelado, no revertimos por un fallo de email
+        console.error(`No se pudo notificar la cancelación del turno ${t.id} a ${paciente.email}`, err)
       }
     }),
   )

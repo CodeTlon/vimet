@@ -4,6 +4,7 @@ import { Check, CheckCheck, UserX, X } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { actualizarTurnoStaffAction, type TurnoState } from '@/actions/turnos'
+import { useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
 
 const initialState: TurnoState = {}
 
@@ -47,6 +48,7 @@ export function TurnoDetalleForm({
   notas: string | null
 }) {
   const [state, formAction] = useFormState(actualizarTurnoStaffAction, initialState)
+  const msgRef = useScrollToMessage(state)
   const editable = ['pendiente', 'confirmado'].includes(estadoActual)
 
   if (!editable) {
@@ -61,16 +63,18 @@ export function TurnoDetalleForm({
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="id" value={id} />
 
-      {state.error ? (
-        <div role="alert" className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
-          {state.error}
-        </div>
-      ) : null}
-      {state.ok ? (
-        <div role="status" className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
-          Turno actualizado correctamente.
-        </div>
-      ) : null}
+      <div ref={msgRef}>
+        {state.error ? (
+          <div role="alert" className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
+            {state.error}
+          </div>
+        ) : null}
+        {state.ok ? (
+          <div role="status" className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+            Turno actualizado correctamente.
+          </div>
+        ) : null}
+      </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-800 mb-1.5">

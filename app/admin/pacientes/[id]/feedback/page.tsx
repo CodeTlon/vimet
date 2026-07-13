@@ -144,18 +144,34 @@ export default async function FeedbackPacientePage(
                 </div>
               ) : null}
 
-              {tieneDudas ? (
-                <div className="mt-4">
-                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-1.5">
-                    Respuesta profesional
+              {f.respuesta_profesional ? (
+                <div className="mt-4 rounded-xl bg-blue-50 border border-blue-100 px-4 py-3">
+                  <p className="text-xs uppercase tracking-wide font-semibold text-blue-700 mb-1">
+                    Tu respuesta
+                    {f.respondido_at
+                      ? ` · ${new Date(f.respondido_at).toLocaleDateString('es-AR', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}`
+                      : ''}
                   </p>
-                  <ResponderFeedbackForm
-                    id={f.id}
-                    pacienteId={params.id}
-                    respuestaActual={f.respuesta_profesional}
-                  />
+                  <p className="text-sm text-gray-800 whitespace-pre-line">
+                    {f.respuesta_profesional}
+                  </p>
                 </div>
               ) : null}
+
+              <div className="mt-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500 mb-1.5">
+                  {f.respuesta_profesional ? 'Editar respuesta' : 'Responder al paciente'}
+                </p>
+                <ResponderFeedbackForm
+                  id={f.id}
+                  pacienteId={params.id}
+                  respuestaActual={f.respuesta_profesional}
+                />
+              </div>
             </article>
           )
         })

@@ -4,7 +4,7 @@ import { Save } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { guardarFichaAction, type FichaState } from '@/actions/ficha'
-import { useRemountKeyOnSuccess } from '@/components/seguimiento/use-reset-on-success'
+import { useRemountKeyOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
 import { hoyArgentina } from '@/lib/datetime'
 
 const initial: FichaState = {}
@@ -65,22 +65,25 @@ export function FichaForm({
 }) {
   const [state, action] = useFormState(guardarFichaAction, initial)
   const remountKey = useRemountKeyOnSuccess(state)
+  const msgRef = useScrollToMessage(state)
   const f = ficha
 
   return (
     <form key={remountKey} action={action} className="space-y-8">
       <input type="hidden" name="paciente_id" value={pacienteId} />
 
-      {state.error ? (
-        <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
-          {state.error}
-        </div>
-      ) : null}
-      {state.ok ? (
-        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
-          Ficha guardada correctamente.
-        </div>
-      ) : null}
+      <div ref={msgRef}>
+        {state.error ? (
+          <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
+            {state.error}
+          </div>
+        ) : null}
+        {state.ok ? (
+          <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+            Ficha guardada correctamente.
+          </div>
+        ) : null}
+      </div>
 
       <Section title="Datos personales">
         <Field label="Fecha de nacimiento">

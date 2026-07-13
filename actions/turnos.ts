@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { diaSemana } from '@/lib/booking/slots'
 import { hoyArgentina } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 
@@ -47,6 +48,23 @@ export async function crearTurnoAction(
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Tenés que iniciar sesión.' }
+
+  // Revalidar que algún horario del profesional cubra ese día/franja con la
+  // modalidad elegida (el cliente ya filtra los slots, pero no confiamos en eso).
+  const { data: horariosCompatibles } = await supabase
+    .from('horarios_disponibles')
+    .select('id')
+    .eq('profesional_id', parsed.data.profesional_id)
+    .eq('dia_semana', diaSemana(parsed.data.fecha))
+    .eq('activo', true)
+    .in('modalidad', [parsed.data.modalidad, 'ambas'])
+    .lte('hora_inicio', parsed.data.hora_inicio)
+    .gte('hora_fin', parsed.data.hora_fin)
+    .limit(1)
+
+  if (!horariosCompatibles?.length) {
+    return { error: 'Esa modalidad no está disponible para el horario elegido.' }
+  }
 
   // Reverificar disponibilidad: que no exista turno superpuesto del profesional
   const { data: choques } = await supabase
@@ -136,15 +154,28 @@ export async function actualizarTurnoStaffAction(
     return { error: 'No autorizado' }
   }
 
-  const { error } = await supabase
+  const { data: actual } = await supabase
+    .from('turnos')
+    .select('estado')
+    .eq('id', parsed.data.id)
+    .maybeSingle()
+  if (!actual || !['pendiente', 'confirmado'].includes(actual.estado)) {
+    return { error: 'Este turno ya está cerrado y no puede modificarse.' }
+  }
+
+  const { data: actualizado, error } = await supabase
     .from('turnos')
     .update({
       estado: parsed.data.estado,
       notas_profesional: parsed.data.notas_profesional || null,
     })
     .eq('id', parsed.data.id)
+    .select('id')
 
   if (error) return { error: 'No pudimos actualizar el turno.' }
+  if (!actualizado?.length) {
+    return { error: 'No tenés permiso para modificar este turno.' }
+  }
 
   revalidatePath('/admin/calendario')
   revalidatePath('/admin/dashboard')

@@ -100,7 +100,68 @@ export default async function FeedbackSemanalPage() {
       </header>
 
       {habilitado ? (
-        <FeedbackForm existente={actual} adjuntoUrl={adjuntoUrlActual} />
+        actual ? (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+            <div className="flex items-center gap-2 rounded-lg bg-vimet-cream border border-vimet-orange/20 px-4 py-3 text-sm text-gray-800">
+              <CheckCheck className="size-4 text-vimet-orange shrink-0" />
+              Ya enviaste tu feedback de esta semana. Vas a poder cargar el próximo el lunes que viene.
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+              <Stat label="Estado físico" value={actual.estado_fisico} suffix="/10" />
+              <Stat label="Ánimo" value={actual.animo} suffix="/10" />
+              <Stat label="Energía" value={actual.energia} suffix="/10" />
+              <Stat
+                label="Peso"
+                value={actual.peso_autoreporte_kg}
+                suffix={actual.peso_autoreporte_kg ? 'kg' : ''}
+              />
+            </div>
+
+            {actual.observaciones ? (
+              <p className="text-sm text-gray-800 whitespace-pre-line">{actual.observaciones}</p>
+            ) : null}
+
+            {adjuntoUrlActual ? (
+              <a
+                href={adjuntoUrlActual}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-vimet-orange hover:underline"
+              >
+                <Paperclip className="size-3.5" /> Ver adjunto de esta semana
+              </a>
+            ) : null}
+
+            {actual.dudas ? (
+              <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-1">
+                  Tu duda
+                </p>
+                <p className="text-sm text-gray-800 whitespace-pre-line">{actual.dudas}</p>
+              </div>
+            ) : null}
+
+            {actual.dudas ? (
+              actual.respuesta_profesional ? (
+                <div className="rounded-xl bg-vimet-cream border border-vimet-orange/20 px-4 py-3">
+                  <p className="text-xs uppercase tracking-wide font-semibold text-vimet-red mb-1">
+                    Respuesta de tu equipo
+                  </p>
+                  <p className="text-sm text-gray-800 whitespace-pre-line">
+                    {actual.respuesta_profesional}
+                  </p>
+                </div>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                  <MessageCircleQuestion className="size-3.5" /> Tu equipo todavía no respondió
+                </span>
+              )
+            ) : null}
+          </div>
+        ) : (
+          <FeedbackForm />
+        )
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
           <div className="flex items-start gap-4">

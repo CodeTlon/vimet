@@ -59,6 +59,36 @@ export async function crearEntradaEvolucionAction(
   return { ok: true }
 }
 
+const updateSchema = schema.extend({ id: z.coerce.number().int().positive() })
+
+export async function actualizarEntradaEvolucionAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<EvolucionState> {
+  const parsed = updateSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+
+  const ctx = await getStaff()
+  if ('error' in ctx) return { error: ctx.error }
+
+  const d = parsed.data
+  const { error } = await ctx.supabase
+    .from('evolucion_entradas')
+    .update({
+      origen: d.origen,
+      tipo: d.tipo,
+      contenido: d.contenido,
+      visible_paciente: d.visible_paciente === 'true',
+    })
+    .eq('id', d.id)
+
+  if (error) return { error: 'No se pudo actualizar la entrada.' }
+
+  revalidatePath(`/admin/pacientes/${d.paciente_id}/evolucion`)
+  revalidatePath('/mi-progreso')
+  return { ok: true }
+}
+
 export async function eliminarEntradaEvolucionAction(formData: FormData) {
   const id = Number(formData.get('id'))
   const paciente_id = String(formData.get('paciente_id') ?? '')

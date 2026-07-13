@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
   const profesionalId = url.searchParams.get('profesional_id') ?? ''
   const fecha = url.searchParams.get('fecha') ?? ''
   const servicioId = url.searchParams.get('servicio_id') ?? ''
+  const modalidadParam = url.searchParams.get('modalidad')
+  const modalidad = modalidadParam === 'presencial' || modalidadParam === 'virtual' ? modalidadParam : undefined
 
   if (!profesionalId || !fecha) {
     return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 })
@@ -26,6 +28,6 @@ export async function GET(request: NextRequest) {
     if (data?.duracion_minutos) duracion = data.duracion_minutos
   }
 
-  const slots = await getSlotsDisponibles({ profesionalId, fecha, duracion })
+  const slots = await getSlotsDisponibles({ profesionalId, fecha, duracion, modalidad })
   return NextResponse.json({ slots })
 }

@@ -3,13 +3,17 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { haceDiasArgentina, hoyArgentina } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 
 export type MedicionState = { ok?: boolean; error?: string }
 
 const schema = z.object({
   paciente_id: z.string().uuid(),
-  fecha_medicion: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  fecha_medicion: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .refine((v) => v >= haceDiasArgentina(7) && v <= hoyArgentina(), 'La fecha debe estar dentro de los últimos 7 días'),
   peso_kg: z.string().optional().or(z.literal('')),
   talla_cm: z.string().optional().or(z.literal('')),
   porc_grasa: z.string().optional().or(z.literal('')),

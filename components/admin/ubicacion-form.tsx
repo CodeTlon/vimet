@@ -3,7 +3,7 @@
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { actualizarUbicacionAction, type ContenidoState } from '@/actions/contenido'
-import { useResetOnSuccess } from '@/components/seguimiento/use-reset-on-success'
+import { useResetOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
 
 const inputBase =
   'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
@@ -42,19 +42,22 @@ export function UbicacionForm({
 }) {
   const [state, formAction] = useFormState<ContenidoState, FormData>(actualizarUbicacionAction, {})
   const formRef = useResetOnSuccess(state)
+  const msgRef = useScrollToMessage(state)
 
   return (
     <form ref={formRef} action={formAction} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4 max-w-2xl">
-      {state.error ? (
-        <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-2 text-sm text-vimet-red">
-          {state.error}
-        </div>
-      ) : null}
-      {state.ok ? (
-        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
-          Guardado.
-        </div>
-      ) : null}
+      <div ref={msgRef}>
+        {state.error ? (
+          <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-2 text-sm text-vimet-red">
+            {state.error}
+          </div>
+        ) : null}
+        {state.ok ? (
+          <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
+            Guardado.
+          </div>
+        ) : null}
+      </div>
 
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Lugar</span>

@@ -25,23 +25,30 @@ export async function getSlotsDisponibles({
   profesionalId,
   fecha,
   duracion,
+  modalidad,
 }: {
   profesionalId: string
   fecha: string
   duracion: number
+  modalidad?: 'presencial' | 'virtual'
 }): Promise<Slot[]> {
   if (!profesionalId || !fecha || !duracion) return []
 
   const supabase = createClient()
   const dia = diaSemana(fecha)
 
+  let horariosQuery = supabase
+    .from('horarios_disponibles')
+    .select('hora_inicio, hora_fin, modalidad')
+    .eq('profesional_id', profesionalId)
+    .eq('dia_semana', dia)
+    .eq('activo', true)
+  if (modalidad) {
+    horariosQuery = horariosQuery.in('modalidad', [modalidad, 'ambas'])
+  }
+
   const [{ data: horarios }, { data: turnos }, { data: bloqueos }] = await Promise.all([
-    supabase
-      .from('horarios_disponibles')
-      .select('hora_inicio, hora_fin')
-      .eq('profesional_id', profesionalId)
-      .eq('dia_semana', dia)
-      .eq('activo', true),
+    horariosQuery,
     supabase
       .from('turnos')
       .select('hora_inicio, hora_fin')
@@ -52,8 +59,8 @@ export async function getSlotsDisponibles({
       .from('bloqueos_horario')
       .select('fecha_inicio, fecha_fin')
       .eq('profesional_id', profesionalId)
-      .lte('fecha_inicio', `${fecha}T23:59:59Z`)
-      .gte('fecha_fin', `${fecha}T00:00:00Z`),
+      .lte('fecha_inicio', `${fecha}T23:59:59-03:00`)
+      .gte('fecha_fin', `${fecha}T00:00:00-03:00`),
   ])
 
   if (!horarios?.length) return []
@@ -63,7 +70,9 @@ export async function getSlotsDisponibles({
     fin: toMinutes(t.hora_fin.slice(0, 5)),
   }))
 
-  const dayStart = new Date(`${fecha}T00:00:00Z`).getTime()
+  // Argentina es UTC-3 fija (sin horario de verano): anclamos el "día" del
+  // bloqueo a medianoche Argentina, no UTC, para no desfasarlo 3hs.
+  const dayStart = new Date(`${fecha}T00:00:00-03:00`).getTime()
   const bloqueadas = (bloqueos ?? [])
     .map((b) => {
       const ini = new Date(b.fecha_inicio).getTime()

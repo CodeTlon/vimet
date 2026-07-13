@@ -1,10 +1,11 @@
 'use client'
 
-import { Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { actualizarMetodologiaAction, type ContenidoState } from '@/actions/contenido'
+import { useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
 
 const inputBase =
   'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
@@ -42,13 +43,16 @@ function Btn() {
 
 function IconSelect({ name, defaultValue }: { name: string; defaultValue: string }) {
   return (
-    <select name={name} defaultValue={defaultValue} className={inputBase}>
-      {ICONOS.map((i) => (
-        <option key={i} value={i}>
-          {i}
-        </option>
-      ))}
-    </select>
+    <div className="relative">
+      <select name={name} defaultValue={defaultValue} className={`${inputBase} appearance-none pr-8`}>
+        {ICONOS.map((i) => (
+          <option key={i} value={i}>
+            {i}
+          </option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+    </div>
   )
 }
 
@@ -87,6 +91,7 @@ export function MetodologiaForm({
   dirigidoA: readonly Dirigido[]
 }) {
   const [state, formAction] = useFormState<ContenidoState, FormData>(actualizarMetodologiaAction, {})
+  const msgRef = useScrollToMessage(state)
 
   const [pasos, setPasos] = useState<PasoPilar[]>([...pasosIniciales])
   const [pilares, setPilares] = useState<PasoPilar[]>([...pilaresIniciales])
@@ -107,16 +112,18 @@ export function MetodologiaForm({
 
   return (
     <form key={formKey} action={formAction} className="space-y-8">
-      {state.error ? (
-        <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-2 text-sm text-vimet-red">
-          {state.error}
-        </div>
-      ) : null}
-      {state.ok ? (
-        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
-          Guardado.
-        </div>
-      ) : null}
+      <div ref={msgRef}>
+        {state.error ? (
+          <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-2 text-sm text-vimet-red">
+            {state.error}
+          </div>
+        ) : null}
+        {state.ok ? (
+          <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
+            Guardado.
+          </div>
+        ) : null}
+      </div>
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">

@@ -75,6 +75,18 @@ export async function enviarFeedbackAction(
 
   const d = parsed.data
 
+  // Defensa en profundidad: la UI ya no muestra el form una vez enviada la
+  // semana, pero una pestaña vieja reabierta no debería poder pisar el envío.
+  const { data: yaEnviado } = await supabase
+    .from('feedback_semanal')
+    .select('id')
+    .eq('paciente_id', user.id)
+    .eq('semana_inicio', d.semana_inicio)
+    .maybeSingle()
+  if (yaEnviado) {
+    return { error: 'Ya enviaste tu feedback de esta semana.' }
+  }
+
   // Manejo del adjunto
   let adjunto_path: string | undefined = undefined // undefined → no tocar la columna
 

@@ -9,7 +9,7 @@ import {
   crearPlanAction,
   type PlanState,
 } from '@/actions/planes'
-import { useRemountKeyOnSuccess } from '@/components/seguimiento/use-reset-on-success'
+import { useRemountKeyOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
 import { hoyArgentina } from '@/lib/datetime'
 
 const initial: PlanState = {}
@@ -72,6 +72,7 @@ export function PlanForm({
   )
   const p = plan
   const remountKey = useRemountKeyOnSuccess(state)
+  const msgRef = useScrollToMessage(state)
   const [fechaDesde, setFechaDesde] = useState(p?.fecha_desde ?? hoyArgentina())
 
   return (
@@ -79,16 +80,18 @@ export function PlanForm({
       <input type="hidden" name="paciente_id" value={pacienteId} />
       {editing ? <input type="hidden" name="id" value={p!.id} /> : null}
 
-      {state.error ? (
-        <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
-          {state.error}
-        </div>
-      ) : null}
-      {state.ok ? (
-        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
-          Plan guardado correctamente.
-        </div>
-      ) : null}
+      <div ref={msgRef}>
+        {state.error ? (
+          <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
+            {state.error}
+          </div>
+        ) : null}
+        {state.ok ? (
+          <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+            Plan guardado correctamente.
+          </div>
+        ) : null}
+      </div>
 
       <Section title="Datos del plan">
         <Field label="Tipo">

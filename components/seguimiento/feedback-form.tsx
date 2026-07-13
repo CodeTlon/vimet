@@ -1,10 +1,10 @@
 'use client'
 
-import { Paperclip, Send } from 'lucide-react'
+import { Send } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { enviarFeedbackAction, type FeedbackState } from '@/actions/feedback'
-import { useRemountKeyOnSuccess } from '@/components/seguimiento/use-reset-on-success'
+import { useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
 import { lunesDeSemana } from '@/lib/seguimiento'
 
 const initial: FeedbackState = {}
@@ -25,70 +25,43 @@ function Btn() {
   )
 }
 
-type Existente = {
-  semana_inicio:            string
-  estado_fisico:            number | null
-  animo:                    number | null
-  energia:                  number | null
-  adherencia_entrenamiento: number | null
-  adherencia_alimentacion:  number | null
-  peso_autoreporte_kg:      number | null
-  observaciones:            string | null
-  dudas:                    string | null
-}
-
-export function FeedbackForm({
-  existente,
-  adjuntoUrl,
-}: {
-  existente:  Existente | null
-  adjuntoUrl: string | null
-}) {
+// Solo se renderiza para la semana actual cuando todavía no se envió nada
+// (ver app/(paciente)/feedback-semanal/page.tsx) — por eso no recibe valores
+// existentes: una vez enviado, esa semana pasa a mostrarse en modo solo lectura.
+export function FeedbackForm() {
   const [state, action] = useFormState(enviarFeedbackAction, initial)
-  const remountKey = useRemountKeyOnSuccess(state)
-  const semana = existente?.semana_inicio ?? lunesDeSemana()
+  const msgRef = useScrollToMessage(state)
+  const semana = lunesDeSemana()
 
   return (
     <form
-      key={remountKey}
       action={action}
-      encType="multipart/form-data"
       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6"
     >
       <input type="hidden" name="semana_inicio" value={semana} />
 
-      {state.error ? (
-        <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
-          {state.error}
-        </div>
-      ) : null}
-      {state.ok ? (
-        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
-          ¡Gracias! Tu feedback fue guardado.
-        </div>
-      ) : null}
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <ScaleField
-          label="Estado físico"
-          name="estado_fisico"
-          defaultValue={existente?.estado_fisico ?? null}
-        />
-        <ScaleField label="Ánimo" name="animo" defaultValue={existente?.animo ?? null} />
-        <ScaleField label="Energía" name="energia" defaultValue={existente?.energia ?? null} />
+      <div ref={msgRef}>
+        {state.error ? (
+          <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
+            {state.error}
+          </div>
+        ) : null}
+        {state.ok ? (
+          <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+            ¡Gracias! Tu feedback fue guardado.
+          </div>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <PercentField
-          label="Adherencia al entrenamiento (%)"
-          name="adherencia_entrenamiento"
-          defaultValue={existente?.adherencia_entrenamiento ?? null}
-        />
-        <PercentField
-          label="Adherencia a la alimentación (%)"
-          name="adherencia_alimentacion"
-          defaultValue={existente?.adherencia_alimentacion ?? null}
-        />
+        <ScaleField label="Estado físico" name="estado_fisico" />
+        <ScaleField label="Ánimo" name="animo" />
+        <ScaleField label="Energía" name="energia" />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <PercentField label="Adherencia al entrenamiento (%)" name="adherencia_entrenamiento" />
+        <PercentField label="Adherencia a la alimentación (%)" name="adherencia_alimentacion" />
         <label className="block text-sm">
           <span className="block font-medium text-gray-800 mb-1">Peso autoreporte (kg)</span>
           <input
@@ -97,7 +70,6 @@ export function FeedbackForm({
             min="20"
             max="400"
             name="peso_autoreporte_kg"
-            defaultValue={existente?.peso_autoreporte_kg ?? ''}
             placeholder="Ej: 72.5"
             className={inputBase}
           />
@@ -109,7 +81,6 @@ export function FeedbackForm({
         <textarea
           name="observaciones"
           rows={4}
-          defaultValue={existente?.observaciones ?? ''}
           placeholder="Contanos cómo te fue con el plan, energía, descanso, dificultades…"
           className={inputBase}
         />
@@ -120,7 +91,6 @@ export function FeedbackForm({
         <textarea
           name="dudas"
           rows={3}
-          defaultValue={existente?.dudas ?? ''}
           placeholder="¿Alguna duda o pregunta para Avril o Gero?"
           className={inputBase}
         />
@@ -129,20 +99,6 @@ export function FeedbackForm({
       {/* Adjunto */}
       <div className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Foto o adjunto (opcional)</span>
-        {adjuntoUrl ? (
-          <div className="mb-2 flex flex-wrap items-center gap-2 rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-700">
-            <Paperclip className="size-4 text-gray-400 shrink-0" />
-            <a
-              href={adjuntoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-vimet-orange hover:underline truncate"
-            >
-              Ver adjunto de esta semana
-            </a>
-            <span className="text-gray-400">— subí uno nuevo para reemplazarlo</span>
-          </div>
-        ) : null}
         <input
           type="file"
           name="adjunto"
@@ -159,54 +115,20 @@ export function FeedbackForm({
   )
 }
 
-function ScaleField({
-  label,
-  name,
-  defaultValue,
-}: {
-  label:        string
-  name:         string
-  defaultValue: number | null
-}) {
+function ScaleField({ label, name }: { label: string; name: string }) {
   return (
     <label className="block text-sm">
       <span className="block font-medium text-gray-800 mb-1">{label} (1–10)</span>
-      <input
-        type="number"
-        min={1}
-        max={10}
-        step={1}
-        name={name}
-        defaultValue={defaultValue ?? ''}
-        placeholder="1–10"
-        className={inputBase}
-      />
+      <input type="number" min={1} max={10} step={1} name={name} placeholder="1–10" className={inputBase} />
     </label>
   )
 }
 
-function PercentField({
-  label,
-  name,
-  defaultValue,
-}: {
-  label:        string
-  name:         string
-  defaultValue: number | null
-}) {
+function PercentField({ label, name }: { label: string; name: string }) {
   return (
     <label className="block text-sm">
       <span className="block font-medium text-gray-800 mb-1">{label}</span>
-      <input
-        type="number"
-        min={0}
-        max={100}
-        step={1}
-        name={name}
-        defaultValue={defaultValue ?? ''}
-        placeholder="0–100"
-        className={inputBase}
-      />
+      <input type="number" min={0} max={100} step={1} name={name} placeholder="0–100" className={inputBase} />
     </label>
   )
 }

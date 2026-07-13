@@ -35,9 +35,9 @@ export default async function AdminCalendario(
   }
 ) {
   const searchParams = await props.searchParams;
-  const now = new Date()
-  const year = Number(searchParams?.year) || now.getFullYear()
-  const month = Number(searchParams?.month) || now.getMonth() + 1
+  const [hoyY, hoyM] = hoyArgentina().split('-').map(Number)
+  const year = Number(searchParams?.year) || hoyY
+  const month = Number(searchParams?.month) || hoyM
   const monthIdx = month - 1
 
   let pm = month - 1

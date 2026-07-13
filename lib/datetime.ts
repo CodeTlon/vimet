@@ -46,3 +46,15 @@ export function lunesDeSemanaArgentina(date: Date = new Date()): string {
   utc.setUTCDate(utc.getUTCDate() + diff)
   return utc.toISOString().slice(0, 10)
 }
+
+// YYYY-MM-DD de "hace `dias` días" en zona Argentina (mismo anclaje a
+// mediodía UTC que lunesDeSemanaArgentina, para no cruzar de día al restar).
+export function haceDiasArgentina(dias: number, date: Date = new Date()): string {
+  const partes = DATE_FMT.formatToParts(date)
+  const y = Number(partes.find((p) => p.type === 'year')!.value)
+  const m = Number(partes.find((p) => p.type === 'month')!.value)
+  const d = Number(partes.find((p) => p.type === 'day')!.value)
+  const utc = new Date(Date.UTC(y, m - 1, d, 12, 0, 0))
+  utc.setUTCDate(utc.getUTCDate() - dias)
+  return utc.toISOString().slice(0, 10)
+}

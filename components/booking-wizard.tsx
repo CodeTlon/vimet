@@ -87,7 +87,7 @@ export function BookingWizard({
 
   useEffect(() => {
     setSlot(null)
-  }, [servId, fecha])
+  }, [servId, fecha, modalidad])
 
   useEffect(() => {
     if (!profId || !servId || !fecha) {
@@ -97,7 +97,7 @@ export function BookingWizard({
     let cancelled = false
     setLoadingSlots(true)
     setSlotError(null)
-    fetch(`/api/slots?profesional_id=${profId}&fecha=${fecha}&servicio_id=${servId}`)
+    fetch(`/api/slots?profesional_id=${profId}&fecha=${fecha}&servicio_id=${servId}&modalidad=${modalidad}`)
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return
@@ -120,7 +120,7 @@ export function BookingWizard({
     return () => {
       cancelled = true
     }
-  }, [profId, servId, fecha])
+  }, [profId, servId, fecha, modalidad])
 
   const submitDisabled = !profId || !servId || !fecha || !slot
 

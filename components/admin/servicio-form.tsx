@@ -3,7 +3,7 @@
 import { useFormState, useFormStatus } from 'react-dom'
 
 import type { ContenidoState } from '@/actions/contenido'
-import { useResetOnSuccess } from '@/components/seguimiento/use-reset-on-success'
+import { useResetOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
 
 const inputBase =
   'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
@@ -46,6 +46,7 @@ export function ServicioForm({
 }) {
   const [state, formAction] = useFormState(action, {})
   const formRef = useResetOnSuccess(state)
+  const msgRef = useScrollToMessage(state)
 
   return (
     <form
@@ -55,16 +56,18 @@ export function ServicioForm({
     >
       {servicio?.id ? <input type="hidden" name="id" value={servicio.id} /> : null}
 
-      {state.error ? (
-        <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-2 text-sm text-vimet-red">
-          {state.error}
-        </div>
-      ) : null}
-      {state.ok ? (
-        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
-          Guardado.
-        </div>
-      ) : null}
+      <div ref={msgRef}>
+        {state.error ? (
+          <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-2 text-sm text-vimet-red">
+            {state.error}
+          </div>
+        ) : null}
+        {state.ok ? (
+          <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
+            Guardado.
+          </div>
+        ) : null}
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
         <label className="block">

@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { crearEvaluacionAction, type EvalState } from '@/actions/evaluaciones'
-import { useResetOnSuccess } from '@/components/seguimiento/use-reset-on-success'
+import { useResetOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
 import { hoyArgentina } from '@/lib/datetime'
 import { TESTS_FUNCIONALES } from '@/lib/seguimiento'
 
@@ -29,6 +29,7 @@ function Btn() {
 export function EvaluacionForm({ pacienteId }: { pacienteId: string }) {
   const [state, action] = useFormState(crearEvaluacionAction, initial)
   const formRef = useResetOnSuccess(state)
+  const msgRef = useScrollToMessage(state)
   const today = hoyArgentina()
   return (
     <form
@@ -39,25 +40,27 @@ export function EvaluacionForm({ pacienteId }: { pacienteId: string }) {
       <input type="hidden" name="paciente_id" value={pacienteId} />
       <h3 className="font-heading font-semibold text-gray-900">Nueva evaluación funcional</h3>
 
-      {state.error ? (
-        <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-2 text-sm text-vimet-red">
-          {state.error}
-        </div>
-      ) : null}
-      {state.ok ? (
-        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
-          Evaluación registrada.
-        </div>
-      ) : null}
+      <div ref={msgRef}>
+        {state.error ? (
+          <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-2 text-sm text-vimet-red">
+            {state.error}
+          </div>
+        ) : null}
+        {state.ok ? (
+          <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
+            Evaluación registrada.
+          </div>
+        ) : null}
+      </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
         <label className="block">
-          <span className="block font-medium text-gray-800 mb-1">Fecha</span>
-          <input type="date" name="fecha" defaultValue={today} className={inputBase} required />
+          <span className="block min-h-10 font-medium text-gray-800 mb-1">Fecha</span>
+          <input type="date" name="fecha" defaultValue={today} max={today} className={inputBase} required />
         </label>
         {TESTS_FUNCIONALES.map((t) => (
           <label key={t.key} className="block">
-            <span className="block font-medium text-gray-800 mb-1">
+            <span className="block min-h-10 font-medium text-gray-800 mb-1">
               {t.label} <span className="text-gray-400">/ {t.max}</span>
             </span>
             <input
