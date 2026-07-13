@@ -243,6 +243,13 @@ export async function actualizarPerfilPublicoAction(
       return { error: 'La foto debe ser JPG, PNG o WEBP.' }
     }
     if (file.size > 5 * 1024 * 1024) return { error: 'La foto no puede superar 5 MB.' }
+
+    const { data: prevProfile } = await ctx.supabase
+      .from('profiles')
+      .select('foto_url')
+      .eq('id', profileId)
+      .maybeSingle()
+
     const ext = file.name.split('.').pop() ?? 'jpg'
     const path = `staff/${profileId}/${Date.now()}.${ext}`
     const { error: uploadError } = await ctx.supabase.storage.from('sitio').upload(path, file, {
@@ -250,6 +257,11 @@ export async function actualizarPerfilPublicoAction(
     })
     if (uploadError) return { error: 'No se pudo subir la foto.' }
     fotoUrl = ctx.supabase.storage.from('sitio').getPublicUrl(path).data.publicUrl
+
+    // Recién borramos la foto vieja después de subir la nueva con éxito, para
+    // no quedarnos sin ninguna si el upload hubiera fallado.
+    const prevPath = prevProfile?.foto_url?.split('/object/public/sitio/')[1]
+    if (prevPath) await ctx.supabase.storage.from('sitio').remove([prevPath])
   }
 
   const { error } = await ctx.supabase
