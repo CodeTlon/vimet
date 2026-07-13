@@ -106,8 +106,8 @@ export default async function ServiciosPage() {
                     sec.tipo === 'nutricion'
                       ? 'bg-vimet-orange'
                       : sec.tipo === 'entrenamiento'
-                        ? 'bg-vimet-red'
-                        : 'bg-gray-900'
+                        ? 'bg-info'
+                        : 'bg-success'
                   }`}
                   aria-hidden
                 />
@@ -140,8 +140,8 @@ export default async function ServiciosPage() {
                           s.tipo === 'nutricion'
                             ? 'bg-vimet-orange/10 text-vimet-orange'
                             : s.tipo === 'entrenamiento'
-                              ? 'bg-vimet-red/10 text-vimet-red'
-                              : 'bg-gray-900/10 text-gray-900'
+                              ? 'bg-info/10 text-info'
+                              : 'bg-success/10 text-success'
                         }`}
                       >
                         <Icon className="size-6" />
