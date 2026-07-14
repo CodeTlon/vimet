@@ -34,7 +34,7 @@ export async function getSlotsDisponibles({
 }): Promise<Slot[]> {
   if (!profesionalId || !fecha || !duracion) return []
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const dia = diaSemana(fecha)
 
   let horariosQuery = supabase
@@ -118,7 +118,7 @@ export async function getSlotsDisponiblesCombo({
   duracion: number
   modalidad?: 'presencial' | 'virtual'
 }): Promise<Slot[]> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: profesionales } = await supabase
     .from('profiles')
     .select('id')
@@ -143,7 +143,7 @@ export async function getSlotsDisponiblesCombo({
 
 // ids de los profesionales activos que participan de un servicio combo.
 export async function getProfesionalesCombo(): Promise<string[]> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from('profiles')
     .select('id')

@@ -34,7 +34,7 @@ type ServicioView = {
 }
 
 async function loadServicios(): Promise<ServicioView[]> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const [{ data: servicios }, { data: profiles }] = await Promise.all([
     supabase.from('servicios').select('*').eq('activo', true),
     supabase.from('profiles').select('id, email').in('email', ['avril@vimet.com', 'gero@vimet.com']),

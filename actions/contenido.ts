@@ -13,7 +13,7 @@ const STAFF_ROLES = ['nutricionista', 'entrenador', 'admin']
 // Todo el staff (no solo admin) administra el contenido del sitio: hoy los
 // únicos usuarios staff son Avril y Gero, y ambos cumplen ese rol.
 async function requireStaffAction() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -24,7 +24,7 @@ async function requireStaffAction() {
 }
 
 async function requireSelfOrAdmin(profileId: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

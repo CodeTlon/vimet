@@ -26,7 +26,7 @@ type Feedback = {
 }
 
 export default async function FeedbackSemanalPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

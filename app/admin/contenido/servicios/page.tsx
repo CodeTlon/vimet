@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
 export default async function ContenidoServiciosPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const [{ data: servicios }, { data: profesionales }] = await Promise.all([
     supabase.from('servicios').select('*').order('tipo').order('nombre'),

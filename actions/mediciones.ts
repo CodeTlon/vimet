@@ -33,7 +33,7 @@ const toNum = (v: string | undefined) => {
 const toStr = (v: string | undefined) => (v && v.trim() !== '' ? v.trim() : null)
 
 async function getStaff() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

@@ -35,7 +35,7 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
   const id = Number(params.id)
   if (!Number.isFinite(id) || id <= 0) notFound()
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from('turnos')
     .select(

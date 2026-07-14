@@ -20,7 +20,7 @@ export default async function PacienteLayout(
     children
   } = props;
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: paciente } = await supabase
     .from('profiles')
     .select('id, nombre, apellido, email, telefono, rol, created_at')

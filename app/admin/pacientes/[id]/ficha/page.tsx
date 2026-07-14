@@ -9,7 +9,7 @@ export default async function PacienteFichaPage(
   }
 ) {
   const params = await props.params;
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: ficha } = await supabase
     .from('fichas_paciente')
     .select('*')

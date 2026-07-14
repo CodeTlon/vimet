@@ -24,7 +24,7 @@ export default async function AntropometriaPage(
   }
 ) {
   const params = await props.params;
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from('mediciones_antropometricas')
     .select(

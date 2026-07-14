@@ -58,7 +58,7 @@ export async function guardarFichaAction(
   const parsed = fichaSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: 'Datos inválidos' }
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

@@ -13,7 +13,7 @@ export type Profile = {
 }
 
 export async function getUserAndProfile() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

@@ -26,7 +26,7 @@ export default async function EvalFuncionalPage(
   }
 ) {
   const params = await props.params;
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from('evaluaciones_funcionales')
     .select('*')

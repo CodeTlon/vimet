@@ -29,7 +29,7 @@ const ESTADO_ORDER: Record<string, number> = {
 }
 
 export default async function MisObjetivosPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

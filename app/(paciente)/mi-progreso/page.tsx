@@ -12,7 +12,7 @@ export const metadata = { title: 'Mi progreso' }
 export const dynamic = 'force-dynamic'
 
 export default async function MiProgresoPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

@@ -56,7 +56,7 @@ function TipoIcon({ tipo, className }: { tipo: string; className?: string }) {
 
 export default async function RecursosPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data } = await supabase
     .from('recursos_paciente')

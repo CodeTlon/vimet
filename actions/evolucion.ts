@@ -16,7 +16,7 @@ const schema = z.object({
 })
 
 async function getStaff() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

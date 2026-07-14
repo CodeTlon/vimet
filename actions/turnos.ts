@@ -31,7 +31,7 @@ type Franja = {
 // que el profesional tenga un horario activo que cubra la franja con esa
 // modalidad, y que no choque con un turno ya confirmado/pendiente suyo.
 async function profesionalDisponible(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   profesionalId: string,
   franja: Franja,
 ): Promise<boolean> {
@@ -85,7 +85,7 @@ export async function crearTurnoAction(
     return { error: 'El horario del turno es inválido.' }
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -176,7 +176,7 @@ export async function cancelarTurnoAction(formData: FormData) {
   const id = Number(formData.get('id'))
   if (!id) return
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -219,7 +219,7 @@ export async function actualizarTurnoStaffAction(
   })
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

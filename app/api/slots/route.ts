@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   let duracion = 60
   let esCombo = false
   if (servicioId) {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data } = await supabase
       .from('servicios')
       .select('duracion_minutos, tipo')

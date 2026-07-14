@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 export default async function HorariosPage() {
   const { user } = await requireStaff()
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: horarios } = await supabase
     .from('horarios_disponibles')
     .select('id, dia_semana, hora_inicio, hora_fin, modalidad, activo')

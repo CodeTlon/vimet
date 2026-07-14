@@ -9,7 +9,7 @@ export const metadata = { title: 'Configuración · VIMET' }
 export default async function ConfiguracionPage() {
   await requireStaff()
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const [profesionales, { data: profiles }] = await Promise.all([
     getProfesionales(),
     supabase.from('profiles').select('id, email').in('email', ['avril@vimet.com', 'gero@vimet.com']),

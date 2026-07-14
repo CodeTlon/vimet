@@ -19,7 +19,7 @@ type TurnoRow = {
 }
 
 export default async function AdminDashboard() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const today = hoyArgentina()
   const in15 = hoyArgentina(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000))
 

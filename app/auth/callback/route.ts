@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   const type = url.searchParams.get('type') as EmailOtpType | null
   const next = safeNextPath(url.searchParams.get('next'))
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   let error = null
   if (code) {

@@ -26,7 +26,7 @@ type Objetivo = {
 
 export default async function ObjetivosPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from('objetivos')
     .select('id, categoria, descripcion, estado, fecha_objetivo, created_at')
