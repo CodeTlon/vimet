@@ -94,7 +94,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `components/tabs.tsx` | Tabs underline para admin paciente |
 | `components/evolution-chart.tsx` | Gráfico SVG nativo (multi-serie) |
 | `components/seguimiento/*.tsx` | Forms del módulo (ficha, medición, eval, plan, feedback, evolución, objetivo) |
-| `components/seguimiento/feedback-chat.tsx` | Chat de feedback semanal (paciente izquierda, staff derecha). Solo admite mensajes nuevos mientras `feedback_semanal.semana_inicio` es la semana en curso; solo se puede editar el último mensaje propio del hilo |
+| `components/seguimiento/feedback-chat.tsx` | Chat de feedback semanal (paciente izquierda, staff derecha), cada burbuja muestra el nombre del autor (`profiles!feedback_mensajes_autor_id_fkey`, resuelto en el select de las páginas que lo consumen). Solo admite mensajes nuevos mientras `feedback_semanal.semana_inicio` es la semana en curso; solo se puede editar el último mensaje propio del hilo |
 | `lib/storage/optimize-image.ts` | `optimizeImage(buf)` — resize + reencode a webp (`sharp`) antes de subir fotos de usuario a Storage (foto de perfil, recursos tipo imagen, adjuntos de feedback) |
 | `components/page-header.tsx` | Hero/header genérico de páginas internas |
 | `components/whatsapp-fab.tsx` | FAB flotante de WhatsApp en páginas públicas |
@@ -109,7 +109,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `components/codetlon-badge.tsx` | Badge de marca CodeTlon en footer |
 | `components/admin-sidebar.tsx` | Sidebar del admin |
 | `lib/seguimiento.ts` | Helpers: scoring funcional, labels, lunesDeSemana, formatFecha |
-| `lib/datetime.ts` | Helpers de fecha en zona Argentina (`hoyArgentina`, `horaArgentina`, `lunesDeSemanaArgentina`) |
+| `lib/datetime.ts` | Helpers de fecha en zona Argentina (`hoyArgentina`, `horaArgentina`, `lunesDeSemanaArgentina`, `turnoVencidoDesde` para el barrido de no-show) |
 | `lib/booking/slots.ts` | Cálculo de slots disponibles (horarios − turnos − bloqueos − filtro de hoy), en bloques de 15 min. `getProfesionalesCombo` resuelve nutricionista + entrenador activos por rol; `getSlotsDisponiblesCombo` intersecta la disponibilidad real de ambos para servicios tipo combo |
 | `lib/config/team.ts` | Datos estáticos del equipo + ubicación + redes |
 | `lib/config/servicios.ts` | Catálogo estático para la página de servicios pública |
@@ -119,7 +119,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `lib/supabase/auth-helpers.ts` | `getUserAndProfile` / `requireAuth` / `requireStaff` |
 | `middleware.ts` | Auth middleware: protege /mis-*, /feedback-semanal, /turnos/*, /admin/* |
 | `actions/auth.ts` | Server Actions: login, register, logout, nuevaContrasena, recuperarContrasena |
-| `actions/turnos.ts` | Server Actions: crear, cancelar, actualizar estado. Para servicio tipo combo, `crearTurnoAction` inserta un turno por profesional vinculados vía `turno_par_id`; `cancelarTurnoAction` y `actualizarTurnoStaffAction` propagan el cambio al turno vinculado (esta última con cliente admin, porque RLS no deja a un profesional escribir el turno del otro) |
+| `actions/turnos.ts` | Server Actions: crear, cancelar, actualizar estado. Para servicio tipo combo, `crearTurnoAction` inserta un turno por profesional vinculados vía `turno_par_id`; `cancelarTurnoAction` y `actualizarTurnoStaffAction` propagan el cambio al turno vinculado (esta última con cliente admin, porque RLS no deja a un profesional escribir el turno del otro). `marcarNoAsistioVencidos` — barrido perezoso (sin cron) que pasa a `no_asistio` los turnos `pendiente` cuyo horario + 15min de gracia ya pasó; se llama al principio de las páginas que listan/muestran turnos (mis-turnos, admin dashboard/calendario/turno detalle) |
 | `actions/contacto.ts` | Server Action: enviar email contacto |
 | `actions/ficha.ts` | Upsert de ficha clínica |
 | `actions/mediciones.ts` | CRUD mediciones antropométricas (crear + editar in-place) |
