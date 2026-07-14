@@ -1,6 +1,7 @@
 'use client'
 
 import { MessageSquarePlus, Save } from 'lucide-react'
+import { useEffect } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import {
@@ -54,6 +55,11 @@ export function EvolucionForm({
   )
   const formRef = useResetOnSuccess(state)
   const msgRef = useScrollToMessage(state)
+
+  useEffect(() => {
+    if (editing && state.ok) onCancel?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state])
   return (
     <form
       ref={editing ? undefined : formRef}
