@@ -17,7 +17,7 @@ type Entry = {
 
 export default async function EvolucionPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from('evolucion_entradas')
     .select(

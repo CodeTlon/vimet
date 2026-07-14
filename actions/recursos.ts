@@ -25,7 +25,7 @@ const MAX_BYTES = {
 } as const
 
 async function requireStaff() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

@@ -9,12 +9,16 @@ import {
   crearPlanAction,
   type PlanState,
 } from '@/actions/planes'
-import { useRemountKeyOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
+import {
+  useAutoHideMessage,
+  useRemountKeyOnSuccess,
+  useScrollToMessage,
+} from '@/components/seguimiento/use-reset-on-success'
 import { hoyArgentina } from '@/lib/datetime'
 
 const initial: PlanState = {}
 const inputBase =
-  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
+  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none'
 
 type Plan = {
   id: number
@@ -73,6 +77,7 @@ export function PlanForm({
   const p = plan
   const remountKey = useRemountKeyOnSuccess(state)
   const msgRef = useScrollToMessage(state)
+  const visible = useAutoHideMessage(state)
   const [fechaDesde, setFechaDesde] = useState(p?.fecha_desde ?? hoyArgentina())
 
   return (
@@ -81,12 +86,12 @@ export function PlanForm({
       {editing ? <input type="hidden" name="id" value={p!.id} /> : null}
 
       <div ref={msgRef}>
-        {state.error ? (
+        {visible && state.error ? (
           <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
             {state.error}
           </div>
         ) : null}
-        {state.ok ? (
+        {visible && state.ok ? (
           <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
             Plan guardado correctamente.
           </div>

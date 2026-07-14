@@ -26,7 +26,7 @@ type Plan = {
 
 export default async function PlanesPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from('planes')
     .select('id, tipo, titulo, estado, fecha_desde, fecha_hasta, archivo_path, updated_at')

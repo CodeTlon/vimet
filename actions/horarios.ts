@@ -54,7 +54,7 @@ export async function agregarHorarioAction(
     return { error: 'La hora de inicio debe ser anterior a la de fin.' }
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: existentes } = await supabase
     .from('horarios_disponibles')
@@ -93,7 +93,7 @@ export async function eliminarHorarioAction(
   const id = Number(formData.get('id'))
   if (!id) return {}
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: horario } = await supabase
     .from('horarios_disponibles')
@@ -141,7 +141,7 @@ export async function actualizarHorarioAction(
     return { error: 'La hora de inicio debe ser anterior a la de fin.' }
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: actual } = await supabase
     .from('horarios_disponibles')
@@ -204,7 +204,7 @@ type TurnoAfectado = {
 // franja que se tocó": si otra franja del mismo día lo sigue cubriendo, el
 // turno queda cubierto igual y no hay que cancelarlo).
 async function turnosSinCobertura(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   profesionalId: string,
   dias: number[],
 ): Promise<TurnoAfectado[]> {
@@ -242,7 +242,7 @@ async function turnosSinCobertura(
 // Best-effort: si un email falla no revierte la cancelación (el turno ya no
 // tiene horario real).
 async function cancelarYNotificar(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   afectados: TurnoAfectado[],
 ): Promise<CanceladoInfo[]> {
   if (afectados.length === 0) return []

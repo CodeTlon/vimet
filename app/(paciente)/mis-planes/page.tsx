@@ -24,7 +24,7 @@ type Plan = {
 }
 
 export default async function MisPlanesPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

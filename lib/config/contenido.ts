@@ -24,7 +24,7 @@ export type ContenidoSitio = {
 }
 
 export async function getContenidoSitio(): Promise<ContenidoSitio> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase.from('contenido_sitio').select('*').eq('id', 1).maybeSingle()
 
   return {
@@ -47,7 +47,7 @@ export async function getContenidoSitio(): Promise<ContenidoSitio> {
 }
 
 export async function getProfesionales(): Promise<Record<'avril' | 'gero', Profesional>> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const emails = [TEAM_FALLBACK.avril.dbEmail, TEAM_FALLBACK.gero.dbEmail]
   const { data } = await supabase
     .from('profiles')

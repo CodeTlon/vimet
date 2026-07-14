@@ -21,7 +21,7 @@ const tabs = [
 ]
 
 export default async function PacienteLayout({ children }: { children: ReactNode }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

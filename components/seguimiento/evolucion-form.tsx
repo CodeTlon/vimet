@@ -1,6 +1,7 @@
 'use client'
 
 import { MessageSquarePlus, Save } from 'lucide-react'
+import { useEffect } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import {
@@ -12,7 +13,7 @@ import { useResetOnSuccess, useScrollToMessage } from '@/components/seguimiento/
 
 const initial: EvolucionState = {}
 const inputBase =
-  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
+  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none'
 
 type Entry = {
   id: number
@@ -54,6 +55,11 @@ export function EvolucionForm({
   )
   const formRef = useResetOnSuccess(state)
   const msgRef = useScrollToMessage(state)
+
+  useEffect(() => {
+    if (editing && state.ok) onCancel?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state])
   return (
     <form
       ref={editing ? undefined : formRef}

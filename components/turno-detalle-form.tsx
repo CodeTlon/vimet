@@ -4,7 +4,7 @@ import { Check, CheckCheck, UserX, X } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { actualizarTurnoStaffAction, type TurnoState } from '@/actions/turnos'
-import { useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
+import { useAutoHideMessage, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
 
 const initialState: TurnoState = {}
 
@@ -49,6 +49,7 @@ export function TurnoDetalleForm({
 }) {
   const [state, formAction] = useFormState(actualizarTurnoStaffAction, initialState)
   const msgRef = useScrollToMessage(state)
+  const visible = useAutoHideMessage(state)
   const editable = ['pendiente', 'confirmado'].includes(estadoActual)
 
   if (!editable) {
@@ -64,12 +65,12 @@ export function TurnoDetalleForm({
       <input type="hidden" name="id" value={id} />
 
       <div ref={msgRef}>
-        {state.error ? (
+        {visible && state.error ? (
           <div role="alert" className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
             {state.error}
           </div>
         ) : null}
-        {state.ok ? (
+        {visible && state.ok ? (
           <div role="status" className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
             Turno actualizado correctamente.
           </div>
@@ -85,7 +86,7 @@ export function TurnoDetalleForm({
           rows={4}
           defaultValue={notas ?? ''}
           placeholder="Notas internas sobre el turno (no visibles al paciente)"
-          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none"
         />
       </div>
 

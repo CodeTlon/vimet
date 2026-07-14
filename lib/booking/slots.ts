@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export type Slot = { hora_inicio: string; hora_fin: string }
 
-const SLOT_STEP_MINUTES = 30
+const SLOT_STEP_MINUTES = 15
 
 function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(':').map(Number)
@@ -34,7 +34,7 @@ export async function getSlotsDisponibles({
 }): Promise<Slot[]> {
   if (!profesionalId || !fecha || !duracion) return []
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const dia = diaSemana(fecha)
 
   let horariosQuery = supabase
@@ -105,4 +105,49 @@ export async function getSlotsDisponibles({
   }
 
   return slots
+}
+
+// Slots donde TODOS los profesionales activos (nutricionista + entrenador)
+// están libres a la vez — para servicios "combo" que requieren a ambos.
+export async function getSlotsDisponiblesCombo({
+  fecha,
+  duracion,
+  modalidad,
+}: {
+  fecha: string
+  duracion: number
+  modalidad?: 'presencial' | 'virtual'
+}): Promise<Slot[]> {
+  const supabase = await createClient()
+  const { data: profesionales } = await supabase
+    .from('profiles')
+    .select('id')
+    .in('rol', ['nutricionista', 'entrenador'])
+    .eq('activo', true)
+
+  if (!profesionales || profesionales.length < 2) return []
+
+  const listas = await Promise.all(
+    profesionales.map((p) =>
+      getSlotsDisponibles({ profesionalId: p.id, fecha, duracion, modalidad }),
+    ),
+  )
+
+  const [primera, ...resto] = listas
+  return primera.filter((s) =>
+    resto.every((lista) =>
+      lista.some((o) => o.hora_inicio === s.hora_inicio && o.hora_fin === s.hora_fin),
+    ),
+  )
+}
+
+// ids de los profesionales activos que participan de un servicio combo.
+export async function getProfesionalesCombo(): Promise<string[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('profiles')
+    .select('id')
+    .in('rol', ['nutricionista', 'entrenador'])
+    .eq('activo', true)
+  return (data ?? []).map((p) => p.id)
 }

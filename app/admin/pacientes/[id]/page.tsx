@@ -17,7 +17,7 @@ export default async function PacienteResumen(
   }
 ) {
   const params = await props.params;
-  const supabase = createClient()
+  const supabase = await createClient()
   const id = params.id
 
   const [

@@ -1,17 +1,39 @@
 'use client'
 
-import { Plus } from 'lucide-react'
+import { Plus, Save } from 'lucide-react'
+import { useEffect } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
-import { crearMedicionAction, type MedicionState } from '@/actions/mediciones'
-import { useResetOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
+import {
+  actualizarMedicionAction,
+  crearMedicionAction,
+  type MedicionState,
+} from '@/actions/mediciones'
+import {
+  useAutoHideMessage,
+  useResetOnSuccess,
+  useScrollToMessage,
+} from '@/components/seguimiento/use-reset-on-success'
 import { haceDiasArgentina, hoyArgentina } from '@/lib/datetime'
 
 const initial: MedicionState = {}
 const inputBase =
-  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
+  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none'
 
-function Btn() {
+type Medicion = {
+  id: number
+  fecha_medicion: string
+  peso_kg: number | null
+  talla_cm: number | null
+  porc_grasa: number | null
+  porc_masa_muscular: number | null
+  kg_grasa: number | null
+  kg_musculo: number | null
+  dx_antropometrico: string | null
+  observaciones: string | null
+}
+
+function Btn({ editing }: { editing: boolean }) {
   const { pending } = useFormStatus()
   return (
     <button
@@ -19,34 +41,54 @@ function Btn() {
       disabled={pending}
       className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-vimet-gradient text-white font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
     >
-      <Plus className="size-4" />
-      {pending ? 'Guardando…' : 'Agregar medición'}
+      {editing ? <Save className="size-4" /> : <Plus className="size-4" />}
+      {pending ? 'Guardando…' : editing ? 'Guardar cambios' : 'Agregar medición'}
     </button>
   )
 }
 
-export function MedicionForm({ pacienteId }: { pacienteId: string }) {
-  const [state, action] = useFormState(crearMedicionAction, initial)
+export function MedicionForm({
+  pacienteId,
+  medicion,
+  onCancel,
+}: {
+  pacienteId: string
+  medicion?: Medicion
+  onCancel?: () => void
+}) {
+  const editing = Boolean(medicion)
+  const [state, action] = useFormState(
+    editing ? actualizarMedicionAction : crearMedicionAction,
+    initial,
+  )
   const formRef = useResetOnSuccess(state)
   const msgRef = useScrollToMessage(state)
+  const visible = useAutoHideMessage(state)
   const today = hoyArgentina()
   const hace7Dias = haceDiasArgentina(7)
+
+  useEffect(() => {
+    if (editing && state.ok) onCancel?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state])
+
   return (
     <form
-      ref={formRef}
+      ref={editing ? undefined : formRef}
       action={action}
       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4"
     >
       <input type="hidden" name="paciente_id" value={pacienteId} />
-      <h3 className="font-heading font-semibold text-gray-900">Nueva medición</h3>
+      {editing ? <input type="hidden" name="id" value={medicion!.id} /> : null}
+      {!editing ? <h3 className="font-heading font-semibold text-gray-900">Nueva medición</h3> : null}
 
       <div ref={msgRef}>
-        {state.error ? (
+        {visible && state.error ? (
           <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-2 text-sm text-vimet-red">
             {state.error}
           </div>
         ) : null}
-        {state.ok ? (
+        {visible && state.ok && !editing ? (
           <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
             Medición agregada.
           </div>
@@ -58,7 +100,7 @@ export function MedicionForm({ pacienteId }: { pacienteId: string }) {
           <input
             type="date"
             name="fecha_medicion"
-            defaultValue={today}
+            defaultValue={medicion?.fecha_medicion ?? today}
             min={hace7Dias}
             max={today}
             className={inputBase}
@@ -66,32 +108,96 @@ export function MedicionForm({ pacienteId }: { pacienteId: string }) {
           />
         </Lab>
         <Lab label="Peso (kg)">
-          <input type="number" step="0.1" name="peso_kg" placeholder="Ej: 72.5" className={inputBase} />
+          <input
+            type="number"
+            step="0.1"
+            name="peso_kg"
+            defaultValue={medicion?.peso_kg ?? ''}
+            placeholder="Ej: 72.5"
+            className={inputBase}
+          />
         </Lab>
         <Lab label="Talla (cm)">
-          <input type="number" step="0.1" name="talla_cm" placeholder="Ej: 170" className={inputBase} />
+          <input
+            type="number"
+            step="0.1"
+            name="talla_cm"
+            defaultValue={medicion?.talla_cm ?? ''}
+            placeholder="Ej: 170"
+            className={inputBase}
+          />
         </Lab>
         <Lab label="DX antropométrico">
-          <input name="dx_antropometrico" placeholder="Ej: normopeso" className={inputBase} />
+          <input
+            name="dx_antropometrico"
+            defaultValue={medicion?.dx_antropometrico ?? ''}
+            placeholder="Ej: normopeso"
+            className={inputBase}
+          />
         </Lab>
         <Lab label="% grasa">
-          <input type="number" step="0.1" name="porc_grasa" placeholder="Ej: 22.0" className={inputBase} />
+          <input
+            type="number"
+            step="0.01"
+            name="porc_grasa"
+            defaultValue={medicion?.porc_grasa ?? ''}
+            placeholder="Ej: 22.05"
+            className={inputBase}
+          />
         </Lab>
         <Lab label="% masa muscular">
-          <input type="number" step="0.1" name="porc_masa_muscular" placeholder="Ej: 38.0" className={inputBase} />
+          <input
+            type="number"
+            step="0.01"
+            name="porc_masa_muscular"
+            defaultValue={medicion?.porc_masa_muscular ?? ''}
+            placeholder="Ej: 38.05"
+            className={inputBase}
+          />
         </Lab>
         <Lab label="Kg grasa">
-          <input type="number" step="0.1" name="kg_grasa" placeholder="Ej: 16.0" className={inputBase} />
+          <input
+            type="number"
+            step="0.1"
+            name="kg_grasa"
+            defaultValue={medicion?.kg_grasa ?? ''}
+            placeholder="Ej: 16.0"
+            className={inputBase}
+          />
         </Lab>
         <Lab label="Kg músculo">
-          <input type="number" step="0.1" name="kg_musculo" placeholder="Ej: 27.5" className={inputBase} />
+          <input
+            type="number"
+            step="0.1"
+            name="kg_musculo"
+            defaultValue={medicion?.kg_musculo ?? ''}
+            placeholder="Ej: 27.5"
+            className={inputBase}
+          />
         </Lab>
       </div>
       <Lab label="Observaciones">
-        <textarea name="observaciones" rows={2} placeholder="Notas de la medición (opcional)" className={inputBase} />
+        <textarea
+          name="observaciones"
+          rows={2}
+          defaultValue={medicion?.observaciones ?? ''}
+          placeholder="Notas de la medición (opcional)"
+          className={inputBase}
+        />
       </Lab>
 
-      <Btn />
+      <div className="flex items-center gap-3">
+        <Btn editing={editing} />
+        {editing ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-sm font-medium text-gray-500 hover:text-gray-700"
+          >
+            Cancelar
+          </button>
+        ) : null}
+      </div>
     </form>
   )
 }

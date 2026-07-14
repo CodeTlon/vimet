@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-import { getSlotsDisponibles } from '@/lib/booking/slots'
+import { getSlotsDisponibles, getSlotsDisponiblesCombo } from '@/lib/booking/slots'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -13,19 +13,30 @@ export async function GET(request: NextRequest) {
   const modalidadParam = url.searchParams.get('modalidad')
   const modalidad = modalidadParam === 'presencial' || modalidadParam === 'virtual' ? modalidadParam : undefined
 
-  if (!profesionalId || !fecha) {
+  if (!fecha || (!profesionalId && !servicioId)) {
     return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 })
   }
 
   let duracion = 60
+  let esCombo = false
   if (servicioId) {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data } = await supabase
       .from('servicios')
-      .select('duracion_minutos')
+      .select('duracion_minutos, tipo')
       .eq('id', servicioId)
       .maybeSingle()
     if (data?.duracion_minutos) duracion = data.duracion_minutos
+    esCombo = data?.tipo === 'combo'
+  }
+
+  if (esCombo) {
+    const slots = await getSlotsDisponiblesCombo({ fecha, duracion, modalidad })
+    return NextResponse.json({ slots })
+  }
+
+  if (!profesionalId) {
+    return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 })
   }
 
   const slots = await getSlotsDisponibles({ profesionalId, fecha, duracion, modalidad })

@@ -1,5 +1,6 @@
 import { Sparkles, Target } from 'lucide-react'
 
+import { hoyArgentina } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 import {
   CATEGORIA_OBJETIVO_LABEL,
@@ -28,7 +29,7 @@ const ESTADO_ORDER: Record<string, number> = {
 }
 
 export default async function MisObjetivosPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -69,34 +70,41 @@ export default async function MisObjetivosPage() {
         </div>
       ) : (
         <ul className="space-y-3">
-          {objetivos.map((o) => (
-            <li
-              key={o.id}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-wrap items-start justify-between gap-3"
-            >
-              <div className="flex-1 min-w-[200px] flex gap-3">
-                <Target className="size-5 text-vimet-orange shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-vimet-orange">
-                    {CATEGORIA_OBJETIVO_LABEL[o.categoria]}
-                  </p>
-                  <p className="text-sm text-gray-900 mt-0.5">{o.descripcion}</p>
-                  {o.fecha_objetivo ? (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Fecha objetivo: {formatearFechaCorta(o.fecha_objetivo)}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-              <span
-                className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                  ESTADO_OBJETIVO_BADGE[o.estado]
-                }`}
+          {objetivos.map((o) => {
+            const vencido =
+              !!o.fecha_objetivo &&
+              o.fecha_objetivo < hoyArgentina() &&
+              !['cumplido', 'descartado'].includes(o.estado)
+            return (
+              <li
+                key={o.id}
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-wrap items-start justify-between gap-3"
               >
-                {ESTADO_OBJETIVO_LABEL[o.estado]}
-              </span>
-            </li>
-          ))}
+                <div className="flex-1 min-w-[200px] flex gap-3">
+                  <Target className="size-5 text-vimet-orange shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-vimet-orange">
+                      {CATEGORIA_OBJETIVO_LABEL[o.categoria]}
+                    </p>
+                    <p className="text-sm text-gray-900 mt-0.5">{o.descripcion}</p>
+                    {o.fecha_objetivo ? (
+                      <p className={`text-xs mt-1 ${vencido ? 'text-vimet-red font-semibold' : 'text-gray-500'}`}>
+                        Fecha objetivo: {formatearFechaCorta(o.fecha_objetivo)}
+                        {vencido ? ' · Vencido' : ''}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+                <span
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    ESTADO_OBJETIVO_BADGE[o.estado]
+                  }`}
+                >
+                  {ESTADO_OBJETIVO_LABEL[o.estado]}
+                </span>
+              </li>
+            )
+          })}
         </ul>
       )}
     </>

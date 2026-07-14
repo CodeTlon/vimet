@@ -18,7 +18,7 @@ type Paciente = {
 }
 
 export default async function PacientesPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from('profiles')
     .select('id, nombre, apellido, email, telefono, activo, created_at')

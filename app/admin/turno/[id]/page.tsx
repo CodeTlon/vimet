@@ -3,26 +3,12 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { TurnoDetalleForm } from '@/components/turno-detalle-form'
+import { ESTADO_TURNO_BADGE, ESTADO_TURNO_LABEL } from '@/lib/seguimiento'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata = { title: 'Detalle de turno' }
 export const dynamic = 'force-dynamic'
-
-const ESTADO_LABEL: Record<string, string> = {
-  pendiente: 'Pendiente',
-  confirmado: 'Confirmado',
-  cancelado: 'Cancelado',
-  completado: 'Completado',
-  no_asistio: 'No asistió',
-}
-
-const ESTADO_BADGE: Record<string, string> = {
-  pendiente: 'bg-yellow-100 text-yellow-800',
-  confirmado: 'bg-green-100 text-green-800',
-  cancelado: 'bg-red-100 text-red-800',
-  completado: 'bg-blue-100 text-blue-800',
-  no_asistio: 'bg-gray-200 text-gray-700',
-}
 
 type TurnoDetail = {
   id: number
@@ -33,6 +19,7 @@ type TurnoDetail = {
   estado: string
   notas_paciente: string | null
   notas_profesional: string | null
+  turno_par_id: number | null
   servicios: { nombre: string } | null
   paciente: {
     nombre: string
@@ -48,17 +35,32 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
   const id = Number(params.id)
   if (!Number.isFinite(id) || id <= 0) notFound()
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from('turnos')
     .select(
-      'id, fecha, hora_inicio, hora_fin, modalidad, estado, notas_paciente, notas_profesional, servicios(nombre), paciente:profiles!turnos_paciente_id_fkey(nombre, apellido, email, telefono), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
+      'id, fecha, hora_inicio, hora_fin, modalidad, estado, notas_paciente, notas_profesional, turno_par_id, servicios(nombre), paciente:profiles!turnos_paciente_id_fkey(nombre, apellido, email, telefono), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
     )
     .eq('id', id)
     .maybeSingle()
 
   if (!data) notFound()
   const turno = data as unknown as TurnoDetail
+
+  // El turno vinculado (plan integral) pertenece al otro profesional — se
+  // lee con el cliente admin porque RLS no deja ver turnos ajenos entre
+  // staff no-admin, y acá es una lectura intencional para mostrar con quién
+  // más tiene turno el paciente.
+  let otroProfesional: { nombre: string; apellido: string } | null = null
+  if (turno.turno_par_id) {
+    const admin = createAdminClient()
+    const { data: par } = await admin
+      .from('turnos')
+      .select('profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)')
+      .eq('id', turno.turno_par_id)
+      .maybeSingle()
+    otroProfesional = (par as unknown as { profesional: { nombre: string; apellido: string } } | null)?.profesional ?? null
+  }
 
   const ModalidadIcon = turno.modalidad === 'virtual' ? Video : Building2
 
@@ -80,19 +82,29 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="font-heading text-xl font-semibold text-gray-900">
-                  {turno.servicios?.nombre ?? 'Consulta'}
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-heading text-xl font-semibold text-gray-900">
+                    {turno.servicios?.nombre ?? 'Consulta'}
+                  </h2>
+                  {otroProfesional ? (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success">
+                      Plan integral
+                    </span>
+                  ) : null}
+                </div>
                 <p className="text-sm text-gray-700 mt-1">
                   Profesional: {turno.profesional?.nombre} {turno.profesional?.apellido}
+                  {otroProfesional
+                    ? ` — junto con ${otroProfesional.nombre} ${otroProfesional.apellido}`
+                    : ''}
                 </p>
               </div>
               <span
                 className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  ESTADO_BADGE[turno.estado] ?? 'bg-gray-100 text-gray-700'
+                  ESTADO_TURNO_BADGE[turno.estado] ?? 'bg-gray-100 text-gray-700'
                 }`}
               >
-                {ESTADO_LABEL[turno.estado] ?? turno.estado}
+                {ESTADO_TURNO_LABEL[turno.estado] ?? turno.estado}
               </span>
             </div>
 

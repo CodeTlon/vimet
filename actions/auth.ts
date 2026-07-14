@@ -41,7 +41,7 @@ export async function loginAction(_prev: unknown, formData: FormData): Promise<A
     return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword(parsed.data)
 
   if (error) {
@@ -86,7 +86,7 @@ export async function registerAction(_prev: unknown, formData: FormData): Promis
     }
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
   const { data, error } = await supabase.auth.signUp({
@@ -114,7 +114,7 @@ export async function registerAction(_prev: unknown, formData: FormData): Promis
     // Marcar como inactivo hasta que el admin lo active
     await createAdminClient().from('profiles').update({ activo: false }).eq('id', data.user.id)
     // Cerrar la sesión que pudo haberse abierto automáticamente
-    await createClient().auth.signOut()
+    await (await createClient()).auth.signOut()
   }
 
   return { ok: true }
@@ -129,7 +129,7 @@ export async function recuperarContrasenaAction(
     return { error: 'Ingresá un email válido.' }
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
   // Código de 8 dígitos en vez de link clickeable: un link de un solo uso se
   // puede quemar solo con que el cliente de mail lo pre-visite (link preview),
   // dejándolo "vencido" antes de que el usuario lo toque. El código no tiene
@@ -169,7 +169,7 @@ export async function confirmarRecuperacionAction(
     return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos', fields: { email } }
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const { error: otpError } = await supabase.auth.verifyOtp({
     email: parsed.data.email,
     token: parsed.data.token,
@@ -209,7 +209,7 @@ export async function nuevaContrasenaAction(_prev: unknown, formData: FormData):
   if (password.length < 6) return { error: 'Mínimo 6 caracteres.' }
   if (password !== confirm) return { error: 'Las contraseñas no coinciden.' }
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const { error } = await supabase.auth.updateUser({ password })
 
   if (error) return { error: 'No se pudo guardar la contraseña. El link puede haber expirado.' }
@@ -242,7 +242,7 @@ export async function nuevaContrasenaAction(_prev: unknown, formData: FormData):
 }
 
 export async function logoutAction() {
-  const supabase = createClient()
+  const supabase = await createClient()
   await supabase.auth.signOut()
   revalidatePath('/', 'layout')
   redirect('/')

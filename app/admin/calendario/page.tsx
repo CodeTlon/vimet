@@ -60,7 +60,7 @@ export default async function AdminCalendario(
   const monthStart = `${year}-${String(month).padStart(2, '0')}-01`
   const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(dim).padStart(2, '0')}`
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from('turnos')
     .select(

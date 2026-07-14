@@ -19,7 +19,7 @@ export default async function MiPlanDetallePage(
   }
 ) {
   const params = await props.params;
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

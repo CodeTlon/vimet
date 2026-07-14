@@ -47,7 +47,7 @@ const baseSchema = planObjectSchema.refine(vigenciaRefine, vigenciaRefineOpts)
 const toStr = (v: string | undefined) => (v && v.trim() !== '' ? v.trim() : null)
 
 async function getStaff() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -217,7 +217,7 @@ export async function eliminarPlanAction(formData: FormData) {
 export async function obtenerUrlPlanAction(formData: FormData): Promise<{ url?: string; error?: string }> {
   const id = Number(formData.get('id'))
   if (!id) return { error: 'Plan inválido' }
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

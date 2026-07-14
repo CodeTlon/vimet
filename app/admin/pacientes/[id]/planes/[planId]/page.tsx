@@ -13,7 +13,7 @@ export default async function EditarPlanPage(
   }
 ) {
   const params = await props.params;
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: plan } = await supabase
     .from('planes')
     .select('*')
