@@ -106,3 +106,48 @@ export async function getSlotsDisponibles({
 
   return slots
 }
+
+// Slots donde TODOS los profesionales activos (nutricionista + entrenador)
+// están libres a la vez — para servicios "combo" que requieren a ambos.
+export async function getSlotsDisponiblesCombo({
+  fecha,
+  duracion,
+  modalidad,
+}: {
+  fecha: string
+  duracion: number
+  modalidad?: 'presencial' | 'virtual'
+}): Promise<Slot[]> {
+  const supabase = createClient()
+  const { data: profesionales } = await supabase
+    .from('profiles')
+    .select('id')
+    .in('rol', ['nutricionista', 'entrenador'])
+    .eq('activo', true)
+
+  if (!profesionales || profesionales.length < 2) return []
+
+  const listas = await Promise.all(
+    profesionales.map((p) =>
+      getSlotsDisponibles({ profesionalId: p.id, fecha, duracion, modalidad }),
+    ),
+  )
+
+  const [primera, ...resto] = listas
+  return primera.filter((s) =>
+    resto.every((lista) =>
+      lista.some((o) => o.hora_inicio === s.hora_inicio && o.hora_fin === s.hora_fin),
+    ),
+  )
+}
+
+// ids de los profesionales activos que participan de un servicio combo.
+export async function getProfesionalesCombo(): Promise<string[]> {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from('profiles')
+    .select('id')
+    .in('rol', ['nutricionista', 'entrenador'])
+    .eq('activo', true)
+  return (data ?? []).map((p) => p.id)
+}

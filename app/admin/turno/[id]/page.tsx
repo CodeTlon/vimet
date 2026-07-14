@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 
 import { TurnoDetalleForm } from '@/components/turno-detalle-form'
 import { ESTADO_TURNO_BADGE, ESTADO_TURNO_LABEL } from '@/lib/seguimiento'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata = { title: 'Detalle de turno' }
@@ -18,6 +19,7 @@ type TurnoDetail = {
   estado: string
   notas_paciente: string | null
   notas_profesional: string | null
+  turno_par_id: number | null
   servicios: { nombre: string } | null
   paciente: {
     nombre: string
@@ -37,13 +39,28 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
   const { data } = await supabase
     .from('turnos')
     .select(
-      'id, fecha, hora_inicio, hora_fin, modalidad, estado, notas_paciente, notas_profesional, servicios(nombre), paciente:profiles!turnos_paciente_id_fkey(nombre, apellido, email, telefono), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
+      'id, fecha, hora_inicio, hora_fin, modalidad, estado, notas_paciente, notas_profesional, turno_par_id, servicios(nombre), paciente:profiles!turnos_paciente_id_fkey(nombre, apellido, email, telefono), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
     )
     .eq('id', id)
     .maybeSingle()
 
   if (!data) notFound()
   const turno = data as unknown as TurnoDetail
+
+  // El turno vinculado (plan integral) pertenece al otro profesional — se
+  // lee con el cliente admin porque RLS no deja ver turnos ajenos entre
+  // staff no-admin, y acá es una lectura intencional para mostrar con quién
+  // más tiene turno el paciente.
+  let otroProfesional: { nombre: string; apellido: string } | null = null
+  if (turno.turno_par_id) {
+    const admin = createAdminClient()
+    const { data: par } = await admin
+      .from('turnos')
+      .select('profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)')
+      .eq('id', turno.turno_par_id)
+      .maybeSingle()
+    otroProfesional = (par as unknown as { profesional: { nombre: string; apellido: string } } | null)?.profesional ?? null
+  }
 
   const ModalidadIcon = turno.modalidad === 'virtual' ? Video : Building2
 
@@ -65,11 +82,21 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="font-heading text-xl font-semibold text-gray-900">
-                  {turno.servicios?.nombre ?? 'Consulta'}
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-heading text-xl font-semibold text-gray-900">
+                    {turno.servicios?.nombre ?? 'Consulta'}
+                  </h2>
+                  {otroProfesional ? (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success">
+                      Plan integral
+                    </span>
+                  ) : null}
+                </div>
                 <p className="text-sm text-gray-700 mt-1">
                   Profesional: {turno.profesional?.nombre} {turno.profesional?.apellido}
+                  {otroProfesional
+                    ? ` — junto con ${otroProfesional.nombre} ${otroProfesional.apellido}`
+                    : ''}
                 </p>
               </div>
               <span

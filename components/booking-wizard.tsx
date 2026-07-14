@@ -69,6 +69,8 @@ export function BookingWizard({
   const [slotError, setSlotError] = useState<string | null>(null)
 
   const profSel = profesionales.find((p) => p.id === profId) ?? null
+  const servSel = servicios.find((s) => String(s.id) === servId) ?? null
+  const esCombo = servSel?.tipo === 'combo'
 
   const serviciosFiltrados = useMemo(() => {
     if (!profSel) return [] as Servicio[]
@@ -90,14 +92,17 @@ export function BookingWizard({
   }, [servId, fecha, modalidad])
 
   useEffect(() => {
-    if (!profId || !servId || !fecha) {
+    if (!servId || !fecha || (!esCombo && !profId)) {
       setSlots([])
       return
     }
     let cancelled = false
     setLoadingSlots(true)
     setSlotError(null)
-    fetch(`/api/slots?profesional_id=${profId}&fecha=${fecha}&servicio_id=${servId}&modalidad=${modalidad}`)
+    const url = esCombo
+      ? `/api/slots?fecha=${fecha}&servicio_id=${servId}&modalidad=${modalidad}`
+      : `/api/slots?profesional_id=${profId}&fecha=${fecha}&servicio_id=${servId}&modalidad=${modalidad}`
+    fetch(url)
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return
@@ -120,7 +125,7 @@ export function BookingWizard({
     return () => {
       cancelled = true
     }
-  }, [profId, servId, fecha, modalidad])
+  }, [profId, servId, fecha, modalidad, esCombo])
 
   const submitDisabled = !profId || !servId || !fecha || !slot
 
@@ -175,6 +180,12 @@ export function BookingWizard({
             </option>
           ))}
         </select>
+        {esCombo ? (
+          <p className="mt-1.5 text-xs text-gray-600">
+            Este servicio combina nutrición y entrenamiento — el turno queda coordinado con
+            ambos profesionales, en un horario donde los dos están disponibles.
+          </p>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
