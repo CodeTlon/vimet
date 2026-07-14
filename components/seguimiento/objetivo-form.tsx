@@ -11,7 +11,7 @@ import { hoyArgentina } from '@/lib/datetime'
 const initial: ObjetivoState = {}
 const hoy = hoyArgentina()
 const inputBase =
-  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
+  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none'
 
 function Btn() {
   const { pending } = useFormStatus()

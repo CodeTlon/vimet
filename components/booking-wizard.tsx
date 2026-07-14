@@ -258,7 +258,7 @@ export function BookingWizard({
           name="notas"
           rows={3}
           placeholder="Motivo de consulta, antecedentes, etc."
-          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none"
         />
       </div>
 

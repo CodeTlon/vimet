@@ -85,7 +85,7 @@ export function TurnoDetalleForm({
           rows={4}
           defaultValue={notas ?? ''}
           placeholder="Notas internas sobre el turno (no visibles al paciente)"
-          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none"
         />
       </div>
 
