@@ -2,18 +2,11 @@ import { CalendarCheck2, CalendarClock, CalendarDays, CalendarRange } from 'luci
 import Link from 'next/link'
 
 import { hoyArgentina } from '@/lib/datetime'
+import { ESTADO_TURNO_BADGE, ESTADO_TURNO_LABEL } from '@/lib/seguimiento'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata = { title: 'Dashboard' }
 export const dynamic = 'force-dynamic'
-
-const ESTADO_BADGE: Record<string, string> = {
-  pendiente: 'bg-yellow-100 text-yellow-800',
-  confirmado: 'bg-green-100 text-green-800',
-  cancelado: 'bg-red-100 text-red-800',
-  completado: 'bg-blue-100 text-blue-800',
-  no_asistio: 'bg-gray-200 text-gray-700',
-}
 
 type TurnoRow = {
   id: number
@@ -131,10 +124,10 @@ export default async function AdminDashboard() {
                 <td className="px-2 py-2.5">
                   <span
                     className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      ESTADO_BADGE[t.estado] ?? 'bg-gray-100 text-gray-700'
+                      ESTADO_TURNO_BADGE[t.estado] ?? 'bg-gray-100 text-gray-700'
                     }`}
                   >
-                    {t.estado}
+                    {ESTADO_TURNO_LABEL[t.estado] ?? t.estado}
                   </span>
                 </td>
                 <td className="px-2 py-2.5 text-right">

@@ -3,26 +3,11 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { TurnoDetalleForm } from '@/components/turno-detalle-form'
+import { ESTADO_TURNO_BADGE, ESTADO_TURNO_LABEL } from '@/lib/seguimiento'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata = { title: 'Detalle de turno' }
 export const dynamic = 'force-dynamic'
-
-const ESTADO_LABEL: Record<string, string> = {
-  pendiente: 'Pendiente',
-  confirmado: 'Confirmado',
-  cancelado: 'Cancelado',
-  completado: 'Completado',
-  no_asistio: 'No asistió',
-}
-
-const ESTADO_BADGE: Record<string, string> = {
-  pendiente: 'bg-yellow-100 text-yellow-800',
-  confirmado: 'bg-green-100 text-green-800',
-  cancelado: 'bg-red-100 text-red-800',
-  completado: 'bg-blue-100 text-blue-800',
-  no_asistio: 'bg-gray-200 text-gray-700',
-}
 
 type TurnoDetail = {
   id: number
@@ -89,10 +74,10 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
               </div>
               <span
                 className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  ESTADO_BADGE[turno.estado] ?? 'bg-gray-100 text-gray-700'
+                  ESTADO_TURNO_BADGE[turno.estado] ?? 'bg-gray-100 text-gray-700'
                 }`}
               >
-                {ESTADO_LABEL[turno.estado] ?? turno.estado}
+                {ESTADO_TURNO_LABEL[turno.estado] ?? turno.estado}
               </span>
             </div>
 
