@@ -75,10 +75,10 @@ export function MedicionForm({ pacienteId }: { pacienteId: string }) {
           <input name="dx_antropometrico" placeholder="Ej: normopeso" className={inputBase} />
         </Lab>
         <Lab label="% grasa">
-          <input type="number" step="0.1" name="porc_grasa" placeholder="Ej: 22.0" className={inputBase} />
+          <input type="number" step="0.01" name="porc_grasa" placeholder="Ej: 22.05" className={inputBase} />
         </Lab>
         <Lab label="% masa muscular">
-          <input type="number" step="0.1" name="porc_masa_muscular" placeholder="Ej: 38.0" className={inputBase} />
+          <input type="number" step="0.01" name="porc_masa_muscular" placeholder="Ej: 38.05" className={inputBase} />
         </Lab>
         <Lab label="Kg grasa">
           <input type="number" step="0.1" name="kg_grasa" placeholder="Ej: 16.0" className={inputBase} />
