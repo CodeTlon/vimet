@@ -137,7 +137,7 @@ export async function actualizarTurnoStaffAction(
     estado: formData.get('estado'),
     notas_profesional: formData.get('notas_profesional') ?? '',
   })
-  if (!parsed.success) return { error: 'Datos inválidos' }
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
   const supabase = createClient()
   const {
