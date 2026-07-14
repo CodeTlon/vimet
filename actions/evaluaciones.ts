@@ -16,6 +16,7 @@ const intInRange = (max: number) =>
     .refine((v) => v === null || (Number.isInteger(v) && v >= 0 && v <= max), 'Fuera de rango')
 
 const schema = z.object({
+  id: z.coerce.number().int().positive().optional(),
   paciente_id: z.string().uuid(),
   fecha: z
     .string()
@@ -84,12 +85,51 @@ export async function crearEvaluacionAction(
   return { ok: true }
 }
 
-export async function eliminarEvaluacionAction(formData: FormData) {
+export async function actualizarEvaluacionAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<EvalState> {
+  const parsed = schema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+  if (!parsed.data.id) return { error: 'Falta el id de la evaluación.' }
+
+  const ctx = await getStaff()
+  if ('error' in ctx) return { error: ctx.error }
+
+  const d = parsed.data
+  const { error } = await ctx.supabase
+    .from('evaluaciones_funcionales')
+    .update({
+      fecha: d.fecha,
+      test_wells_adams: d.test_wells_adams,
+      test_thomas: d.test_thomas,
+      test_dorsiflexion: d.test_dorsiflexion,
+      test_sentadilla: d.test_sentadilla,
+      test_estabilidad: d.test_estabilidad,
+      fuerza_inferior: d.fuerza_inferior,
+      fuerza_superior: d.fuerza_superior,
+      resistencia_metabolica: d.resistencia_metabolica,
+      observaciones: d.observaciones && d.observaciones.trim() !== '' ? d.observaciones.trim() : null,
+    })
+    .eq('id', d.id)
+
+  if (error) return { error: 'No se pudo actualizar la evaluación.' }
+
+  revalidatePath(`/admin/pacientes/${d.paciente_id}/evaluacion-funcional`)
+  return { ok: true }
+}
+
+export async function eliminarEvaluacionAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<EvalState> {
   const id = Number(formData.get('id'))
   const paciente_id = String(formData.get('paciente_id') ?? '')
-  if (!id) return
+  if (!id) return { error: 'Datos inválidos' }
   const ctx = await getStaff()
-  if ('error' in ctx) return
-  await ctx.supabase.from('evaluaciones_funcionales').delete().eq('id', id)
+  if ('error' in ctx) return { error: ctx.error }
+  const { error } = await ctx.supabase.from('evaluaciones_funcionales').delete().eq('id', id)
+  if (error) return { error: 'No se pudo eliminar la evaluación.' }
   revalidatePath(`/admin/pacientes/${paciente_id}/evaluacion-funcional`)
+  return { ok: true }
 }
