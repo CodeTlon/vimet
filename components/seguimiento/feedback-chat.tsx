@@ -17,6 +17,7 @@ export type MensajeFeedback = {
   contenido: string
   created_at: string
   edited_at: string | null
+  autor: { nombre: string; apellido: string } | null
 }
 
 function formatHora(iso: string) {
@@ -133,6 +134,17 @@ export function FeedbackChat({
                     <EditarMensajeForm mensaje={m} onDone={() => setEditandoId(null)} />
                   ) : (
                     <>
+                      <p
+                        className={`text-xs font-semibold mb-0.5 ${
+                          esPaciente ? 'text-gray-500' : 'text-white/80'
+                        }`}
+                      >
+                        {m.autor
+                          ? `${m.autor.nombre} ${m.autor.apellido}`
+                          : esPaciente
+                            ? 'Paciente'
+                            : 'Equipo VIMET'}
+                      </p>
                       <p className="whitespace-pre-line">{m.contenido}</p>
                       <div
                         className={`flex items-center gap-2 mt-1 text-xs ${
