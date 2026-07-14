@@ -2,6 +2,7 @@ import { ArrowLeft, Building2, Mail, MessageCircle, Phone, UserRound, Video } fr
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
+import { marcarNoAsistioVencidos } from '@/actions/turnos'
 import { TurnoDetalleForm } from '@/components/turno-detalle-form'
 import { ESTADO_TURNO_BADGE, ESTADO_TURNO_LABEL } from '@/lib/seguimiento'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -35,8 +36,10 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
   const id = Number(params.id)
   if (!Number.isFinite(id) || id <= 0) notFound()
 
+  await marcarNoAsistioVencidos()
+
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('turnos')
     .select(
       'id, fecha, hora_inicio, hora_fin, modalidad, estado, notas_paciente, notas_profesional, turno_par_id, servicios(nombre), paciente:profiles!turnos_paciente_id_fkey(nombre, apellido, email, telefono), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
@@ -44,7 +47,10 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
     .eq('id', id)
     .maybeSingle()
 
-  if (!data) notFound()
+  if (!data) {
+    if (error) console.error('turno detalle: select falló', error)
+    notFound()
+  }
   const turno = data as unknown as TurnoDetail
 
   // El turno vinculado (plan integral) pertenece al otro profesional — se

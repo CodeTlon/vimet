@@ -58,3 +58,9 @@ export function haceDiasArgentina(dias: number, date: Date = new Date()): string
   utc.setUTCDate(utc.getUTCDate() - dias)
   return utc.toISOString().slice(0, 10)
 }
+
+// Instante (Date real) en que un turno + gracia se considera vencido.
+// Argentina es UTC-3 fijo (sin DST), por eso el offset hardcodeado es seguro.
+export function turnoVencidoDesde(fecha: string, horaFin: string, graciaMin = 15): Date {
+  return new Date(new Date(`${fecha}T${horaFin}-03:00`).getTime() + graciaMin * 60_000)
+}
