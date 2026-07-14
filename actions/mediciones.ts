@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/server'
 export type MedicionState = { ok?: boolean; error?: string }
 
 const schema = z.object({
+  id: z.coerce.number().int().positive().optional(),
   paciente_id: z.string().uuid(),
   fecha_medicion: z
     .string()
@@ -89,12 +90,61 @@ export async function crearMedicionAction(
   return { ok: true }
 }
 
-export async function eliminarMedicionAction(formData: FormData) {
+export async function actualizarMedicionAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<MedicionState> {
+  const parsed = schema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: 'Datos inválidos' }
+  if (!parsed.data.id) return { error: 'Falta el id de la medición.' }
+
+  const ctx = await getStaff()
+  if ('error' in ctx) return { error: ctx.error }
+
+  const d = parsed.data
+  const peso = toNum(d.peso_kg)
+  const talla = toNum(d.talla_cm)
+  const imc =
+    peso != null && talla != null && talla > 0
+      ? Math.round((peso / Math.pow(talla / 100, 2)) * 100) / 100
+      : null
+
+  const { error } = await ctx.supabase
+    .from('mediciones_antropometricas')
+    .update({
+      fecha_medicion: d.fecha_medicion,
+      peso_kg: peso,
+      talla_cm: talla,
+      imc,
+      porc_grasa: toNum(d.porc_grasa),
+      porc_masa_muscular: toNum(d.porc_masa_muscular),
+      kg_grasa: toNum(d.kg_grasa),
+      kg_musculo: toNum(d.kg_musculo),
+      dx_antropometrico: toStr(d.dx_antropometrico),
+      observaciones: toStr(d.observaciones),
+    })
+    .eq('id', d.id)
+
+  if (error) return { error: 'No se pudo actualizar la medición.' }
+
+  revalidatePath(`/admin/pacientes/${d.paciente_id}`)
+  revalidatePath(`/admin/pacientes/${d.paciente_id}/antropometria`)
+  revalidatePath('/mi-progreso')
+  return { ok: true }
+}
+
+export async function eliminarMedicionAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<MedicionState> {
   const id = Number(formData.get('id'))
   const paciente_id = String(formData.get('paciente_id') ?? '')
-  if (!id) return
+  if (!id) return { error: 'Datos inválidos' }
   const ctx = await getStaff()
-  if ('error' in ctx) return
-  await ctx.supabase.from('mediciones_antropometricas').delete().eq('id', id)
+  if ('error' in ctx) return { error: ctx.error }
+  const { error } = await ctx.supabase.from('mediciones_antropometricas').delete().eq('id', id)
+  if (error) return { error: 'No se pudo eliminar la medición.' }
   revalidatePath(`/admin/pacientes/${paciente_id}/antropometria`)
+  revalidatePath('/mi-progreso')
+  return { ok: true }
 }
