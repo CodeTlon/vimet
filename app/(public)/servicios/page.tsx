@@ -150,12 +150,9 @@ export default async function ServiciosPage() {
                         {s.nombre}
                       </h3>
                       <p className="text-sm text-gray-700 leading-relaxed mb-4">{s.descripcion}</p>
-                      <div className="mt-auto flex items-center justify-between">
+                      <div className="mt-auto">
                         <span className="inline-flex items-center gap-1.5 text-xs text-gray-700">
                           <Clock className="size-3.5" /> {s.duracion_minutos} min
-                        </span>
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
-                          {TIPO_LABEL[s.tipo]}
                         </span>
                       </div>
                     </article>
