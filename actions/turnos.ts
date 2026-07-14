@@ -4,11 +4,32 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 import { diaSemana, getProfesionalesCombo } from '@/lib/booking/slots'
-import { hoyArgentina } from '@/lib/datetime'
+import { hoyArgentina, turnoVencidoDesde } from '@/lib/datetime'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 export type TurnoState = { ok?: boolean; error?: string }
+
+// Barrido perezoso: pasa a "no_asistio" los turnos pendientes (nunca
+// confirmados) cuyo horario + 15min de gracia ya pasó. Se llama al cargar
+// las pantallas que muestran turnos — no hay cron, así que si nadie visita
+// esas pantallas el turno vencido no cambia de estado hasta que alguien entre.
+export async function marcarNoAsistioVencidos() {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('turnos')
+    .select('id, fecha, hora_fin')
+    .eq('estado', 'pendiente')
+    .lte('fecha', hoyArgentina())
+
+  const vencidos = (data ?? []).filter((t) => turnoVencidoDesde(t.fecha, t.hora_fin) < new Date())
+  if (!vencidos.length) return
+
+  await admin
+    .from('turnos')
+    .update({ estado: 'no_asistio' })
+    .in('id', vencidos.map((t) => t.id))
+}
 
 const crearSchema = z.object({
   profesional_id: z.string().uuid('Profesional inválido'),

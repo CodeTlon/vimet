@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
+import { marcarNoAsistioVencidos } from '@/actions/turnos'
 import { hoyArgentina } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 
@@ -59,6 +60,8 @@ export default async function AdminCalendario(
   const todayISO = hoyArgentina()
   const monthStart = `${year}-${String(month).padStart(2, '0')}-01`
   const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(dim).padStart(2, '0')}`
+
+  await marcarNoAsistioVencidos()
 
   const supabase = await createClient()
   const { data } = await supabase

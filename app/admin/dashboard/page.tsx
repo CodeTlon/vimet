@@ -1,6 +1,7 @@
 import { CalendarCheck2, CalendarClock, CalendarDays, CalendarRange } from 'lucide-react'
 import Link from 'next/link'
 
+import { marcarNoAsistioVencidos } from '@/actions/turnos'
 import { hoyArgentina } from '@/lib/datetime'
 import { ESTADO_TURNO_BADGE, ESTADO_TURNO_LABEL } from '@/lib/seguimiento'
 import { createClient } from '@/lib/supabase/server'
@@ -19,6 +20,8 @@ type TurnoRow = {
 }
 
 export default async function AdminDashboard() {
+  await marcarNoAsistioVencidos()
+
   const supabase = await createClient()
   const today = hoyArgentina()
   const in15 = hoyArgentina(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000))

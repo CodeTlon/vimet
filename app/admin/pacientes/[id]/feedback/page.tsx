@@ -47,13 +47,15 @@ export default async function FeedbackPacientePage(
   const { data: mensajesData } = feedback.length
     ? await supabase
         .from('feedback_mensajes')
-        .select('id, feedback_id, autor_id, contenido, created_at, edited_at')
+        .select(
+          'id, feedback_id, autor_id, contenido, created_at, edited_at, autor:profiles!feedback_mensajes_autor_id_fkey(nombre, apellido)',
+        )
         .in('feedback_id', feedback.map((f) => f.id))
         .order('id', { ascending: true })
     : { data: [] }
 
   const mensajesPorFeedback = new Map<number, MensajeFeedback[]>()
-  for (const m of mensajesData ?? []) {
+  for (const m of (mensajesData ?? []) as unknown as (MensajeFeedback & { feedback_id: number })[]) {
     const arr = mensajesPorFeedback.get(m.feedback_id) ?? []
     arr.push(m)
     mensajesPorFeedback.set(m.feedback_id, arr)

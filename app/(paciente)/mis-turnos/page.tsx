@@ -1,7 +1,7 @@
 import { Building2, CalendarDays, CalendarPlus, Clock, UserRound, Video } from 'lucide-react'
 import Link from 'next/link'
 
-import { cancelarTurnoAction } from '@/actions/turnos'
+import { cancelarTurnoAction, marcarNoAsistioVencidos } from '@/actions/turnos'
 import { hoyArgentina } from '@/lib/datetime'
 import { ESTADO_TURNO_BADGE as ESTADO_BADGE, ESTADO_TURNO_LABEL as ESTADO_LABEL } from '@/lib/seguimiento'
 import { createClient } from '@/lib/supabase/server'
@@ -36,6 +36,8 @@ export default async function MisTurnosPage(
   } = await supabase.auth.getUser()
   // Layout (paciente) ya valida sesión y rol — acá user nunca es null.
   if (!user) return null
+
+  await marcarNoAsistioVencidos()
 
   const [{ data: profile }, { data: turnos }] = await Promise.all([
     supabase.from('profiles').select('nombre, apellido').eq('id', user.id).maybeSingle(),
