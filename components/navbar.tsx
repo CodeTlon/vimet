@@ -58,7 +58,12 @@ export function Navbar() {
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+    // Recalcula también en cada cambio de ruta: Navbar no se desmonta al
+    // navegar dentro de (public), así que sin `pathname` en las deps
+    // heroDarkness quedaba con el valor de la página anterior (navbar
+    // "blanco" en el tope de Home si el usuario había scrolleado antes en
+    // otra página y el navegador no disparó un scroll real al volver).
+  }, [pathname])
 
   useEffect(() => {
     setOpen(false)
