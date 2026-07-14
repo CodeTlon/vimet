@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export type Slot = { hora_inicio: string; hora_fin: string }
 
-const SLOT_STEP_MINUTES = 30
+const SLOT_STEP_MINUTES = 15
 
 function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(':').map(Number)
