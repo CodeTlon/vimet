@@ -5,7 +5,7 @@ import { useFormState, useFormStatus } from 'react-dom'
 
 import { crearEvaluacionAction, type EvalState } from '@/actions/evaluaciones'
 import { useResetOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
-import { hoyArgentina } from '@/lib/datetime'
+import { haceDiasArgentina, hoyArgentina } from '@/lib/datetime'
 import { TESTS_FUNCIONALES } from '@/lib/seguimiento'
 
 const initial: EvalState = {}
@@ -31,6 +31,7 @@ export function EvaluacionForm({ pacienteId }: { pacienteId: string }) {
   const formRef = useResetOnSuccess(state)
   const msgRef = useScrollToMessage(state)
   const today = hoyArgentina()
+  const hace14Dias = haceDiasArgentina(14)
   return (
     <form
       ref={formRef}
@@ -56,7 +57,15 @@ export function EvaluacionForm({ pacienteId }: { pacienteId: string }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
         <label className="block">
           <span className="block min-h-10 font-medium text-gray-800 mb-1">Fecha</span>
-          <input type="date" name="fecha" defaultValue={today} max={today} className={inputBase} required />
+          <input
+            type="date"
+            name="fecha"
+            defaultValue={today}
+            min={hace14Dias}
+            max={today}
+            className={inputBase}
+            required
+          />
         </label>
         {TESTS_FUNCIONALES.map((t) => (
           <label key={t.key} className="block">

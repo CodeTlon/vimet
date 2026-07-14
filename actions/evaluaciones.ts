@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-import { hoyArgentina } from '@/lib/datetime'
+import { haceDiasArgentina, hoyArgentina } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 
 export type EvalState = { ok?: boolean; error?: string }
@@ -20,7 +20,10 @@ const schema = z.object({
   fecha: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .refine((v) => v <= hoyArgentina(), 'La fecha no puede ser futura'),
+    .refine(
+      (v) => v >= haceDiasArgentina(14) && v <= hoyArgentina(),
+      'La fecha debe estar dentro de las últimas 2 semanas',
+    ),
   test_wells_adams: intInRange(10),
   test_thomas: intInRange(10),
   test_dorsiflexion: intInRange(10),
