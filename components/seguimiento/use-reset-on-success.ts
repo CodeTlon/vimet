@@ -44,3 +44,23 @@ export function useScrollToMessage(state: { ok?: boolean; error?: string } | und
   }, [state])
   return ref
 }
+
+/**
+ * Los carteles de éxito/error de state.ok/state.error quedaban visibles para
+ * siempre (hasta el próximo submit). Devuelve `true` apenas hay un state
+ * nuevo con ok/error, y vuelve a `false` solo con un setTimeout — usalo para
+ * condicionar el render del cartel junto a state.ok/state.error.
+ */
+export function useAutoHideMessage(
+  state: { ok?: boolean; error?: string } | undefined,
+  ms = 4000,
+) {
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    if (!state?.ok && !state?.error) return
+    setVisible(true)
+    const t = setTimeout(() => setVisible(false), ms)
+    return () => clearTimeout(t)
+  }, [state, ms])
+  return visible
+}

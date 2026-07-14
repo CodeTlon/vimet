@@ -4,7 +4,11 @@ import { Save } from 'lucide-react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { guardarFichaAction, type FichaState } from '@/actions/ficha'
-import { useRemountKeyOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
+import {
+  useAutoHideMessage,
+  useRemountKeyOnSuccess,
+  useScrollToMessage,
+} from '@/components/seguimiento/use-reset-on-success'
 import { hoyArgentina } from '@/lib/datetime'
 
 const initial: FichaState = {}
@@ -66,6 +70,7 @@ export function FichaForm({
   const [state, action] = useFormState(guardarFichaAction, initial)
   const remountKey = useRemountKeyOnSuccess(state)
   const msgRef = useScrollToMessage(state)
+  const visible = useAutoHideMessage(state)
   const f = ficha
 
   return (
@@ -73,12 +78,12 @@ export function FichaForm({
       <input type="hidden" name="paciente_id" value={pacienteId} />
 
       <div ref={msgRef}>
-        {state.error ? (
+        {visible && state.error ? (
           <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
             {state.error}
           </div>
         ) : null}
-        {state.ok ? (
+        {visible && state.ok ? (
           <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
             Ficha guardada correctamente.
           </div>
