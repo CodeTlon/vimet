@@ -48,7 +48,6 @@ const serviciosDestacados = [
     nombre: 'Nutrición Personalizada',
     descripcion:
       'Planes de alimentación adaptados a tus objetivos, requerimientos y estilo de vida.',
-    tipo: 'Nutrición',
     color: 'from-vimet-orange/15 to-vimet-orange/5 text-vimet-orange',
   },
   {
@@ -56,7 +55,6 @@ const serviciosDestacados = [
     nombre: 'Entrenamiento Adaptado',
     descripcion:
       'Rutinas diseñadas según tu nivel físico, asegurando una progresión segura y constante.',
-    tipo: 'Entrenamiento',
     color: 'from-info/15 to-info/5 text-info',
   },
   {
@@ -64,7 +62,6 @@ const serviciosDestacados = [
     nombre: 'Plan Integral VIMET',
     descripcion:
       'Nuestro abordaje más completo. Combinamos nutrición y entrenamiento trabajando en equipo para vos.',
-    tipo: 'Plan Integral',
     color: 'from-success/15 to-success/5 text-success',
   },
 ] as const
@@ -192,10 +189,7 @@ export default function HomePage() {
                 <h3 className="font-heading text-xl font-semibold text-gray-900 mb-2">
                   {s.nombre}
                 </h3>
-                <p className="text-sm text-gray-700 leading-relaxed mb-4">{s.descripcion}</p>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
-                  {s.tipo}
-                </span>
+                <p className="text-sm text-gray-700 leading-relaxed">{s.descripcion}</p>
               </article>
             ))}
           </div>
