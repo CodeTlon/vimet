@@ -1,45 +1,55 @@
 'use client'
 
 import Image from 'next/image'
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
-export type EjercicioCatalogo = {
+export type EjercicioResultado = {
   id: number
   nombre: string
   parte_cuerpo: string | null
   equipo: string | null
-  musculo_principal: string | null
   imagen_url: string | null
 }
 
 export function EjercicioPicker({
-  catalogo,
+  partes,
+  equipos,
   onAgregar,
 }: {
-  catalogo: EjercicioCatalogo[]
-  onAgregar: (ejercicio: EjercicioCatalogo) => void
+  partes: string[]
+  equipos: string[]
+  onAgregar: (ejercicio: EjercicioResultado) => void
 }) {
   const [q, setQ] = useState('')
   const [parte, setParte] = useState('')
   const [equipo, setEquipo] = useState('')
+  const [resultados, setResultados] = useState<EjercicioResultado[]>([])
+  const [cargando, setCargando] = useState(false)
 
-  const partes = useMemo(
-    () => Array.from(new Set(catalogo.map((e) => e.parte_cuerpo).filter(Boolean))).sort() as string[],
-    [catalogo],
-  )
-  const equipos = useMemo(
-    () => Array.from(new Set(catalogo.map((e) => e.equipo).filter(Boolean))).sort() as string[],
-    [catalogo],
-  )
-
-  const resultados = useMemo(() => {
-    const term = q.trim().toLowerCase()
-    return catalogo
-      .filter((e) => !term || e.nombre.toLowerCase().includes(term))
-      .filter((e) => !parte || e.parte_cuerpo === parte)
-      .filter((e) => !equipo || e.equipo === equipo)
-      .slice(0, 40)
-  }, [catalogo, q, parte, equipo])
+  // Sin búsqueda ni filtro no se trae nada — evita bajar el catálogo entero.
+  useEffect(() => {
+    if (!q.trim() && !parte && !equipo) {
+      setResultados([])
+      return
+    }
+    const controller = new AbortController()
+    setCargando(true)
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams()
+      if (q.trim()) params.set('q', q.trim())
+      if (parte) params.set('parte', parte)
+      if (equipo) params.set('equipo', equipo)
+      fetch(`/api/ejercicios?${params.toString()}`, { signal: controller.signal })
+        .then((res) => res.json())
+        .then((json) => setResultados(json.data ?? []))
+        .catch(() => {})
+        .finally(() => setCargando(false))
+    }, 300)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [q, parte, equipo])
 
   const inputBase = 'rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
 
@@ -67,8 +77,12 @@ export function EjercicioPicker({
       </div>
 
       <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-100 divide-y divide-gray-100">
-        {resultados.length === 0 ? (
-          <p className="p-3 text-sm text-gray-500">Sin resultados.</p>
+        {cargando ? (
+          <p className="p-3 text-sm text-gray-500">Buscando...</p>
+        ) : resultados.length === 0 ? (
+          <p className="p-3 text-sm text-gray-500">
+            {q.trim() || parte || equipo ? 'Sin resultados.' : 'Escribí para buscar en el catálogo.'}
+          </p>
         ) : (
           resultados.map((e) => (
             <button

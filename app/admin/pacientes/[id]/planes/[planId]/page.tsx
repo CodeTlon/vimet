@@ -26,18 +26,24 @@ export default async function EditarPlanPage(
 
   const tieneRutina = plan.tipo === 'entrenamiento' || plan.tipo === 'combo'
 
-  const [{ data: catalogo }, { data: rutina }] = tieneRutina
+  // Solo 2 columnas angostas de las 1324 filas (para armar los <select> de filtro),
+  // no el catálogo completo con nombres/thumbnails — eso se busca on-demand vía /api/ejercicios.
+  const [{ data: valoresFiltro }, { data: rutina }] = tieneRutina
     ? await Promise.all([
-        supabase
-          .from('ejercicios')
-          .select('id, nombre, parte_cuerpo, equipo, musculo_principal, imagen_url')
-          .order('nombre'),
+        supabase.from('ejercicios').select('parte_cuerpo, equipo'),
         supabase
           .from('plan_ejercicios')
           .select('id, ejercicio_id, dia_semana, orden, series, repeticiones, descanso_seg, notas, ejercicio:ejercicios(id, nombre, imagen_url)')
           .eq('plan_id', planId),
       ])
     : [{ data: [] }, { data: [] }]
+
+  const partes = Array.from(
+    new Set((valoresFiltro ?? []).map((v) => v.parte_cuerpo).filter(Boolean)),
+  ).sort() as string[]
+  const equipos = Array.from(
+    new Set((valoresFiltro ?? []).map((v) => v.equipo).filter(Boolean)),
+  ).sort() as string[]
 
   return (
     <div className="space-y-4">
@@ -53,7 +59,8 @@ export default async function EditarPlanPage(
         <RutinaPanel
           planId={planId}
           pacienteId={params.id}
-          catalogo={catalogo ?? []}
+          partes={partes}
+          equipos={equipos}
           rutinaInicial={(rutina ?? []) as unknown as RutinaItem[]}
         />
       ) : null}

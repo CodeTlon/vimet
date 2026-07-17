@@ -8,7 +8,7 @@ import {
   agregarEjercicioAction,
   eliminarEjercicioPlanAction,
 } from '@/actions/plan-ejercicios'
-import { EjercicioPicker, type EjercicioCatalogo } from '@/components/seguimiento/ejercicio-picker'
+import { EjercicioPicker, type EjercicioResultado } from '@/components/seguimiento/ejercicio-picker'
 
 const DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'] as const
 
@@ -36,19 +36,21 @@ function ordenar(a: RutinaItem, b: RutinaItem) {
 export function RutinaPanel({
   planId,
   pacienteId,
-  catalogo,
+  partes,
+  equipos,
   rutinaInicial,
 }: {
   planId: number
   pacienteId: string
-  catalogo: EjercicioCatalogo[]
+  partes: string[]
+  equipos: string[]
   rutinaInicial: RutinaItem[]
 }) {
   const [rutina, setRutina] = useState(() => [...rutinaInicial].sort(ordenar))
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
-  function agregar(ejercicio: EjercicioCatalogo) {
+  function agregar(ejercicio: EjercicioResultado) {
     setError(null)
     const fd = new FormData()
     fd.set('plan_id', String(planId))
@@ -118,7 +120,7 @@ export function RutinaPanel({
     <fieldset className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
       <legend className="px-2 font-heading font-semibold text-gray-900">Rutina de ejercicios</legend>
 
-      <EjercicioPicker catalogo={catalogo} onAgregar={agregar} />
+      <EjercicioPicker partes={partes} equipos={equipos} onAgregar={agregar} />
 
       {error ? (
         <div className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
