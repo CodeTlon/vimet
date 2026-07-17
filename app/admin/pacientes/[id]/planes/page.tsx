@@ -2,7 +2,9 @@ import { FilePlus2, Pencil, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 import { eliminarPlanAction } from '@/actions/planes'
+import { Pagination } from '@/components/pagination'
 import { PlanDownloadButton } from '@/components/seguimiento/plan-download'
+import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
 import {
   ESTADO_PLAN_BADGE,
@@ -24,16 +26,28 @@ type Plan = {
   updated_at: string
 }
 
-export default async function PlanesPage(props: { params: Promise<{ id: string }> }) {
+export default async function PlanesPage(
+  props: {
+    params: Promise<{ id: string }>
+    searchParams: Promise<{ page?: string }>
+  }
+) {
   const params = await props.params;
+  const searchParams = await props.searchParams;
   const supabase = await createClient()
-  const { data } = await supabase
+  const page = parsePage(searchParams?.page)
+  const [from, to] = pageRange(page)
+  const { data, count } = await supabase
     .from('planes')
-    .select('id, tipo, titulo, estado, fecha_desde, fecha_hasta, archivo_path, updated_at')
+    .select('id, tipo, titulo, estado, fecha_desde, fecha_hasta, archivo_path, updated_at', {
+      count: 'exact',
+    })
     .eq('paciente_id', params.id)
     .order('fecha_desde', { ascending: false })
+    .range(from, to)
 
   const planes = (data ?? []) as Plan[]
+  const pages = calcTotalPages(count)
 
   return (
     <div className="space-y-5">
@@ -99,6 +113,12 @@ export default async function PlanesPage(props: { params: Promise<{ id: string }
           ))}
         </ul>
       )}
+
+      <Pagination
+        page={page}
+        totalPages={pages}
+        makeHref={(p) => `/admin/pacientes/${params.id}/planes?page=${p}`}
+      />
     </div>
   )
 }

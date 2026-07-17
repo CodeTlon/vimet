@@ -2,7 +2,9 @@ import { Building2, CalendarDays, CalendarPlus, Clock, UserRound, Video } from '
 import Link from 'next/link'
 
 import { cancelarTurnoAction, marcarNoAsistioVencidos } from '@/actions/turnos'
+import { Pagination } from '@/components/pagination'
 import { hoyArgentina } from '@/lib/datetime'
+import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { ESTADO_TURNO_BADGE as ESTADO_BADGE, ESTADO_TURNO_LABEL as ESTADO_LABEL } from '@/lib/seguimiento'
 import { createClient } from '@/lib/supabase/server'
 
@@ -26,7 +28,7 @@ export const metadata = { title: 'Mis turnos' }
 
 export default async function MisTurnosPage(
   props: {
-    searchParams: Promise<{ nuevo?: string }>
+    searchParams: Promise<{ nuevo?: string; page?: string }>
   }
 ) {
   const searchParams = await props.searchParams;
@@ -39,16 +41,21 @@ export default async function MisTurnosPage(
 
   await marcarNoAsistioVencidos()
 
-  const [{ data: profile }, { data: turnos }] = await Promise.all([
+  const page = parsePage(searchParams?.page)
+  const [from, to] = pageRange(page)
+
+  const [{ data: profile }, { data: turnos, count }] = await Promise.all([
     supabase.from('profiles').select('nombre, apellido').eq('id', user.id).maybeSingle(),
     supabase
       .from('turnos')
       .select(
         'id, fecha, hora_inicio, hora_fin, modalidad, estado, servicios(nombre), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
+        { count: 'exact' },
       )
       .eq('paciente_id', user.id)
       .order('fecha', { ascending: false })
-      .order('hora_inicio', { ascending: false }),
+      .order('hora_inicio', { ascending: false })
+      .range(from, to),
   ])
 
   type Row = {
@@ -64,6 +71,8 @@ export default async function MisTurnosPage(
   const rows = (turnos ?? []) as unknown as Row[]
   const hoy = hoyArgentina()
   const showNuevo = searchParams?.nuevo === '1'
+  const pages = calcTotalPages(count)
+  const hrefForPage = (p: number) => `/mis-turnos?page=${p}${showNuevo ? '&nuevo=1' : ''}`
 
   return (
     <>
@@ -176,6 +185,8 @@ export default async function MisTurnosPage(
             })}
         </ul>
       )}
+
+      <Pagination page={page} totalPages={pages} makeHref={hrefForPage} />
     </>
   )
 }

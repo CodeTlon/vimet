@@ -1,5 +1,7 @@
 import { EvolutionChart } from '@/components/evolution-chart'
+import { Pagination } from '@/components/pagination'
 import { EvaluacionesPanel } from '@/components/seguimiento/evaluaciones-panel'
+import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
 import { PUNTAJE_MAX_FUNCIONAL } from '@/lib/seguimiento'
 
@@ -23,21 +25,37 @@ type Eval = {
 export default async function EvalFuncionalPage(
   props: {
     params: Promise<{ id: string }>
+    searchParams: Promise<{ page?: string }>
   }
 ) {
   const params = await props.params;
+  const searchParams = await props.searchParams;
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('evaluaciones_funcionales')
-    .select('*')
-    .eq('paciente_id', params.id)
-    .order('fecha', { ascending: true })
+  const page = parsePage(searchParams?.page)
+  const [from, to] = pageRange(page)
 
-  const evals = (data ?? []) as Eval[]
+  // El gráfico necesita la serie completa; el listado de abajo se pagina aparte.
+  const [{ data: serie }, { data: pagina, count }] = await Promise.all([
+    supabase
+      .from('evaluaciones_funcionales')
+      .select('fecha, puntaje_total')
+      .eq('paciente_id', params.id)
+      .order('fecha', { ascending: true }),
+    supabase
+      .from('evaluaciones_funcionales')
+      .select('*', { count: 'exact' })
+      .eq('paciente_id', params.id)
+      .order('fecha', { ascending: false })
+      .range(from, to),
+  ])
+
+  const serieCompleta = serie ?? []
+  const evals = (pagina ?? []) as Eval[]
+  const pages = calcTotalPages(count)
 
   return (
     <div className="space-y-6">
-      {evals.length > 0 ? (
+      {serieCompleta.length > 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="font-heading font-semibold text-gray-900 mb-3">
             Evolución del puntaje total <span className="text-gray-500 font-normal">/ {PUNTAJE_MAX_FUNCIONAL}</span>
@@ -47,7 +65,7 @@ export default async function EvalFuncionalPage(
               {
                 label: 'Puntaje',
                 color: '#E8611A',
-                data: evals.map((e) => ({ x: e.fecha, y: e.puntaje_total })),
+                data: serieCompleta.map((e) => ({ x: e.fecha, y: e.puntaje_total })),
               },
             ]}
             unit="pts"
@@ -56,6 +74,11 @@ export default async function EvalFuncionalPage(
       ) : null}
 
       <EvaluacionesPanel pacienteId={params.id} evaluaciones={evals} />
+      <Pagination
+        page={page}
+        totalPages={pages}
+        makeHref={(p) => `/admin/pacientes/${params.id}/evaluacion-funcional?page=${p}`}
+      />
     </div>
   )
 }

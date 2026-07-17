@@ -1,6 +1,7 @@
 'use client'
 
 import { Check, CheckCheck, UserX, X } from 'lucide-react'
+import { useRef } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { actualizarTurnoStaffAction, type TurnoState } from '@/actions/turnos'
@@ -15,7 +16,17 @@ const ACTIONS = [
   { value: 'cancelado', label: 'Cancelar', icon: X, className: 'bg-red-600 hover:bg-red-700 text-white' },
 ] as const
 
-function StateButtons({ disableConfirm }: { disableConfirm: boolean }) {
+// ponytail: useFormState (React 18) no preserva el submitter del <button
+// type="submit" name value>, así que el FormData que llega al server action
+// nunca trae "estado". Se setea el input oculto por ref, a mano, en el click
+// (síncrono, antes del submit) — más simple que migrar a formAction por botón.
+function StateButtons({
+  disableConfirm,
+  estadoRef,
+}: {
+  disableConfirm: boolean
+  estadoRef: React.RefObject<HTMLInputElement>
+}) {
   const { pending } = useFormStatus()
   return (
     <div className="flex flex-wrap gap-2">
@@ -25,8 +36,9 @@ function StateButtons({ disableConfirm }: { disableConfirm: boolean }) {
           <button
             key={a.value}
             type="submit"
-            name="estado"
-            value={a.value}
+            onClick={() => {
+              if (estadoRef.current) estadoRef.current.value = a.value
+            }}
             disabled={pending}
             className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold shadow-sm transition-all disabled:opacity-50 ${a.className}`}
           >
@@ -50,6 +62,7 @@ export function TurnoDetalleForm({
   const [state, formAction] = useFormState(actualizarTurnoStaffAction, initialState)
   const msgRef = useScrollToMessage(state)
   const visible = useAutoHideMessage(state)
+  const estadoRef = useRef<HTMLInputElement>(null)
   const editable = ['pendiente', 'confirmado'].includes(estadoActual)
 
   if (!editable) {
@@ -63,6 +76,7 @@ export function TurnoDetalleForm({
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="estado" ref={estadoRef} />
 
       <div ref={msgRef}>
         {visible && state.error ? (
@@ -90,7 +104,7 @@ export function TurnoDetalleForm({
         />
       </div>
 
-      <StateButtons disableConfirm={estadoActual === 'confirmado'} />
+      <StateButtons disableConfirm={estadoActual === 'confirmado'} estadoRef={estadoRef} />
     </form>
   )
 }

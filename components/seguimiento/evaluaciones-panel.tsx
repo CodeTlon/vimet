@@ -67,7 +67,7 @@ export function EvaluacionesPanel({
           Sin evaluaciones funcionales registradas.
         </p>
       ) : (
-        [...evaluaciones].reverse().map((e) => {
+        evaluaciones.map((e) => {
           const cat = categoriaCondicionFisica(e.puntaje_total, PUNTAJE_MAX_FUNCIONAL)
           return (
             <article

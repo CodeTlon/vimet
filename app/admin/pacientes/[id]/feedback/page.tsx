@@ -1,6 +1,8 @@
 import { Paperclip } from 'lucide-react'
 
+import { Pagination } from '@/components/pagination'
 import { FeedbackChat, type MensajeFeedback } from '@/components/seguimiento/feedback-chat'
+import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
 import { formatearFechaCorta, lunesDeSemana } from '@/lib/seguimiento'
 
@@ -25,23 +27,30 @@ type Feedback = {
 export default async function FeedbackPacientePage(
   props: {
     params: Promise<{ id: string }>
+    searchParams: Promise<{ page?: string }>
   }
 ) {
   const params = await props.params;
+  const searchParams = await props.searchParams;
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { data } = await supabase
+  const page = parsePage(searchParams?.page)
+  const [from, to] = pageRange(page)
+  const { data, count } = await supabase
     .from('feedback_semanal')
     .select(
       'id, semana_inicio, estado_fisico, animo, energia, adherencia_entrenamiento, adherencia_alimentacion, peso_autoreporte_kg, observaciones, dudas, respuesta_profesional, respondido_at, adjunto_path',
+      { count: 'exact' },
     )
     .eq('paciente_id', params.id)
     .order('semana_inicio', { ascending: false })
+    .range(from, to)
 
   const feedback = (data ?? []) as Feedback[]
+  const pages = calcTotalPages(count)
   const semanaActual = lunesDeSemana()
 
   const { data: mensajesData } = feedback.length
@@ -180,6 +189,12 @@ export default async function FeedbackPacientePage(
           )
         })
       )}
+
+      <Pagination
+        page={page}
+        totalPages={pages}
+        makeHref={(p) => `/admin/pacientes/${params.id}/feedback?page=${p}`}
+      />
     </div>
   )
 }

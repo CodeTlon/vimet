@@ -77,7 +77,7 @@ export function MedicionesPanel({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {[...mediciones].reverse().map((m) => (
+                {mediciones.map((m) => (
                   <tr key={m.id} className="hover:bg-gray-50">
                     <td className="px-3 py-2.5 font-semibold text-gray-900">
                       {formatearFechaCorta(m.fecha_medicion)}

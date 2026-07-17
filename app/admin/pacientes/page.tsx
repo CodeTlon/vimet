@@ -2,6 +2,8 @@ import { ArrowRight, Mail, Phone, UsersRound } from 'lucide-react'
 import Link from 'next/link'
 
 import { toggleActivoAction } from '@/actions/staff'
+import { Pagination } from '@/components/pagination'
+import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata = { title: 'Pacientes' }
@@ -17,18 +19,32 @@ type Paciente = {
   created_at: string
 }
 
-export default async function PacientesPage() {
+export default async function PacientesPage(
+  props: {
+    searchParams: Promise<{ page?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('profiles')
-    .select('id, nombre, apellido, email, telefono, activo, created_at')
-    .eq('rol', 'paciente')
-    .order('activo', { ascending: true })   // pendientes primero
-    .order('created_at', { ascending: false })
+  const page = parsePage(searchParams?.page)
+  const [from, to] = pageRange(page)
+
+  const [{ data, count }, { count: activosCount }, { count: pendientesCount }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, nombre, apellido, email, telefono, activo, created_at', { count: 'exact' })
+      .eq('rol', 'paciente')
+      .order('activo', { ascending: true })   // pendientes primero
+      .order('created_at', { ascending: false })
+      .range(from, to),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('rol', 'paciente').eq('activo', true),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('rol', 'paciente').eq('activo', false),
+  ])
 
   const pacientes = (data ?? []) as Paciente[]
-  const activos = pacientes.filter((p) => p.activo).length
-  const pendientes = pacientes.length - activos
+  const pages = calcTotalPages(count)
+  const activos = activosCount ?? 0
+  const pendientes = pendientesCount ?? 0
 
   return (
     <div>
@@ -225,6 +241,8 @@ export default async function PacientesPage() {
           </>
         )}
       </div>
+
+      <Pagination page={page} totalPages={pages} makeHref={(p) => `/admin/pacientes?page=${p}`} />
     </div>
   )
 }
