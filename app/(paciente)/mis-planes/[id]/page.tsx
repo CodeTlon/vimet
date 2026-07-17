@@ -1,4 +1,5 @@
 import { CalendarDays, ChevronLeft, FileText } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -12,6 +13,27 @@ import {
 } from '@/lib/seguimiento'
 
 export const dynamic = 'force-dynamic'
+
+const DIA_LABEL: Record<string, string> = {
+  lunes: 'Lunes',
+  martes: 'Martes',
+  miercoles: 'Miércoles',
+  jueves: 'Jueves',
+  viernes: 'Viernes',
+  sabado: 'Sábado',
+  domingo: 'Domingo',
+}
+const ORDEN_DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo', '']
+
+type RutinaEjercicio = {
+  id: number
+  dia_semana: string | null
+  series: number | null
+  repeticiones: string | null
+  descanso_seg: number | null
+  notas: string | null
+  ejercicio: { nombre: string; gif_url: string | null; imagen_url: string | null; atribucion: string | null } | null
+}
 
 export default async function MiPlanDetallePage(
   props: {
@@ -33,6 +55,24 @@ export default async function MiPlanDetallePage(
     .maybeSingle()
 
   if (!plan) notFound()
+
+  const { data: rutina } =
+    plan.tipo === 'entrenamiento' || plan.tipo === 'combo'
+      ? await supabase
+          .from('plan_ejercicios')
+          .select(
+            'id, dia_semana, series, repeticiones, descanso_seg, notas, ejercicio:ejercicios(nombre, gif_url, imagen_url, atribucion)',
+          )
+          .eq('plan_id', Number(params.id))
+          .order('orden')
+      : { data: null }
+
+  const rutinaOrdenada = ((rutina ?? []) as unknown as RutinaEjercicio[])
+    .slice()
+    .sort(
+      (a, b) => ORDEN_DIAS.indexOf(a.dia_semana ?? '') - ORDEN_DIAS.indexOf(b.dia_semana ?? ''),
+    )
+  const atribucion = rutinaOrdenada.find((r) => r.ejercicio?.atribucion)?.ejercicio?.atribucion
 
   const dias = [
     { key: 'disponibilidad_lunes', label: 'Lunes' },
@@ -139,6 +179,62 @@ export default async function MiPlanDetallePage(
               </ul>
             </div>
           ) : null}
+        </section>
+      ) : null}
+
+      {rutinaOrdenada.length > 0 ? (
+        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5">
+          <h2 className="font-heading text-lg font-semibold text-gray-900 mb-4">
+            Rutina de ejercicios
+          </h2>
+          <div className="space-y-5">
+            {ORDEN_DIAS.filter((dia) => rutinaOrdenada.some((r) => (r.dia_semana ?? '') === dia)).map(
+              (dia) => (
+                <div key={dia || 'general'}>
+                  <h3 className="font-heading font-semibold text-gray-900 mb-2">
+                    {DIA_LABEL[dia] ?? 'General'}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {rutinaOrdenada
+                      .filter((r) => (r.dia_semana ?? '') === dia)
+                      .map((r) => (
+                        <div
+                          key={r.id}
+                          className="flex items-center gap-3 rounded-lg border border-gray-100 p-3"
+                        >
+                          {r.ejercicio?.gif_url || r.ejercicio?.imagen_url ? (
+                            <Image
+                              src={(r.ejercicio.gif_url ?? r.ejercicio.imagen_url)!}
+                              alt={r.ejercicio.nombre}
+                              width={56}
+                              height={56}
+                              unoptimized
+                              className="size-14 rounded-md object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className="size-14 rounded-md bg-gray-100 shrink-0" />
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-900">{r.ejercicio?.nombre}</p>
+                            <p className="text-xs text-gray-600 mt-0.5">
+                              {[
+                                r.series ? `${r.series} series` : null,
+                                r.repeticiones ? `${r.repeticiones} reps` : null,
+                                r.descanso_seg ? `${r.descanso_seg}s descanso` : null,
+                              ]
+                                .filter(Boolean)
+                                .join(' · ') || '—'}
+                            </p>
+                            {r.notas ? <p className="text-xs text-gray-500 mt-0.5">{r.notas}</p> : null}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
+          {atribucion ? <p className="mt-4 text-xs text-gray-400">{atribucion}</p> : null}
         </section>
       ) : null}
 
