@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient()
   let query = supabase
     .from('ejercicios')
-    .select('id, nombre, parte_cuerpo, equipo, imagen_url')
+    .select('id, nombre, parte_cuerpo, equipo, imagen_url, gif_url, instrucciones')
     .order('nombre')
     .limit(30)
 

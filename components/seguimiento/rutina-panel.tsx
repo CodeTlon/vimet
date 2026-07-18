@@ -1,6 +1,7 @@
 'use client'
 
 import { Trash2 } from 'lucide-react'
+import Image from 'next/image'
 import { useState, useTransition } from 'react'
 
 import {
@@ -21,7 +22,7 @@ export type RutinaItem = {
   repeticiones: string | null
   descanso_seg: number | null
   notas: string | null
-  ejercicio: { id: number; nombre: string; imagen_url: string | null } | null
+  ejercicio: { id: number; nombre: string; imagen_url: string | null; gif_url: string | null } | null
 }
 
 const inputBase =
@@ -75,7 +76,7 @@ export function RutinaPanel({
             repeticiones: null,
             descanso_seg: null,
             notas: null,
-            ejercicio: { id: ejercicio.id, nombre: ejercicio.nombre, imagen_url: ejercicio.imagen_url },
+            ejercicio: { id: ejercicio.id, nombre: ejercicio.nombre, imagen_url: ejercicio.imagen_url, gif_url: ejercicio.gif_url },
           },
         ].sort(ordenar),
       )
@@ -147,7 +148,33 @@ export function RutinaPanel({
             <tbody>
               {rutina.map((item) => (
                 <tr key={item.id} className="border-t border-gray-100">
-                  <td className="py-2 pr-2 font-medium text-gray-900">{item.ejercicio?.nombre ?? '—'}</td>
+                  <td className="py-2 pr-2 font-medium text-gray-900">
+                    <div className="group flex items-center gap-2">
+                      {item.ejercicio?.imagen_url ? (
+                        <span className="relative size-16 rounded-md overflow-hidden shrink-0 bg-gray-100">
+                          <Image
+                            src={item.ejercicio.imagen_url}
+                            alt=""
+                            width={64}
+                            height={64}
+                            unoptimized
+                            className="absolute inset-0 size-16 object-cover transition-opacity group-hover:opacity-0"
+                          />
+                          {item.ejercicio.gif_url ? (
+                            <Image
+                              src={item.ejercicio.gif_url}
+                              alt=""
+                              width={64}
+                              height={64}
+                              unoptimized
+                              className="absolute inset-0 size-16 object-cover opacity-0 transition-opacity group-hover:opacity-100"
+                            />
+                          ) : null}
+                        </span>
+                      ) : null}
+                      <span>{item.ejercicio?.nombre ?? '—'}</span>
+                    </div>
+                  </td>
                   <td className="py-2 pr-2">
                     <select
                       className={inputBase}
@@ -165,6 +192,7 @@ export function RutinaPanel({
                     <input
                       className={inputBase}
                       inputMode="numeric"
+                      placeholder="4"
                       defaultValue={item.series ?? ''}
                       onBlur={(e) => {
                         actualizarCampo(item.id, 'series', e.target.value)
@@ -187,6 +215,7 @@ export function RutinaPanel({
                     <input
                       className={inputBase}
                       inputMode="numeric"
+                      placeholder="60"
                       defaultValue={item.descanso_seg ?? ''}
                       onBlur={(e) => {
                         actualizarCampo(item.id, 'descanso_seg', e.target.value)
@@ -197,6 +226,7 @@ export function RutinaPanel({
                   <td className="py-2 pr-2">
                     <input
                       className={inputBase}
+                      placeholder="Opcional"
                       defaultValue={item.notas ?? ''}
                       onBlur={(e) => {
                         actualizarCampo(item.id, 'notas', e.target.value)

@@ -32,7 +32,13 @@ type RutinaEjercicio = {
   repeticiones: string | null
   descanso_seg: number | null
   notas: string | null
-  ejercicio: { nombre: string; gif_url: string | null; imagen_url: string | null; atribucion: string | null } | null
+  ejercicio: {
+    nombre: string
+    gif_url: string | null
+    imagen_url: string | null
+    atribucion: string | null
+    instrucciones: string | null
+  } | null
 }
 
 export default async function MiPlanDetallePage(
@@ -61,7 +67,7 @@ export default async function MiPlanDetallePage(
       ? await supabase
           .from('plan_ejercicios')
           .select(
-            'id, dia_semana, series, repeticiones, descanso_seg, notas, ejercicio:ejercicios(nombre, gif_url, imagen_url, atribucion)',
+            'id, dia_semana, series, repeticiones, descanso_seg, notas, ejercicio:ejercicios(nombre, gif_url, imagen_url, atribucion, instrucciones)',
           )
           .eq('plan_id', Number(params.id))
           .order('orden')
@@ -200,19 +206,33 @@ export default async function MiPlanDetallePage(
                       .map((r) => (
                         <div
                           key={r.id}
-                          className="flex items-center gap-3 rounded-lg border border-gray-100 p-3"
+                          className="group flex items-center gap-4 rounded-lg border border-gray-100 p-3"
                         >
-                          {r.ejercicio?.gif_url || r.ejercicio?.imagen_url ? (
-                            <Image
-                              src={(r.ejercicio.gif_url ?? r.ejercicio.imagen_url)!}
-                              alt={r.ejercicio.nombre}
-                              width={56}
-                              height={56}
-                              unoptimized
-                              className="size-14 rounded-md object-cover shrink-0"
-                            />
+                          {r.ejercicio?.imagen_url || r.ejercicio?.gif_url ? (
+                            <span className="relative size-24 rounded-md overflow-hidden shrink-0 bg-gray-100">
+                              {r.ejercicio.imagen_url ? (
+                                <Image
+                                  src={r.ejercicio.imagen_url}
+                                  alt={r.ejercicio.nombre}
+                                  width={96}
+                                  height={96}
+                                  unoptimized
+                                  className="absolute inset-0 size-24 object-cover transition-opacity group-hover:opacity-0"
+                                />
+                              ) : null}
+                              {r.ejercicio.gif_url ? (
+                                <Image
+                                  src={r.ejercicio.gif_url}
+                                  alt={r.ejercicio.nombre}
+                                  width={96}
+                                  height={96}
+                                  unoptimized
+                                  className="absolute inset-0 size-24 object-cover opacity-0 transition-opacity group-hover:opacity-100"
+                                />
+                              ) : null}
+                            </span>
                           ) : (
-                            <div className="size-14 rounded-md bg-gray-100 shrink-0" />
+                            <div className="size-24 rounded-md bg-gray-100 shrink-0" />
                           )}
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-gray-900">{r.ejercicio?.nombre}</p>
@@ -226,6 +246,11 @@ export default async function MiPlanDetallePage(
                                 .join(' · ') || '—'}
                             </p>
                             {r.notas ? <p className="text-xs text-gray-500 mt-0.5">{r.notas}</p> : null}
+                            {r.ejercicio?.instrucciones ? (
+                              <p className="text-xs text-gray-400 line-clamp-3 mt-0.5">
+                                {r.ejercicio.instrucciones}
+                              </p>
+                            ) : null}
                           </div>
                         </div>
                       ))}

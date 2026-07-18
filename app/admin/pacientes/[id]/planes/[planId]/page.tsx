@@ -33,7 +33,7 @@ export default async function EditarPlanPage(
         supabase.from('ejercicios').select('parte_cuerpo, equipo'),
         supabase
           .from('plan_ejercicios')
-          .select('id, ejercicio_id, dia_semana, orden, series, repeticiones, descanso_seg, notas, ejercicio:ejercicios(id, nombre, imagen_url)')
+          .select('id, ejercicio_id, dia_semana, orden, series, repeticiones, descanso_seg, notas, ejercicio:ejercicios(id, nombre, imagen_url, gif_url)')
           .eq('plan_id', planId),
       ])
     : [{ data: [] }, { data: [] }]

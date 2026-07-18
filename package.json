@@ -12,7 +12,8 @@
     "start": "next start",
     "lint": "next lint",
     "test:e2e": "playwright test",
-    "seed:ejercicios": "node scripts/seed-ejercicios.mjs"
+    "seed:ejercicios": "node scripts/seed-ejercicios.mjs",
+    "translate:ejercicios": "node scripts/traducir-ejercicios.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

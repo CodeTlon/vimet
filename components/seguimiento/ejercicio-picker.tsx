@@ -9,6 +9,8 @@ export type EjercicioResultado = {
   parte_cuerpo: string | null
   equipo: string | null
   imagen_url: string | null
+  gif_url: string | null
+  instrucciones: string | null
 }
 
 export function EjercicioPicker({
@@ -89,25 +91,40 @@ export function EjercicioPicker({
               key={e.id}
               type="button"
               onClick={() => onAgregar(e)}
-              className="w-full flex items-center gap-3 p-2 text-left hover:bg-gray-50"
+              className="group w-full flex items-center gap-3 p-2 text-left hover:bg-gray-50"
             >
               {e.imagen_url ? (
-                <Image
-                  src={e.imagen_url}
-                  alt=""
-                  width={40}
-                  height={40}
-                  unoptimized
-                  className="size-10 rounded-md object-cover shrink-0"
-                />
+                <span className="relative size-16 rounded-md overflow-hidden shrink-0 bg-gray-100">
+                  <Image
+                    src={e.imagen_url}
+                    alt=""
+                    width={64}
+                    height={64}
+                    unoptimized
+                    className="absolute inset-0 size-16 object-cover transition-opacity group-hover:opacity-0"
+                  />
+                  {e.gif_url ? (
+                    <Image
+                      src={e.gif_url}
+                      alt=""
+                      width={64}
+                      height={64}
+                      unoptimized
+                      className="absolute inset-0 size-16 object-cover opacity-0 transition-opacity group-hover:opacity-100"
+                    />
+                  ) : null}
+                </span>
               ) : (
-                <div className="size-10 rounded-md bg-gray-100 shrink-0" />
+                <div className="size-16 rounded-md bg-gray-100 shrink-0" />
               )}
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-gray-900 truncate">{e.nombre}</p>
                 <p className="text-xs text-gray-500 truncate">
                   {[e.parte_cuerpo, e.equipo].filter(Boolean).join(' · ')}
                 </p>
+                {e.instrucciones ? (
+                  <p className="text-xs text-gray-400 line-clamp-2 mt-0.5">{e.instrucciones}</p>
+                ) : null}
               </div>
               <span className="text-xs font-medium text-vimet-orange shrink-0">Agregar</span>
             </button>
