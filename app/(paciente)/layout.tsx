@@ -39,7 +39,7 @@ export default async function PacienteLayout({ children }: { children: ReactNode
 
   return (
     <div className="min-h-screen flex flex-col bg-vimet-sand">
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md shadow-sm">
+      <header className="print:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md shadow-sm">
         <div className="container-vimet flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
             <Image
@@ -67,7 +67,9 @@ export default async function PacienteLayout({ children }: { children: ReactNode
 
       <div className="flex-1 pt-8 pb-16 overflow-x-hidden">
         <div className="container-vimet">
-          <PacienteSubnav tabs={tabs} />
+          <div className="print:hidden">
+            <PacienteSubnav tabs={tabs} />
+          </div>
           {children}
         </div>
       </div>

@@ -1,9 +1,10 @@
 import { CalendarDays, ChevronLeft, FileText } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
+import { PlanPrintButton } from '@/components/seguimiento/plan-print-button'
 import { PlanDownloadButton } from '@/components/seguimiento/plan-download'
+import { RutinaViewer, type RutinaEjercicio } from '@/components/seguimiento/rutina-viewer'
 import { createClient } from '@/lib/supabase/server'
 import {
   ESTADO_PLAN_BADGE,
@@ -13,33 +14,6 @@ import {
 } from '@/lib/seguimiento'
 
 export const dynamic = 'force-dynamic'
-
-const DIA_LABEL: Record<string, string> = {
-  lunes: 'Lunes',
-  martes: 'Martes',
-  miercoles: 'Miércoles',
-  jueves: 'Jueves',
-  viernes: 'Viernes',
-  sabado: 'Sábado',
-  domingo: 'Domingo',
-}
-const ORDEN_DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo', '']
-
-type RutinaEjercicio = {
-  id: number
-  dia_semana: string | null
-  series: number | null
-  repeticiones: string | null
-  descanso_seg: number | null
-  notas: string | null
-  ejercicio: {
-    nombre: string
-    gif_url: string | null
-    imagen_url: string | null
-    atribucion: string | null
-    instrucciones: string | null
-  } | null
-}
 
 export default async function MiPlanDetallePage(
   props: {
@@ -73,12 +47,7 @@ export default async function MiPlanDetallePage(
           .order('orden')
       : { data: null }
 
-  const rutinaOrdenada = ((rutina ?? []) as unknown as RutinaEjercicio[])
-    .slice()
-    .sort(
-      (a, b) => ORDEN_DIAS.indexOf(a.dia_semana ?? '') - ORDEN_DIAS.indexOf(b.dia_semana ?? ''),
-    )
-  const atribucion = rutinaOrdenada.find((r) => r.ejercicio?.atribucion)?.ejercicio?.atribucion
+  const rutinaOrdenada = (rutina ?? []) as unknown as RutinaEjercicio[]
   const diasDescanso = (plan.dias_descanso ?? []) as string[]
 
   const dias = [
@@ -103,12 +72,12 @@ export default async function MiPlanDetallePage(
     <>
       <Link
         href="/mis-planes"
-        className="inline-flex items-center gap-1 text-sm text-gray-700 hover:text-vimet-orange mb-3"
+        className="inline-flex items-center gap-1 text-sm text-gray-700 hover:text-vimet-orange mb-3 print:hidden"
       >
         <ChevronLeft className="size-4" /> Mis planes
       </Link>
 
-      <header className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5">
+      <header className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5 print:break-inside-avoid">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-vimet-orange flex items-center gap-1.5">
@@ -124,16 +93,19 @@ export default async function MiPlanDetallePage(
               {plan.fecha_hasta ? ` hasta ${formatearFechaCorta(plan.fecha_hasta)}` : ''}
             </p>
           </div>
-          <span
-            className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-              ESTADO_PLAN_BADGE[plan.estado as keyof typeof ESTADO_PLAN_BADGE]
-            }`}
-          >
-            {ESTADO_PLAN_LABEL[plan.estado as keyof typeof ESTADO_PLAN_LABEL]}
-          </span>
+          <div className="flex items-center gap-2 print:hidden">
+            <span
+              className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                ESTADO_PLAN_BADGE[plan.estado as keyof typeof ESTADO_PLAN_BADGE]
+              }`}
+            >
+              {ESTADO_PLAN_LABEL[plan.estado as keyof typeof ESTADO_PLAN_LABEL]}
+            </span>
+            <PlanPrintButton />
+          </div>
         </div>
         {plan.archivo_path ? (
-          <div className="mt-4">
+          <div className="mt-4 print:hidden">
             <PlanDownloadButton planId={Number(params.id)} />
           </div>
         ) : null}
@@ -190,82 +162,7 @@ export default async function MiPlanDetallePage(
       ) : null}
 
       {rutinaOrdenada.length > 0 || diasDescanso.length > 0 ? (
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5">
-          <h2 className="font-heading text-lg font-semibold text-gray-900 mb-4">
-            Rutina de ejercicios
-          </h2>
-          <div className="space-y-5">
-            {ORDEN_DIAS.filter(
-              (dia) => rutinaOrdenada.some((r) => (r.dia_semana ?? '') === dia) || diasDescanso.includes(dia),
-            ).map((dia) => (
-                <div key={dia || 'general'}>
-                  <h3 className="font-heading font-semibold text-gray-900 mb-2">
-                    {DIA_LABEL[dia] ?? 'General'}
-                  </h3>
-                  {diasDescanso.includes(dia) ? (
-                    <p className="text-sm text-gray-500">Día de descanso.</p>
-                  ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {rutinaOrdenada
-                      .filter((r) => (r.dia_semana ?? '') === dia)
-                      .map((r) => (
-                        <div
-                          key={r.id}
-                          className="group flex items-center gap-4 rounded-lg border border-gray-100 p-3"
-                        >
-                          {r.ejercicio?.imagen_url || r.ejercicio?.gif_url ? (
-                            <span className="relative size-24 lg:size-36 rounded-md overflow-hidden shrink-0 bg-gray-100">
-                              {r.ejercicio.imagen_url ? (
-                                <Image
-                                  src={r.ejercicio.imagen_url}
-                                  alt={r.ejercicio.nombre}
-                                  width={144}
-                                  height={144}
-                                  unoptimized
-                                  className="absolute inset-0 size-full object-cover transition-opacity group-hover:opacity-0"
-                                />
-                              ) : null}
-                              {r.ejercicio.gif_url ? (
-                                <Image
-                                  src={r.ejercicio.gif_url}
-                                  alt={r.ejercicio.nombre}
-                                  width={144}
-                                  height={144}
-                                  unoptimized
-                                  className="absolute inset-0 size-full object-cover opacity-0 transition-opacity group-hover:opacity-100"
-                                />
-                              ) : null}
-                            </span>
-                          ) : (
-                            <div className="size-24 lg:size-36 rounded-md bg-gray-100 shrink-0" />
-                          )}
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-gray-900">{r.ejercicio?.nombre}</p>
-                            <p className="text-xs text-gray-600 mt-0.5">
-                              {[
-                                r.series ? `${r.series} series` : null,
-                                r.repeticiones ? `${r.repeticiones} reps` : null,
-                                r.descanso_seg ? `${r.descanso_seg}s descanso` : null,
-                              ]
-                                .filter(Boolean)
-                                .join(' · ') || '—'}
-                            </p>
-                            {r.notas ? <p className="text-xs text-gray-500 mt-0.5">{r.notas}</p> : null}
-                            {r.ejercicio?.instrucciones ? (
-                              <p className="text-xs text-gray-400 line-clamp-3 mt-0.5">
-                                {r.ejercicio.instrucciones}
-                              </p>
-                            ) : null}
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                  )}
-                </div>
-            ))}
-          </div>
-          {atribucion ? <p className="mt-4 text-xs text-gray-400">{atribucion}</p> : null}
-        </section>
+        <RutinaViewer rutina={rutinaOrdenada} diasDescanso={diasDescanso} />
       ) : null}
 
       {plan.notas ? (

@@ -2,7 +2,7 @@
 
 import { Trash2 } from 'lucide-react'
 import Image from 'next/image'
-import { useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 
 import {
   actualizarDiaDescansoAction,
@@ -10,6 +10,7 @@ import {
   agregarEjercicioAction,
   eliminarEjercicioPlanAction,
 } from '@/actions/plan-ejercicios'
+import { EjercicioModal, type EjercicioDetalle } from '@/components/seguimiento/ejercicio-modal'
 import { EjercicioPicker, type EjercicioResultado } from '@/components/seguimiento/ejercicio-picker'
 
 const DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'] as const
@@ -35,7 +36,13 @@ export type RutinaItem = {
   repeticiones: string | null
   descanso_seg: number | null
   notas: string | null
-  ejercicio: { id: number; nombre: string; imagen_url: string | null; gif_url: string | null } | null
+  ejercicio: {
+    id: number
+    nombre: string
+    imagen_url: string | null
+    gif_url: string | null
+    instrucciones: string | null
+  } | null
 }
 
 const inputBase =
@@ -65,6 +72,15 @@ export function RutinaPanel({
   const [diaActivo, setDiaActivo] = useState<(typeof TABS)[number]>('lunes')
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  const [ultimoAgregadoId, setUltimoAgregadoId] = useState<number | null>(null)
+  const ultimoAgregadoRef = useRef<HTMLTableRowElement | null>(null)
+  const [ejercicioAbierto, setEjercicioAbierto] = useState<EjercicioDetalle | null>(null)
+
+  useEffect(() => {
+    if (ultimoAgregadoId == null) return
+    ultimoAgregadoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setUltimoAgregadoId(null)
+  }, [ultimoAgregadoId])
 
   const diaValor = diaActivo === 'general' ? '' : diaActivo
   const rutinaDelDia = rutina.filter((r) => (r.dia_semana ?? '') === diaValor)
@@ -96,10 +112,17 @@ export function RutinaPanel({
             repeticiones: null,
             descanso_seg: null,
             notas: null,
-            ejercicio: { id: ejercicio.id, nombre: ejercicio.nombre, imagen_url: ejercicio.imagen_url, gif_url: ejercicio.gif_url },
+            ejercicio: {
+              id: ejercicio.id,
+              nombre: ejercicio.nombre,
+              imagen_url: ejercicio.imagen_url,
+              gif_url: ejercicio.gif_url,
+              instrucciones: ejercicio.instrucciones,
+            },
           },
         ].sort(ordenar),
       )
+      setUltimoAgregadoId(res.id!)
     })
   }
 
@@ -154,7 +177,8 @@ export function RutinaPanel({
       }
       setDiasDescanso((prev) => {
         const next = new Set(prev)
-        activar ? next.add(dia) : next.delete(dia)
+        if (activar) next.add(dia)
+        else next.delete(dia)
         return next
       })
     })
@@ -235,9 +259,25 @@ export function RutinaPanel({
                 </thead>
                 <tbody>
                   {rutinaDelDia.map((item) => (
-                    <tr key={item.id} className="border-t border-gray-100">
+                    <tr
+                      key={item.id}
+                      ref={item.id === ultimoAgregadoId ? ultimoAgregadoRef : undefined}
+                      className="border-t border-gray-100"
+                    >
                       <td className="py-2 pr-2 font-medium text-gray-900">
-                        <div className="group flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            item.ejercicio &&
+                            setEjercicioAbierto({
+                              nombre: item.ejercicio.nombre,
+                              gif_url: item.ejercicio.gif_url,
+                              imagen_url: item.ejercicio.imagen_url,
+                              instrucciones: item.ejercicio.instrucciones,
+                            })
+                          }
+                          className="group flex items-center gap-2 text-left hover:text-vimet-orange"
+                        >
                           {item.ejercicio?.imagen_url ? (
                             <span className="relative size-16 lg:size-28 rounded-md overflow-hidden shrink-0 bg-gray-100">
                               <Image
@@ -261,7 +301,7 @@ export function RutinaPanel({
                             </span>
                           ) : null}
                           <span>{item.ejercicio?.nombre ?? '—'}</span>
-                        </div>
+                        </button>
                       </td>
                       <td className="py-2 pr-2">
                         <input
@@ -328,6 +368,8 @@ export function RutinaPanel({
           )}
         </>
       )}
+
+      <EjercicioModal ejercicio={ejercicioAbierto} onClose={() => setEjercicioAbierto(null)} />
     </fieldset>
   )
 }

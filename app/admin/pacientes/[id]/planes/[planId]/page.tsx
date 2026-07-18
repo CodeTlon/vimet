@@ -33,7 +33,7 @@ export default async function EditarPlanPage(
         supabase.from('ejercicios').select('parte_cuerpo, equipo'),
         supabase
           .from('plan_ejercicios')
-          .select('id, ejercicio_id, dia_semana, orden, series, repeticiones, descanso_seg, notas, ejercicio:ejercicios(id, nombre, imagen_url, gif_url)')
+          .select('id, ejercicio_id, dia_semana, orden, series, repeticiones, descanso_seg, notas, ejercicio:ejercicios(id, nombre, imagen_url, gif_url, instrucciones)')
           .eq('plan_id', planId),
       ])
     : [{ data: [] }, { data: [] }]
@@ -54,7 +54,6 @@ export default async function EditarPlanPage(
         <ChevronLeft className="size-4" /> Planes
       </Link>
       <h2 className="font-heading text-xl font-semibold text-gray-900">Editar plan</h2>
-      <PlanForm pacienteId={params.id} plan={plan} />
       {tieneRutina ? (
         <RutinaPanel
           planId={planId}
@@ -65,6 +64,7 @@ export default async function EditarPlanPage(
           diasDescansoInicial={plan.dias_descanso ?? []}
         />
       ) : null}
+      <PlanForm pacienteId={params.id} plan={plan} />
     </div>
   )
 }
