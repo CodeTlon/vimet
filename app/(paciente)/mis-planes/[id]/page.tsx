@@ -209,30 +209,30 @@ export default async function MiPlanDetallePage(
                           className="group flex items-center gap-4 rounded-lg border border-gray-100 p-3"
                         >
                           {r.ejercicio?.imagen_url || r.ejercicio?.gif_url ? (
-                            <span className="relative size-24 rounded-md overflow-hidden shrink-0 bg-gray-100">
+                            <span className="relative size-24 lg:size-36 rounded-md overflow-hidden shrink-0 bg-gray-100">
                               {r.ejercicio.imagen_url ? (
                                 <Image
                                   src={r.ejercicio.imagen_url}
                                   alt={r.ejercicio.nombre}
-                                  width={96}
-                                  height={96}
+                                  width={144}
+                                  height={144}
                                   unoptimized
-                                  className="absolute inset-0 size-24 object-cover transition-opacity group-hover:opacity-0"
+                                  className="absolute inset-0 size-full object-cover transition-opacity group-hover:opacity-0"
                                 />
                               ) : null}
                               {r.ejercicio.gif_url ? (
                                 <Image
                                   src={r.ejercicio.gif_url}
                                   alt={r.ejercicio.nombre}
-                                  width={96}
-                                  height={96}
+                                  width={144}
+                                  height={144}
                                   unoptimized
-                                  className="absolute inset-0 size-24 object-cover opacity-0 transition-opacity group-hover:opacity-100"
+                                  className="absolute inset-0 size-full object-cover opacity-0 transition-opacity group-hover:opacity-100"
                                 />
                               ) : null}
                             </span>
                           ) : (
-                            <div className="size-24 rounded-md bg-gray-100 shrink-0" />
+                            <div className="size-24 lg:size-36 rounded-md bg-gray-100 shrink-0" />
                           )}
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-gray-900">{r.ejercicio?.nombre}</p>

@@ -94,28 +94,28 @@ export function EjercicioPicker({
               className="group w-full flex items-center gap-3 p-2 text-left hover:bg-gray-50"
             >
               {e.imagen_url ? (
-                <span className="relative size-16 rounded-md overflow-hidden shrink-0 bg-gray-100">
+                <span className="relative size-16 lg:size-24 rounded-md overflow-hidden shrink-0 bg-gray-100">
                   <Image
                     src={e.imagen_url}
                     alt=""
-                    width={64}
-                    height={64}
+                    width={96}
+                    height={96}
                     unoptimized
-                    className="absolute inset-0 size-16 object-cover transition-opacity group-hover:opacity-0"
+                    className="absolute inset-0 size-full object-cover transition-opacity group-hover:opacity-0"
                   />
                   {e.gif_url ? (
                     <Image
                       src={e.gif_url}
                       alt=""
-                      width={64}
-                      height={64}
+                      width={96}
+                      height={96}
                       unoptimized
-                      className="absolute inset-0 size-16 object-cover opacity-0 transition-opacity group-hover:opacity-100"
+                      className="absolute inset-0 size-full object-cover opacity-0 transition-opacity group-hover:opacity-100"
                     />
                   ) : null}
                 </span>
               ) : (
-                <div className="size-16 rounded-md bg-gray-100 shrink-0" />
+                <div className="size-16 lg:size-24 rounded-md bg-gray-100 shrink-0" />
               )}
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-gray-900 truncate">{e.nombre}</p>

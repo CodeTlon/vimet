@@ -151,23 +151,23 @@ export function RutinaPanel({
                   <td className="py-2 pr-2 font-medium text-gray-900">
                     <div className="group flex items-center gap-2">
                       {item.ejercicio?.imagen_url ? (
-                        <span className="relative size-16 rounded-md overflow-hidden shrink-0 bg-gray-100">
+                        <span className="relative size-16 lg:size-28 rounded-md overflow-hidden shrink-0 bg-gray-100">
                           <Image
                             src={item.ejercicio.imagen_url}
                             alt=""
-                            width={64}
-                            height={64}
+                            width={112}
+                            height={112}
                             unoptimized
-                            className="absolute inset-0 size-16 object-cover transition-opacity group-hover:opacity-0"
+                            className="absolute inset-0 size-full object-cover transition-opacity group-hover:opacity-0"
                           />
                           {item.ejercicio.gif_url ? (
                             <Image
                               src={item.ejercicio.gif_url}
                               alt=""
-                              width={64}
-                              height={64}
+                              width={112}
+                              height={112}
                               unoptimized
-                              className="absolute inset-0 size-16 object-cover opacity-0 transition-opacity group-hover:opacity-100"
+                              className="absolute inset-0 size-full object-cover opacity-0 transition-opacity group-hover:opacity-100"
                             />
                           ) : null}
                         </span>
