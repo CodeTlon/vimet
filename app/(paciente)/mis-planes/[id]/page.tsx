@@ -79,6 +79,7 @@ export default async function MiPlanDetallePage(
       (a, b) => ORDEN_DIAS.indexOf(a.dia_semana ?? '') - ORDEN_DIAS.indexOf(b.dia_semana ?? ''),
     )
   const atribucion = rutinaOrdenada.find((r) => r.ejercicio?.atribucion)?.ejercicio?.atribucion
+  const diasDescanso = (plan.dias_descanso ?? []) as string[]
 
   const dias = [
     { key: 'disponibilidad_lunes', label: 'Lunes' },
@@ -188,18 +189,22 @@ export default async function MiPlanDetallePage(
         </section>
       ) : null}
 
-      {rutinaOrdenada.length > 0 ? (
+      {rutinaOrdenada.length > 0 || diasDescanso.length > 0 ? (
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5">
           <h2 className="font-heading text-lg font-semibold text-gray-900 mb-4">
             Rutina de ejercicios
           </h2>
           <div className="space-y-5">
-            {ORDEN_DIAS.filter((dia) => rutinaOrdenada.some((r) => (r.dia_semana ?? '') === dia)).map(
-              (dia) => (
+            {ORDEN_DIAS.filter(
+              (dia) => rutinaOrdenada.some((r) => (r.dia_semana ?? '') === dia) || diasDescanso.includes(dia),
+            ).map((dia) => (
                 <div key={dia || 'general'}>
                   <h3 className="font-heading font-semibold text-gray-900 mb-2">
                     {DIA_LABEL[dia] ?? 'General'}
                   </h3>
+                  {diasDescanso.includes(dia) ? (
+                    <p className="text-sm text-gray-500">Día de descanso.</p>
+                  ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {rutinaOrdenada
                       .filter((r) => (r.dia_semana ?? '') === dia)
@@ -255,9 +260,9 @@ export default async function MiPlanDetallePage(
                         </div>
                       ))}
                   </div>
+                  )}
                 </div>
-              ),
-            )}
+            ))}
           </div>
           {atribucion ? <p className="mt-4 text-xs text-gray-400">{atribucion}</p> : null}
         </section>

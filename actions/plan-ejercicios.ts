@@ -116,6 +116,44 @@ export async function actualizarEjercicioPlanAction(
   return { ok: true }
 }
 
+const diasDescansoSchema = z.object({
+  plan_id: z.coerce.number().int(),
+  paciente_id: z.string().uuid(),
+  dia: diaEnum,
+  activar: z.enum(['true', 'false']),
+})
+
+export async function actualizarDiaDescansoAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<PlanEjercicioState> {
+  const parsed = diasDescansoSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+
+  const ctx = await requireStaff()
+  if ('error' in ctx) return { error: ctx.error }
+
+  const d = parsed.data
+  const { data: plan } = await ctx.supabase
+    .from('planes')
+    .select('dias_descanso')
+    .eq('id', d.plan_id)
+    .single()
+  const actuales = (plan?.dias_descanso ?? []) as string[]
+  const siguientes = d.activar === 'true'
+    ? Array.from(new Set([...actuales, d.dia]))
+    : actuales.filter((x) => x !== d.dia)
+
+  const { error } = await ctx.supabase
+    .from('planes')
+    .update({ dias_descanso: siguientes })
+    .eq('id', d.plan_id)
+  if (error) return { error: 'No se pudo actualizar el día de descanso.' }
+
+  revalidarPlan(d.paciente_id, d.plan_id)
+  return { ok: true }
+}
+
 export async function eliminarEjercicioPlanAction(formData: FormData) {
   const id = Number(formData.get('id'))
   const planId = Number(formData.get('plan_id'))

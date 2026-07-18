@@ -62,6 +62,7 @@ export default async function EditarPlanPage(
           partes={partes}
           equipos={equipos}
           rutinaInicial={(rutina ?? []) as unknown as RutinaItem[]}
+          diasDescansoInicial={plan.dias_descanso ?? []}
         />
       ) : null}
     </div>
