@@ -68,8 +68,11 @@ export function RutinaViewer({
       </div>
 
       <div className="space-y-5">
-        {diasConContenido.map((dia) => (
-          <div key={dia || 'general'} className={dia === diaActivo ? '' : 'hidden print:block print:mt-5'}>
+        {diasConContenido.map((dia, diaIdx) => (
+          <div
+            key={dia || 'general'}
+            className={`${dia === diaActivo ? '' : 'hidden'} print:block ${diaIdx > 0 ? 'print:mt-5 print:break-before-page' : ''}`}
+          >
             <h3 className="font-heading font-semibold text-gray-900 mb-2 hidden print:block">
               {DIA_LABEL[dia] ?? 'General'}
             </h3>
@@ -79,7 +82,7 @@ export function RutinaViewer({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {rutina
                   .filter((r) => (r.dia_semana ?? '') === dia)
-                  .map((r) => (
+                  .map((r, idx) => (
                     <button
                       key={r.id}
                       type="button"
@@ -95,7 +98,7 @@ export function RutinaViewer({
                       className="group flex items-center gap-4 rounded-lg border border-gray-100 p-3 text-left hover:border-vimet-orange/40"
                     >
                       {r.ejercicio?.imagen_url || r.ejercicio?.gif_url ? (
-                        <span className="relative size-24 lg:size-36 rounded-md overflow-hidden shrink-0 bg-gray-100">
+                        <span className="relative size-24 lg:size-36 print:size-40 rounded-md overflow-hidden shrink-0 bg-gray-100">
                           {r.ejercicio.imagen_url ? (
                             <Image
                               src={r.ejercicio.imagen_url}
@@ -118,10 +121,12 @@ export function RutinaViewer({
                           ) : null}
                         </span>
                       ) : (
-                        <div className="size-24 lg:size-36 rounded-md bg-gray-100 shrink-0" />
+                        <div className="size-24 lg:size-36 print:size-40 rounded-md bg-gray-100 shrink-0" />
                       )}
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900">{r.ejercicio?.nombre}</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {idx + 1}. {r.ejercicio?.nombre}
+                        </p>
                         <p className="text-xs text-gray-600 mt-0.5">
                           {[
                             r.series ? `${r.series} series` : null,
@@ -133,7 +138,7 @@ export function RutinaViewer({
                         </p>
                         {r.notas ? <p className="text-xs text-gray-500 mt-0.5">{r.notas}</p> : null}
                         {r.ejercicio?.instrucciones ? (
-                          <p className="text-xs text-gray-400 line-clamp-3 print:line-clamp-none mt-0.5">
+                          <p className="text-xs text-gray-400 line-clamp-3 print:line-clamp-6 mt-0.5">
                             {r.ejercicio.instrucciones}
                           </p>
                         ) : null}

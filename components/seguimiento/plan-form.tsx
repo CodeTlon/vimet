@@ -65,9 +65,11 @@ function Btn({ children }: { children: React.ReactNode }) {
 export function PlanForm({
   pacienteId,
   plan,
+  rutina,
 }: {
   pacienteId: string
   plan?: Plan
+  rutina?: React.ReactNode
 }) {
   const editing = Boolean(plan)
   const [state, action] = useFormState(
@@ -290,6 +292,8 @@ export function PlanForm({
           />
         </Field>
       </Section>
+
+      {rutina}
 
       <Section title="Notas">
         <FullField label="Notas internas / extra">

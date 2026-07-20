@@ -50,7 +50,7 @@ export function EjercicioModal({
             </button>
           </div>
           {ejercicio.gif_url || ejercicio.imagen_url ? (
-            <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gray-100 mb-3">
+            <div className="relative w-56 sm:w-64 mx-auto aspect-square rounded-xl overflow-hidden bg-gray-100 mb-3">
               <Image
                 src={ejercicio.gif_url ?? ejercicio.imagen_url ?? ''}
                 alt={ejercicio.nombre}

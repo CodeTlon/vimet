@@ -54,17 +54,22 @@ export default async function EditarPlanPage(
         <ChevronLeft className="size-4" /> Planes
       </Link>
       <h2 className="font-heading text-xl font-semibold text-gray-900">Editar plan</h2>
-      {tieneRutina ? (
-        <RutinaPanel
-          planId={planId}
-          pacienteId={params.id}
-          partes={partes}
-          equipos={equipos}
-          rutinaInicial={(rutina ?? []) as unknown as RutinaItem[]}
-          diasDescansoInicial={plan.dias_descanso ?? []}
-        />
-      ) : null}
-      <PlanForm pacienteId={params.id} plan={plan} />
+      <PlanForm
+        pacienteId={params.id}
+        plan={plan}
+        rutina={
+          tieneRutina ? (
+            <RutinaPanel
+              planId={planId}
+              pacienteId={params.id}
+              partes={partes}
+              equipos={equipos}
+              rutinaInicial={(rutina ?? []) as unknown as RutinaItem[]}
+              diasDescansoInicial={plan.dias_descanso ?? []}
+            />
+          ) : null
+        }
+      />
     </div>
   )
 }
