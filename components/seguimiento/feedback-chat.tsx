@@ -10,6 +10,7 @@ import {
   type FeedbackState,
 } from '@/actions/feedback'
 import { useResetOnSuccess } from '@/components/seguimiento/use-reset-on-success'
+import { NotaTextarea } from '@/components/ui/nota-textarea'
 
 export type MensajeFeedback = {
   id: number
@@ -51,7 +52,7 @@ function Composer({ feedbackId }: { feedbackId: number }) {
     <form ref={formRef} action={action} className="pt-3">
       <input type="hidden" name="feedback_id" value={feedbackId} />
       <div className="flex items-end gap-2">
-        <textarea
+        <NotaTextarea
           name="contenido"
           required
           rows={1}
@@ -75,7 +76,7 @@ function EditarMensajeForm({ mensaje, onDone }: { mensaje: MensajeFeedback; onDo
   return (
     <form action={action} className="space-y-1.5">
       <input type="hidden" name="id" value={mensaje.id} />
-      <textarea
+      <NotaTextarea
         name="contenido"
         defaultValue={mensaje.contenido}
         required

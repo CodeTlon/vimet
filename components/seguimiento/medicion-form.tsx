@@ -14,6 +14,7 @@ import {
   useResetOnSuccess,
   useScrollToMessage,
 } from '@/components/seguimiento/use-reset-on-success'
+import { NotaTextarea } from '@/components/ui/nota-textarea'
 import { haceDiasArgentina, hoyArgentina } from '@/lib/datetime'
 
 const initial: MedicionState = {}
@@ -177,10 +178,10 @@ export function MedicionForm({
         </Lab>
       </div>
       <Lab label="Observaciones">
-        <textarea
+        <NotaTextarea
           name="observaciones"
           rows={2}
-          defaultValue={medicion?.observaciones ?? ''}
+          defaultValue={medicion?.observaciones}
           placeholder="Notas de la medición (opcional)"
           className={inputBase}
         />

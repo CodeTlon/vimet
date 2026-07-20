@@ -10,6 +10,7 @@ import {
   useResetOnSuccess,
   useScrollToMessage,
 } from '@/components/seguimiento/use-reset-on-success'
+import { NotaTextarea } from '@/components/ui/nota-textarea'
 
 const initial: RecursoState = {}
 
@@ -151,7 +152,7 @@ export function RecursoForm({ pacienteId }: { pacienteId: string }) {
 
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Descripción</span>
-        <textarea name="descripcion" rows={2} maxLength={1000} placeholder="Breve descripción del recurso (opcional)" className={inputBase} />
+        <NotaTextarea name="descripcion" rows={2} maxLength={1000} placeholder="Breve descripción del recurso (opcional)" className={inputBase} />
       </label>
 
       <div className="flex flex-wrap items-end justify-between gap-3">

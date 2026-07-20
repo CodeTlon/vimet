@@ -14,6 +14,7 @@ import {
   useResetOnSuccess,
   useScrollToMessage,
 } from '@/components/seguimiento/use-reset-on-success'
+import { NotaTextarea } from '@/components/ui/nota-textarea'
 import { haceDiasArgentina, hoyArgentina } from '@/lib/datetime'
 import { TESTS_FUNCIONALES } from '@/lib/seguimiento'
 
@@ -132,10 +133,10 @@ export function EvaluacionForm({
 
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Observaciones</span>
-        <textarea
+        <NotaTextarea
           name="observaciones"
           rows={3}
-          defaultValue={evaluacion?.observaciones ?? ''}
+          defaultValue={evaluacion?.observaciones}
           placeholder="Notas de la evaluación (opcional)"
           className={inputBase}
         />

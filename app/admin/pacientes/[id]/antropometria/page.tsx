@@ -1,4 +1,4 @@
-import { EvolutionChart } from '@/components/evolution-chart'
+import { ExpandableChart } from '@/components/expandable-chart'
 import { Pagination } from '@/components/pagination'
 import { MedicionesPanel } from '@/components/seguimiento/mediciones-panel'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
@@ -110,7 +110,7 @@ function ChartCard({
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
       <h3 className="font-heading font-semibold text-gray-900 mb-3">{title}</h3>
-      <EvolutionChart series={series} unit={unit} />
+      <ExpandableChart series={series} unit={unit} />
     </div>
   )
 }

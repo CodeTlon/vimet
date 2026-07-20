@@ -10,6 +10,7 @@ import {
   type EvolucionState,
 } from '@/actions/evolucion'
 import { useResetOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
+import { NotaTextarea } from '@/components/ui/nota-textarea'
 
 const initial: EvolucionState = {}
 const inputBase =
@@ -113,11 +114,11 @@ export function EvolucionForm({
 
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Contenido</span>
-        <textarea
+        <NotaTextarea
           name="contenido"
           rows={4}
           required
-          defaultValue={entry?.contenido ?? ''}
+          defaultValue={entry?.contenido}
           placeholder="Describí la evolución u observación…"
           className={inputBase}
         />

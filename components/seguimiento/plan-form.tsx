@@ -14,6 +14,7 @@ import {
   useRemountKeyOnSuccess,
   useScrollToMessage,
 } from '@/components/seguimiento/use-reset-on-success'
+import { NotaTextarea } from '@/components/ui/nota-textarea'
 import { hoyArgentina } from '@/lib/datetime'
 
 const initial: PlanState = {}
@@ -163,55 +164,55 @@ export function PlanForm({
 
       <Section title="Pautas nutricionales">
         <FullField label="Pautas generales">
-          <textarea
+          <NotaTextarea
             name="pautas_generales"
             rows={4}
-            defaultValue={p?.pautas_generales ?? ''}
+            defaultValue={p?.pautas_generales}
             placeholder="Indicaciones generales del plan alimentario"
             className={inputBase}
           />
         </FullField>
         <FullField label="Pautas de hidratación">
-          <textarea
+          <NotaTextarea
             name="pautas_hidratacion"
             rows={2}
-            defaultValue={p?.pautas_hidratacion ?? ''}
+            defaultValue={p?.pautas_hidratacion}
             placeholder="Ej: 2,5 L de agua por día, más en días de entrenamiento"
             className={inputBase}
           />
         </FullField>
         <Field label="Pre entreno">
-          <textarea
+          <NotaTextarea
             name="pre_entreno"
             rows={2}
-            defaultValue={p?.pre_entreno ?? ''}
+            defaultValue={p?.pre_entreno}
             placeholder="Qué consumir antes de entrenar"
             className={inputBase}
           />
         </Field>
         <Field label="Intra entreno">
-          <textarea
+          <NotaTextarea
             name="intra_entreno"
             rows={2}
-            defaultValue={p?.intra_entreno ?? ''}
+            defaultValue={p?.intra_entreno}
             placeholder="Qué consumir durante el entrenamiento"
             className={inputBase}
           />
         </Field>
         <Field label="Post entreno">
-          <textarea
+          <NotaTextarea
             name="post_entreno"
             rows={2}
-            defaultValue={p?.post_entreno ?? ''}
+            defaultValue={p?.post_entreno}
             placeholder="Qué consumir después de entrenar"
             className={inputBase}
           />
         </Field>
         <Field label="Suplementación">
-          <textarea
+          <NotaTextarea
             name="suplementacion"
             rows={2}
-            defaultValue={p?.suplementacion ?? ''}
+            defaultValue={p?.suplementacion}
             placeholder="Suplementos sugeridos y dosis"
             className={inputBase}
           />
@@ -226,19 +227,19 @@ export function PlanForm({
           <input name="frecuencia" defaultValue={p?.frecuencia ?? ''} placeholder="Ej: 4 días/semana" className={inputBase} />
         </Field>
         <FullField label="Experiencia previa">
-          <textarea
+          <NotaTextarea
             name="experiencia_previa"
             rows={2}
-            defaultValue={p?.experiencia_previa ?? ''}
+            defaultValue={p?.experiencia_previa}
             placeholder="Ej: 2 años de musculación, antecedentes deportivos"
             className={inputBase}
           />
         </FullField>
         <FullField label="Volumen / orientación general">
-          <textarea
+          <NotaTextarea
             name="volumen"
             rows={2}
-            defaultValue={p?.volumen ?? ''}
+            defaultValue={p?.volumen}
             placeholder="Ej: 12–16 series por grupo muscular, progresión semanal"
             className={inputBase}
           />
@@ -297,7 +298,7 @@ export function PlanForm({
 
       <Section title="Notas">
         <FullField label="Notas internas / extra">
-          <textarea name="notas" rows={4} defaultValue={p?.notas ?? ''} placeholder="Notas internas o aclaraciones extra del plan" className={inputBase} />
+          <NotaTextarea name="notas" rows={4} defaultValue={p?.notas} placeholder="Notas internas o aclaraciones extra del plan" className={inputBase} />
         </FullField>
       </Section>
 

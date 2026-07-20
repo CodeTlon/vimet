@@ -5,6 +5,7 @@ import { useFormState, useFormStatus } from 'react-dom'
 
 import { enviarFeedbackAction, type FeedbackState } from '@/actions/feedback'
 import { useAutoHideMessage, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
+import { NotaTextarea } from '@/components/ui/nota-textarea'
 import { lunesDeSemana } from '@/lib/seguimiento'
 
 const initial: FeedbackState = {}
@@ -79,7 +80,7 @@ export function FeedbackForm() {
 
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">¿Cómo te sentiste esta semana?</span>
-        <textarea
+        <NotaTextarea
           name="observaciones"
           rows={4}
           placeholder="Contanos cómo te fue con el plan, energía, descanso, dificultades…"

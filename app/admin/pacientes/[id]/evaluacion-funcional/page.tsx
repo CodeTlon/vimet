@@ -1,4 +1,4 @@
-import { EvolutionChart } from '@/components/evolution-chart'
+import { ExpandableChart } from '@/components/expandable-chart'
 import { Pagination } from '@/components/pagination'
 import { EvaluacionesPanel } from '@/components/seguimiento/evaluaciones-panel'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
@@ -60,7 +60,7 @@ export default async function EvalFuncionalPage(
           <h3 className="font-heading font-semibold text-gray-900 mb-3">
             Evolución del puntaje total <span className="text-gray-500 font-normal">/ {PUNTAJE_MAX_FUNCIONAL}</span>
           </h3>
-          <EvolutionChart
+          <ExpandableChart
             series={[
               {
                 label: 'Puntaje',

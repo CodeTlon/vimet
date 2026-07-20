@@ -6,6 +6,7 @@ import { useFormState, useFormStatus } from 'react-dom'
 
 import { actualizarTurnoStaffAction, type TurnoState } from '@/actions/turnos'
 import { useAutoHideMessage, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
+import { NotaTextarea } from '@/components/ui/nota-textarea'
 
 const initialState: TurnoState = {}
 
@@ -95,10 +96,10 @@ export function TurnoDetalleForm({
         <label className="block text-sm font-medium text-gray-800 mb-1.5">
           Notas profesionales
         </label>
-        <textarea
+        <NotaTextarea
           name="notas_profesional"
           rows={4}
-          defaultValue={notas ?? ''}
+          defaultValue={notas}
           placeholder="Notas internas sobre el turno (no visibles al paciente)"
           className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none"
         />

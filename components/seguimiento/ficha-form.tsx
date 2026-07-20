@@ -9,6 +9,7 @@ import {
   useRemountKeyOnSuccess,
   useScrollToMessage,
 } from '@/components/seguimiento/use-reset-on-success'
+import { NotaTextarea } from '@/components/ui/nota-textarea'
 import { hoyArgentina } from '@/lib/datetime'
 
 const initial: FichaState = {}
@@ -155,55 +156,55 @@ export function FichaForm({
 
       <Section title="Salud">
         <FullField label="Diagnóstico médico">
-          <textarea
+          <NotaTextarea
             name="dx_medico"
             rows={2}
-            defaultValue={f?.dx_medico ?? ''}
+            defaultValue={f?.dx_medico}
             placeholder="Ej: resistencia a la insulina, hipotiroidismo…"
             className={inputBase}
           />
         </FullField>
         <FullField label="Diagnóstico nutricional">
-          <textarea
+          <NotaTextarea
             name="dx_nutricional"
             rows={2}
-            defaultValue={f?.dx_nutricional ?? ''}
+            defaultValue={f?.dx_nutricional}
             placeholder="Ej: sobrepeso grado I"
             className={inputBase}
           />
         </FullField>
         <FullField label="Medicación">
-          <textarea
+          <NotaTextarea
             name="medicacion"
             rows={2}
-            defaultValue={f?.medicacion ?? ''}
+            defaultValue={f?.medicacion}
             placeholder="Medicación actual y dosis"
             className={inputBase}
           />
         </FullField>
         <FullField label="Suplementación">
-          <textarea
+          <NotaTextarea
             name="suplementacion"
             rows={2}
-            defaultValue={f?.suplementacion ?? ''}
+            defaultValue={f?.suplementacion}
             placeholder="Suplementos que consume"
             className={inputBase}
           />
         </FullField>
         <FullField label="Lesiones">
-          <textarea
+          <NotaTextarea
             name="lesiones"
             rows={2}
-            defaultValue={f?.lesiones ?? ''}
+            defaultValue={f?.lesiones}
             placeholder="Lesiones previas o actuales"
             className={inputBase}
           />
         </FullField>
         <FullField label="Molestias / pinzamientos">
-          <textarea
+          <NotaTextarea
             name="molestias"
             rows={2}
-            defaultValue={f?.molestias ?? ''}
+            defaultValue={f?.molestias}
             placeholder="Dolores, pinzamientos, zonas a cuidar"
             className={inputBase}
           />
@@ -212,28 +213,28 @@ export function FichaForm({
 
       <Section title="Laboratorio y motivos">
         <FullField label="Datos de laboratorio de interés">
-          <textarea
+          <NotaTextarea
             name="datos_laboratorio"
             rows={4}
-            defaultValue={f?.datos_laboratorio ?? ''}
+            defaultValue={f?.datos_laboratorio}
             placeholder="Glucemia, perfil lipídico, TSH, etc."
             className={inputBase}
           />
         </FullField>
         <FullField label="Motivos de la consulta">
-          <textarea
+          <NotaTextarea
             name="motivos_consulta"
             rows={3}
-            defaultValue={f?.motivos_consulta ?? ''}
+            defaultValue={f?.motivos_consulta}
             placeholder="Qué lo trae a la consulta y qué objetivos tiene"
             className={inputBase}
           />
         </FullField>
         <FullField label="Observaciones internas (no visibles al paciente)">
-          <textarea
+          <NotaTextarea
             name="observaciones_internas"
             rows={3}
-            defaultValue={f?.observaciones_internas ?? ''}
+            defaultValue={f?.observaciones_internas}
             placeholder="Notas del equipo (no visibles al paciente)"
             className={inputBase}
           />

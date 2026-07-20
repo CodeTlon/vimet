@@ -9,6 +9,7 @@ import {
   useResetOnSuccess,
   useScrollToMessage,
 } from '@/components/seguimiento/use-reset-on-success'
+import { NotaTextarea } from '@/components/ui/nota-textarea'
 import { CATEGORIA_OBJETIVO_LABEL } from '@/lib/seguimiento'
 import { hoyArgentina } from '@/lib/datetime'
 
@@ -86,7 +87,7 @@ export function ObjetivoForm({ pacienteId }: { pacienteId: string }) {
 
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Descripción</span>
-        <textarea name="descripcion" rows={3} required placeholder="Ej: Bajar 5% de grasa corporal en 3 meses" className={inputBase} />
+        <NotaTextarea name="descripcion" rows={3} required placeholder="Ej: Bajar 5% de grasa corporal en 3 meses" className={inputBase} />
       </label>
 
       <Btn />

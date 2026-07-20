@@ -12,6 +12,7 @@ import {
 } from '@/actions/plan-ejercicios'
 import { EjercicioModal, type EjercicioDetalle } from '@/components/seguimiento/ejercicio-modal'
 import { EjercicioPicker, type EjercicioResultado } from '@/components/seguimiento/ejercicio-picker'
+import { NotaTextarea } from '@/components/ui/nota-textarea'
 
 const DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'] as const
 // ponytail: "general" (sin día) es el bucket legacy de ejercicios cargados antes de que existieran las tabs.
@@ -249,6 +250,7 @@ export function RutinaPanel({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-gray-500">
+                    <th className="py-1 pr-2 font-medium">#</th>
                     <th className="py-1 pr-2 font-medium">Ejercicio</th>
                     <th className="py-1 pr-2 font-medium">Series</th>
                     <th className="py-1 pr-2 font-medium">Reps</th>
@@ -258,12 +260,13 @@ export function RutinaPanel({
                   </tr>
                 </thead>
                 <tbody>
-                  {rutinaDelDia.map((item) => (
+                  {rutinaDelDia.map((item, idx) => (
                     <tr
                       key={item.id}
                       ref={item.id === ultimoAgregadoId ? ultimoAgregadoRef : undefined}
                       className="border-t border-gray-100"
                     >
+                      <td className="py-2 pr-2 text-gray-500">{idx + 1}</td>
                       <td className="py-2 pr-2 font-medium text-gray-900">
                         <button
                           type="button"
@@ -339,13 +342,14 @@ export function RutinaPanel({
                         />
                       </td>
                       <td className="py-2 pr-2">
-                        <input
+                        <NotaTextarea
+                          rows={1}
                           className={inputBase}
                           placeholder="Opcional"
-                          defaultValue={item.notas ?? ''}
-                          onBlur={(e) => {
-                            actualizarCampo(item.id, 'notas', e.target.value)
-                            guardar({ ...item, notas: e.target.value || null })
+                          defaultValue={item.notas}
+                          onSave={(value) => {
+                            actualizarCampo(item.id, 'notas', value)
+                            guardar({ ...item, notas: value || null })
                           }}
                         />
                       </td>
