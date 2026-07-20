@@ -4,30 +4,54 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 import { diaSemana, getProfesionalesCombo } from '@/lib/booking/slots'
-import { hoyArgentina, turnoVencidoDesde } from '@/lib/datetime'
+import { HORAS_CORTE_RESERVA, hoyArgentina, turnoCorteDesde, turnoVencidoDesde } from '@/lib/datetime'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 export type TurnoState = { ok?: boolean; error?: string }
 
-// Barrido perezoso: pasa a "no_asistio" los turnos pendientes (nunca
-// confirmados) cuyo horario + 15min de gracia ya pasó. Se llama al cargar
-// las pantallas que muestran turnos — no hay cron, así que si nadie visita
-// esas pantallas el turno vencido no cambia de estado hasta que alguien entre.
+// Barrido perezoso: pasa a "no_asistio" (a) los turnos pendientes (nunca
+// confirmados) cuyo horario + 15min de gracia ya pasó, y (b) los turnos
+// confirmados que el profesional nunca marcó completado, 24hs después de su
+// horario. Se llama al cargar las pantallas que muestran turnos — no hay
+// cron, así que si nadie visita esas pantallas el turno vencido no cambia de
+// estado hasta que alguien entre.
 export async function marcarNoAsistioVencidos() {
   const admin = createAdminClient()
-  const { data } = await admin
-    .from('turnos')
-    .select('id, fecha, hora_fin')
-    .eq('estado', 'pendiente')
-    .lte('fecha', hoyArgentina())
+  const [{ data: pendientes }, { data: confirmados }] = await Promise.all([
+    admin.from('turnos').select('id, fecha, hora_fin').eq('estado', 'pendiente').lte('fecha', hoyArgentina()),
+    admin.from('turnos').select('id, fecha, hora_fin').eq('estado', 'confirmado').lte('fecha', hoyArgentina()),
+  ])
 
-  const vencidos = (data ?? []).filter((t) => turnoVencidoDesde(t.fecha, t.hora_fin) < new Date())
+  const vencidos = [
+    ...(pendientes ?? []).filter((t) => turnoVencidoDesde(t.fecha, t.hora_fin) < new Date()),
+    ...(confirmados ?? []).filter((t) => turnoVencidoDesde(t.fecha, t.hora_fin, 24 * 60) < new Date()),
+  ]
   if (!vencidos.length) return
 
   await admin
     .from('turnos')
     .update({ estado: 'no_asistio' })
+    .in('id', vencidos.map((t) => t.id))
+}
+
+// Barrido perezoso: cancela los turnos "pendiente" que el paciente nunca
+// confirmó y ya entraron en la ventana de corte (HORAS_CORTE_RESERVA antes
+// del turno) — mismo patrón sin cron que marcarNoAsistioVencidos.
+export async function cancelarPendientesSinConfirmar() {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('turnos')
+    .select('id, fecha, hora_inicio')
+    .eq('estado', 'pendiente')
+    .lte('fecha', hoyArgentina())
+
+  const vencidos = (data ?? []).filter((t) => turnoCorteDesde(t.fecha, t.hora_inicio) < new Date())
+  if (!vencidos.length) return
+
+  await admin
+    .from('turnos')
+    .update({ estado: 'cancelado' })
     .in('id', vencidos.map((t) => t.id))
 }
 
@@ -104,6 +128,11 @@ export async function crearTurnoAction(
   }
   if (parsed.data.hora_fin <= parsed.data.hora_inicio) {
     return { error: 'El horario del turno es inválido.' }
+  }
+  if (turnoCorteDesde(parsed.data.fecha, parsed.data.hora_inicio) < new Date()) {
+    return {
+      error: `Los turnos se reservan con al menos ${HORAS_CORTE_RESERVA} horas de anticipación.`,
+    }
   }
 
   const supabase = await createClient()
@@ -219,6 +248,36 @@ export async function cancelarTurnoAction(formData: FormData) {
     .eq('paciente_id', user.id)
     .in('estado', ['pendiente', 'confirmado'])
     .gte('fecha', hoyArgentina())
+
+  revalidatePath('/mis-turnos')
+}
+
+export async function confirmarTurnoAction(formData: FormData) {
+  const id = Number(formData.get('id'))
+  if (!id) return
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return
+
+  const { data: turno } = await supabase
+    .from('turnos')
+    .select('turno_par_id, fecha, hora_inicio')
+    .eq('id', id)
+    .eq('paciente_id', user.id)
+    .maybeSingle()
+  if (!turno || turnoCorteDesde(turno.fecha, turno.hora_inicio) < new Date()) return
+
+  const ids = turno.turno_par_id ? [id, turno.turno_par_id] : [id]
+
+  await supabase
+    .from('turnos')
+    .update({ estado: 'confirmado' })
+    .in('id', ids)
+    .eq('paciente_id', user.id)
+    .eq('estado', 'pendiente')
 
   revalidatePath('/mis-turnos')
 }

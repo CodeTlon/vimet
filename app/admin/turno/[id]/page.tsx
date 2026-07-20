@@ -2,7 +2,7 @@ import { ArrowLeft, Building2, Mail, MessageCircle, Phone, UserRound, Video } fr
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-import { marcarNoAsistioVencidos } from '@/actions/turnos'
+import { cancelarPendientesSinConfirmar, marcarNoAsistioVencidos } from '@/actions/turnos'
 import { TurnoDetalleForm } from '@/components/turno-detalle-form'
 import { ESTADO_TURNO_BADGE, ESTADO_TURNO_LABEL } from '@/lib/seguimiento'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -37,6 +37,7 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
   if (!Number.isFinite(id) || id <= 0) notFound()
 
   await marcarNoAsistioVencidos()
+  await cancelarPendientesSinConfirmar()
 
   const supabase = await createClient()
   const { data, error } = await supabase

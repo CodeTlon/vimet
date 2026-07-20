@@ -1,4 +1,4 @@
-import { hoyArgentina, horaArgentina } from '@/lib/datetime'
+import { HORAS_CORTE_RESERVA, hoyArgentina, horaArgentina } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
 
 export type Slot = { hora_inicio: string; hora_fin: string }
@@ -86,7 +86,7 @@ export async function getSlotsDisponibles({
 
   const ahora = new Date()
   const esHoy = fecha === hoyArgentina(ahora)
-  const minimoMin = esHoy ? toMinutes(horaArgentina(ahora)) + 30 : 0
+  const minimoMin = esHoy ? toMinutes(horaArgentina(ahora)) + HORAS_CORTE_RESERVA * 60 : 0
 
   const slots: Slot[] = []
   for (const h of horarios) {

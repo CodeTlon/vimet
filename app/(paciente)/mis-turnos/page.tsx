@@ -1,9 +1,14 @@
 import { Building2, CalendarDays, CalendarPlus, Clock, UserRound, Video } from 'lucide-react'
 import Link from 'next/link'
 
-import { cancelarTurnoAction, marcarNoAsistioVencidos } from '@/actions/turnos'
+import {
+  cancelarPendientesSinConfirmar,
+  cancelarTurnoAction,
+  confirmarTurnoAction,
+  marcarNoAsistioVencidos,
+} from '@/actions/turnos'
 import { Pagination } from '@/components/pagination'
-import { hoyArgentina } from '@/lib/datetime'
+import { hoyArgentina, horaArgentina, turnoCorteDesde } from '@/lib/datetime'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { ESTADO_TURNO_BADGE as ESTADO_BADGE, ESTADO_TURNO_LABEL as ESTADO_LABEL } from '@/lib/seguimiento'
 import { createClient } from '@/lib/supabase/server'
@@ -24,6 +29,12 @@ const MESES = [
   'Dic',
 ]
 
+function corteLabel(fecha: string, horaInicio: string): string {
+  const corte = turnoCorteDesde(fecha, horaInicio)
+  const [, mes, dia] = hoyArgentina(corte).split('-')
+  return `${horaArgentina(corte)} del ${dia}/${mes}`
+}
+
 export const metadata = { title: 'Mis turnos' }
 
 export default async function MisTurnosPage(
@@ -40,6 +51,7 @@ export default async function MisTurnosPage(
   if (!user) return null
 
   await marcarNoAsistioVencidos()
+  await cancelarPendientesSinConfirmar()
 
   const page = parsePage(searchParams?.page)
   const [from, to] = pageRange(page)
@@ -168,16 +180,36 @@ export default async function MisTurnosPage(
                       </li>
                     </ul>
 
+                    {t.estado === 'pendiente' ? (
+                      <p className="mt-3 text-xs text-vimet-red">
+                        Confirmá antes de las {corteLabel(t.fecha, t.hora_inicio)} o el turno se cancela
+                        automáticamente.
+                      </p>
+                    ) : null}
+
                     {cancelable ? (
-                      <form action={cancelarTurnoAction} className="mt-4">
-                        <input type="hidden" name="id" value={t.id} />
-                        <button
-                          type="submit"
-                          className="text-sm font-semibold text-vimet-red hover:underline"
-                        >
-                          Cancelar turno
-                        </button>
-                      </form>
+                      <div className="mt-4 flex items-center gap-4">
+                        {t.estado === 'pendiente' ? (
+                          <form action={confirmarTurnoAction}>
+                            <input type="hidden" name="id" value={t.id} />
+                            <button
+                              type="submit"
+                              className="text-sm font-semibold text-vimet-orange hover:underline"
+                            >
+                              Confirmar turno
+                            </button>
+                          </form>
+                        ) : null}
+                        <form action={cancelarTurnoAction}>
+                          <input type="hidden" name="id" value={t.id} />
+                          <button
+                            type="submit"
+                            className="text-sm font-semibold text-vimet-red hover:underline"
+                          >
+                            Cancelar turno
+                          </button>
+                        </form>
+                      </div>
                     ) : null}
                   </div>
                 </li>

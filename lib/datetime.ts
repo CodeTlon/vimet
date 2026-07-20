@@ -64,3 +64,14 @@ export function haceDiasArgentina(dias: number, date: Date = new Date()): string
 export function turnoVencidoDesde(fecha: string, horaFin: string, graciaMin = 15): Date {
   return new Date(new Date(`${fecha}T${horaFin}-03:00`).getTime() + graciaMin * 60_000)
 }
+
+// Antelación mínima para reservar un turno, y misma ventana usada para
+// auto-cancelar un turno "pendiente" que el paciente nunca confirmó.
+export const HORAS_CORTE_RESERVA = 3
+
+// Instante (Date real) en que empieza la ventana de corte de un turno: desde
+// ese momento ya no se puede reservar, y un turno pendiente sin confirmar se
+// da de baja automáticamente.
+export function turnoCorteDesde(fecha: string, horaInicio: string, horasAntes = HORAS_CORTE_RESERVA): Date {
+  return new Date(new Date(`${fecha}T${horaInicio}-03:00`).getTime() - horasAntes * 60 * 60_000)
+}

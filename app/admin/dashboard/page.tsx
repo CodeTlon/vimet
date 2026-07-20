@@ -1,7 +1,7 @@
 import { CalendarCheck2, CalendarClock, CalendarDays, CalendarRange } from 'lucide-react'
 import Link from 'next/link'
 
-import { marcarNoAsistioVencidos } from '@/actions/turnos'
+import { cancelarPendientesSinConfirmar, marcarNoAsistioVencidos } from '@/actions/turnos'
 import { hoyArgentina } from '@/lib/datetime'
 import { ESTADO_TURNO_BADGE, ESTADO_TURNO_LABEL } from '@/lib/seguimiento'
 import { createClient } from '@/lib/supabase/server'
@@ -21,6 +21,7 @@ type TurnoRow = {
 
 export default async function AdminDashboard() {
   await marcarNoAsistioVencidos()
+  await cancelarPendientesSinConfirmar()
 
   const supabase = await createClient()
   const today = hoyArgentina()
