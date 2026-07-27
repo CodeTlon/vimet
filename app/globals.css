@@ -8,6 +8,22 @@
     /* Reserva el ancho de la scrollbar siempre, así el navbar fixed queda
        alineado con el contenido (container-vimet) y no se corre a un costado. */
     scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.gray.300') theme('colors.gray.100');
+  }
+  html::-webkit-scrollbar {
+    width: 10px;
+  }
+  html::-webkit-scrollbar-track {
+    background: theme('colors.gray.100');
+  }
+  html::-webkit-scrollbar-thumb {
+    background-color: theme('colors.gray.300');
+    border-radius: 9999px;
+    border: 2px solid theme('colors.gray.100');
+  }
+  html::-webkit-scrollbar-thumb:hover {
+    background-color: theme('colors.vimet.orange');
   }
 
   body {
