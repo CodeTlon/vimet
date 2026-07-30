@@ -54,6 +54,13 @@ export const metadata: Metadata = {
     description: 'Nutrición y entrenamiento especializado en alteraciones metabólicas.',
     locale: 'es_AR',
     type: 'website',
+    images: [{ url: '/images/hero/training.jpg', width: 1200, height: 630, alt: 'VIMET — Vida y Metabolismo' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'VIMET — Vida y Metabolismo',
+    description: 'Nutrición y entrenamiento especializado en alteraciones metabólicas.',
+    images: ['/images/hero/training.jpg'],
   },
 }
 
