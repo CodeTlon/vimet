@@ -49,9 +49,12 @@ export const metadata: Metadata = {
       { url: '/icons/favicon-dark.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: dark)' },
     ],
   },
+  alternates: { canonical: '/' },
   openGraph: {
     title: 'VIMET — Vida y Metabolismo',
     description: 'Nutrición y entrenamiento especializado en alteraciones metabólicas.',
+    url: '/',
+    siteName: 'VIMET',
     locale: 'es_AR',
     type: 'website',
     images: [{ url: '/images/hero/training.jpg', width: 1200, height: 630, alt: 'VIMET — Vida y Metabolismo' }],
