@@ -1,6 +1,7 @@
 'use client'
 
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import type { ContenidoState } from '@/actions/contenido'
 import { useResetOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
@@ -44,7 +45,7 @@ export function ServicioForm({
   profesionales: { id: string; nombre: string }[]
   submitLabel: string
 }) {
-  const [state, formAction] = useFormState(action, {})
+  const [state, formAction] = useActionState(action, {})
   const formRef = useResetOnSuccess(state)
   const msgRef = useScrollToMessage(state)
 

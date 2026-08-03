@@ -7,7 +7,6 @@ import { type ReactNode } from 'react'
 import { LogoutButton } from '@/components/logout-button'
 import { PacienteSubnav } from '@/components/paciente-subnav'
 import { createClient } from '@/lib/supabase/server'
-
 export const dynamic = 'force-dynamic'
 
 const tabs = [

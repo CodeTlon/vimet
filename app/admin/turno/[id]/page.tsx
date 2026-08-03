@@ -7,7 +7,6 @@ import { TurnoDetalleForm } from '@/components/turno-detalle-form'
 import { ESTADO_TURNO_BADGE, ESTADO_TURNO_LABEL } from '@/lib/seguimiento'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-
 export const metadata = { title: 'Detalle de turno' }
 export const dynamic = 'force-dynamic'
 

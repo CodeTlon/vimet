@@ -10,7 +10,6 @@ import {
 } from '@/lib/config/servicios'
 import { team } from '@/lib/config/team'
 import { createClient } from '@/lib/supabase/server'
-
 export const metadata = { title: 'Servicios' }
 
 type ServicioRow = {

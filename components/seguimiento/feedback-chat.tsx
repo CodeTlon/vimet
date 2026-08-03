@@ -2,7 +2,8 @@
 
 import { Send } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import {
   editarMensajeFeedbackAction,
@@ -45,7 +46,7 @@ function SendBtn() {
 }
 
 function Composer({ feedbackId }: { feedbackId: number }) {
-  const [state, action] = useFormState<FeedbackState, FormData>(enviarMensajeFeedbackAction, {})
+  const [state, action] = useActionState<FeedbackState, FormData>(enviarMensajeFeedbackAction, {})
   const formRef = useResetOnSuccess(state)
 
   return (
@@ -67,7 +68,7 @@ function Composer({ feedbackId }: { feedbackId: number }) {
 }
 
 function EditarMensajeForm({ mensaje, onDone }: { mensaje: MensajeFeedback; onDone: () => void }) {
-  const [state, action] = useFormState<FeedbackState, FormData>(editarMensajeFeedbackAction, {})
+  const [state, action] = useActionState<FeedbackState, FormData>(editarMensajeFeedbackAction, {})
 
   useEffect(() => {
     if (state.ok) onDone()

@@ -1,7 +1,8 @@
 'use client'
 
 import { Plus } from 'lucide-react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import { crearObjetivoAction, type ObjetivoState } from '@/actions/objetivos'
 import {
@@ -33,7 +34,7 @@ function Btn() {
 }
 
 export function ObjetivoForm({ pacienteId }: { pacienteId: string }) {
-  const [state, action] = useFormState(crearObjetivoAction, initial)
+  const [state, action] = useActionState(crearObjetivoAction, initial)
   const formRef = useResetOnSuccess(state)
   const msgRef = useScrollToMessage(state)
   const visible = useAutoHideMessage(state)

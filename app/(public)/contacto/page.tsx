@@ -5,7 +5,6 @@ import { ContactoForm } from '@/components/contacto-form'
 import { LazyMap } from '@/components/lazy-map'
 import { PageHeader } from '@/components/page-header'
 import { getContenidoSitio, getProfesionales } from '@/lib/config/contenido'
-
 export const metadata = { title: 'Contacto' }
 
 export default async function ContactoPage() {

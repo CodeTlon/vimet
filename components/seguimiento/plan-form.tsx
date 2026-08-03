@@ -2,7 +2,8 @@
 
 import { Save } from 'lucide-react'
 import { useState } from 'react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import {
   actualizarPlanAction,
@@ -73,7 +74,7 @@ export function PlanForm({
   rutina?: React.ReactNode
 }) {
   const editing = Boolean(plan)
-  const [state, action] = useFormState(
+  const [state, action] = useActionState(
     editing ? actualizarPlanAction : crearPlanAction,
     initial,
   )

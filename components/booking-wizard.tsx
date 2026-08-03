@@ -2,7 +2,8 @@
 
 import { Building2, CalendarCheck2, Loader2, Video } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 import { useRouter } from 'next/navigation'
 
 import { crearTurnoAction, type TurnoState } from '@/actions/turnos'
@@ -53,7 +54,7 @@ export function BookingWizard({
   servicios: Servicio[]
 }) {
   const router = useRouter()
-  const [state, formAction] = useFormState(crearTurnoAction, initialState)
+  const [state, formAction] = useActionState(crearTurnoAction, initialState)
 
   useEffect(() => {
     if (state?.ok) router.push('/mis-turnos?nuevo=1')

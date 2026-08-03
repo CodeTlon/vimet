@@ -2,7 +2,8 @@
 
 import { LogIn } from 'lucide-react'
 import Link from 'next/link'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import { loginAction, type AuthState } from '@/actions/auth'
 
@@ -26,7 +27,7 @@ function SubmitButton() {
 }
 
 export function LoginForm() {
-  const [state, formAction] = useFormState(loginAction, initialState)
+  const [state, formAction] = useActionState(loginAction, initialState)
   return (
     <form action={formAction} className="space-y-4">
       {state.error ? (

@@ -11,7 +11,6 @@ import {
 } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/server'
-
 export const metadata = { title: 'Mis recursos' }
 export const dynamic  = 'force-dynamic'
 
@@ -140,11 +139,11 @@ function RecursoCard({ r }: { r: RecursoConUrl }) {
       {/* Thumbnail o placeholder */}
       {r.tipo === 'imagen' && r.signedUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
+        (<img
           src={r.signedUrl}
           alt={r.titulo}
           className="w-full h-44 object-cover"
-        />
+        />)
       ) : (
         <div
           className={`w-full h-28 flex items-center justify-center ${TIPO_BG[r.tipo] ?? 'bg-gray-50'}`}
@@ -196,5 +195,5 @@ function RecursoCard({ r }: { r: RecursoConUrl }) {
         </p>
       </div>
     </li>
-  )
+  );
 }

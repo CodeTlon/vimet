@@ -84,7 +84,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `app/api/slots/route.ts` | GET slots disponibles (lo consume el wizard) |
 | `components/navbar.tsx` | Navbar pública (transparente en home). `user` es three-state (`undefined` mientras resuelve la sesión client-side, `null` deslogueado) para no mostrar "Ingresar" un instante antes de corregir a "Salir" |
 | `components/auth-shell.tsx` | Shell visual de las pantallas login/registro |
-| `components/login-form.tsx` | Form cliente del login (useFormState) |
+| `components/login-form.tsx` | Form cliente del login (useActionState) |
 | `components/register-form.tsx` | Form cliente del registro (incluye chequeo de password match) |
 | `components/booking-wizard.tsx` | Wizard cliente de reserva — consume `/api/slots` |
 | `components/contacto-form.tsx` | Form cliente del contacto público (Resend) |
@@ -196,7 +196,8 @@ Ver `.env.example` para el listado completo.
 
 ## Quirks y Advertencias
 - Migraciones y la base real pueden desincronizarse en cualquier momento — no hay CI que lo garantice (pasó con `0011_turnos_combo.sql`, mergeada en v0.10.0 pero recién aplicada a mano semanas después; verificado 2026-07-19 que ya corrió: `turnos.turno_par_id` existe). Si `/admin/turno/[id]` (u otra pantalla) da 404 sin razón aparente, lo primero a chequear es si la migración más nueva de `supabase/migrations/` sigue sin correr contra el proyecto Supabase real.
-- Reglas FOS: Tailwind only (no styled-jsx), `useFormState` de `react-dom`, Server Actions con `(prevState, formData)`, fuentes via `next/font`, viewport separado de metadata, `<Image>` con `sizes`, hero con `priority`.
+- Reglas FOS: Tailwind only (no styled-jsx), `useActionState` de `react` (no `useFormState` de `react-dom`, removido en React 19), Server Actions con `(prevState, formData)`, fuentes via `next/font`, viewport separado de metadata, `<Image>` con `sizes`, hero con `priority`.
+- `npm run lint` (`eslint .` vía flat config, `eslint.config.mjs`) está roto tras el upgrade a Next 16 / eslint-config-next 16.3.0 / ESLint 10: `next/core-web-vitals` vía `FlatCompat` tira `TypeError: Converting circular structure to JSON` al resolver `eslint-plugin-react`, reproducible igual bajando a ESLint 9.x — parece bug real de esta combinación recién publicada, no un problema de nuestra config (es el patrón oficial que genera `create-next-app`). Build y `tsc --noEmit` no se ven afectados (son procesos separados). Revisar si hay un patch de `eslint-config-next`/`eslint-plugin-react` antes de perder más tiempo intentando bordearlo.
 - Calendario admin: implementación nativa SSR (sin FullCalendar). El legacy usa una grilla simple de divs mes-by-mes con turnos del día.
 - El wizard de reservar turno (`/turnos/nuevo`) hace fetch a `/api/slots` desde el cliente — implementar como Route Handler GET, no como Server Action.
 - Servicios y horarios son data semi-estática (cambia rara vez) → se cargan server-side directo desde DB sin SWR.

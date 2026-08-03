@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import { nuevaContrasenaAction } from '@/actions/auth'
 import { AuthShell } from '@/components/auth-shell'
@@ -22,7 +23,7 @@ function SubmitButton({ recovery }: { recovery: boolean }) {
 }
 
 function NuevaContrasenaInner() {
-  const [state, formAction] = useFormState(nuevaContrasenaAction, {})
+  const [state, formAction] = useActionState(nuevaContrasenaAction, {})
   const searchParams = useSearchParams()
   // recovery = usuario existente cambiando su contraseña (no pedir datos de perfil).
   const recovery = searchParams.get('flow') === 'recovery'

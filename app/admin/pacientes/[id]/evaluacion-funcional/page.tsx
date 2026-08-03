@@ -4,7 +4,6 @@ import { EvaluacionesPanel } from '@/components/seguimiento/evaluaciones-panel'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
 import { PUNTAJE_MAX_FUNCIONAL } from '@/lib/seguimiento'
-
 export const dynamic = 'force-dynamic'
 
 type Eval = {

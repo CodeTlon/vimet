@@ -3,7 +3,6 @@ import { Pagination } from '@/components/pagination'
 import { MedicionesPanel } from '@/components/seguimiento/mediciones-panel'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
-
 export const dynamic = 'force-dynamic'
 
 type Medicion = {

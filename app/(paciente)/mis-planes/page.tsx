@@ -9,7 +9,6 @@ import {
   TIPO_PLAN_LABEL,
   formatearFechaCorta,
 } from '@/lib/seguimiento'
-
 export const metadata = { title: 'Mis planes' }
 export const dynamic = 'force-dynamic'
 

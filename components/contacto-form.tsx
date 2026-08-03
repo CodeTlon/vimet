@@ -1,7 +1,8 @@
 'use client'
 
 import { CheckCircle2, Send } from 'lucide-react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import { contactoAction, type ContactoState } from '@/actions/contacto'
 
@@ -25,7 +26,7 @@ function SubmitButton() {
 }
 
 export function ContactoForm() {
-  const [state, formAction] = useFormState(contactoAction, initialState)
+  const [state, formAction] = useActionState(contactoAction, initialState)
 
   if (state.ok) {
     return (

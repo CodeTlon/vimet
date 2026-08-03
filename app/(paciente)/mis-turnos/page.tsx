@@ -12,7 +12,6 @@ import { hoyArgentina, horaArgentina, turnoCorteDesde } from '@/lib/datetime'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { ESTADO_TURNO_BADGE as ESTADO_BADGE, ESTADO_TURNO_LABEL as ESTADO_LABEL } from '@/lib/seguimiento'
 import { createClient } from '@/lib/supabase/server'
-
 const MESES = [
   '',
   'Ene',

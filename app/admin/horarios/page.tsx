@@ -1,7 +1,6 @@
 import { HorariosEditor, type Horario } from '@/components/horarios-editor'
 import { requireStaff } from '@/lib/supabase/auth-helpers'
 import { createClient } from '@/lib/supabase/server'
-
 export const metadata = { title: 'Mis horarios · VIMET' }
 export const dynamic = 'force-dynamic'
 

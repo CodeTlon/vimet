@@ -1,6 +1,5 @@
 import { MetodologiaForm } from '@/components/admin/metodologia-form'
 import { getContenidoSitio } from '@/lib/config/contenido'
-
 export const dynamic = 'force-dynamic'
 
 export default async function ContenidoMetodologiaPage() {
