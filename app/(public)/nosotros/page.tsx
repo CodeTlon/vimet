@@ -15,7 +15,6 @@ import Link from 'next/link'
 import { PageHeader } from '@/components/page-header'
 import { getProfesionales } from '@/lib/config/contenido'
 import { brand, type Profesional } from '@/lib/config/team'
-
 const ICONS: Record<string, LucideIcon> = {
   Activity,
   Scale,

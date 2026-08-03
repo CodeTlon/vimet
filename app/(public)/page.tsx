@@ -18,7 +18,6 @@ import Link from 'next/link'
 import { HeroVideo } from '@/components/hero-video'
 import { LazyMap } from '@/components/lazy-map'
 import { location, social, team } from '@/lib/config/team'
-
 const pilares = [
   {
     icon: Users,

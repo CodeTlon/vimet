@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { FaqList } from '@/components/faq-list'
 import { PageHeader } from '@/components/page-header'
 import { faq } from '@/lib/config/team'
-
 export const metadata = { title: 'Preguntas frecuentes' }
 
 export default function FaqPage() {

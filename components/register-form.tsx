@@ -2,7 +2,8 @@
 
 import { UserPlus } from 'lucide-react'
 import { useState } from 'react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import { registerAction, type AuthState } from '@/actions/auth'
 
@@ -26,7 +27,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
 }
 
 export function RegisterForm() {
-  const [state, formAction] = useFormState(registerAction, initialState)
+  const [state, formAction] = useActionState(registerAction, initialState)
   const f = state.fields ?? { nombre: '', apellido: '', email: '', telefono: '' }
 
   const [password, setPassword] = useState('')

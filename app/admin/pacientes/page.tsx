@@ -5,7 +5,6 @@ import { toggleActivoAction } from '@/actions/staff'
 import { Pagination } from '@/components/pagination'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
-
 export const metadata = { title: 'Pacientes' }
 export const dynamic = 'force-dynamic'
 
@@ -244,5 +243,5 @@ export default async function PacientesPage(
 
       <Pagination page={page} totalPages={pages} makeHref={(p) => `/admin/pacientes?page=${p}`} />
     </div>
-  )
+  );
 }

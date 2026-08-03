@@ -2,7 +2,6 @@ import Link from 'next/link'
 
 import { AuthShell } from '@/components/auth-shell'
 import { RegisterForm } from '@/components/register-form'
-
 export const metadata = { title: 'Crear cuenta' }
 
 export default function RegistroPage() {

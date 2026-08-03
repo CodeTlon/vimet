@@ -8,7 +8,6 @@ import {
   ESTADO_OBJETIVO_LABEL,
   formatearFechaCorta,
 } from '@/lib/seguimiento'
-
 export const metadata = { title: 'Mis objetivos' }
 export const dynamic = 'force-dynamic'
 

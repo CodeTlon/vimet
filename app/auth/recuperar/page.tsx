@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import { confirmarRecuperacionAction, recuperarContrasenaAction } from '@/actions/auth'
 import { AuthShell } from '@/components/auth-shell'
@@ -22,7 +23,7 @@ function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: st
 }
 
 function CodigoForm({ email }: { email: string }) {
-  const [state, formAction] = useFormState(confirmarRecuperacionAction, {})
+  const [state, formAction] = useActionState(confirmarRecuperacionAction, {})
 
   return (
     <form action={formAction} className="space-y-4">
@@ -79,7 +80,7 @@ function CodigoForm({ email }: { email: string }) {
 }
 
 function RecuperarInner() {
-  const [state, formAction] = useFormState(recuperarContrasenaAction, {})
+  const [state, formAction] = useActionState(recuperarContrasenaAction, {})
   const expired = useSearchParams().get('expired') === '1'
 
   return (

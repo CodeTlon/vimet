@@ -3,7 +3,6 @@ import { type ReactNode } from 'react'
 
 import { AdminSidebar } from '@/components/admin-sidebar'
 import { createClient } from '@/lib/supabase/server'
-
 export const dynamic = 'force-dynamic'
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {

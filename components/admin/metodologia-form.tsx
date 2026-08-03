@@ -2,7 +2,8 @@
 
 import { ChevronDown, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import { actualizarMetodologiaAction, type ContenidoState } from '@/actions/contenido'
 import { useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
@@ -90,7 +91,7 @@ export function MetodologiaForm({
   pilares: readonly PasoPilar[]
   dirigidoA: readonly Dirigido[]
 }) {
-  const [state, formAction] = useFormState<ContenidoState, FormData>(actualizarMetodologiaAction, {})
+  const [state, formAction] = useActionState<ContenidoState, FormData>(actualizarMetodologiaAction, {})
   const msgRef = useScrollToMessage(state)
 
   const [pasos, setPasos] = useState<PasoPilar[]>([...pasosIniciales])

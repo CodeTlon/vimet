@@ -2,7 +2,8 @@
 
 import { MessageSquarePlus, Save } from 'lucide-react'
 import { useEffect } from 'react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import {
   actualizarEntradaEvolucionAction,
@@ -50,7 +51,7 @@ export function EvolucionForm({
   onCancel?: () => void
 }) {
   const editing = Boolean(entry)
-  const [state, action] = useFormState(
+  const [state, action] = useActionState(
     editing ? actualizarEntradaEvolucionAction : crearEntradaEvolucionAction,
     initial,
   )

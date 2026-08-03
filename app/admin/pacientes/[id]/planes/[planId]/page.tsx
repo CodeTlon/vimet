@@ -5,7 +5,6 @@ import { notFound } from 'next/navigation'
 import { PlanForm } from '@/components/seguimiento/plan-form'
 import { RutinaPanel, type RutinaItem } from '@/components/seguimiento/rutina-panel'
 import { createClient } from '@/lib/supabase/server'
-
 export const dynamic = 'force-dynamic'
 
 export default async function EditarPlanPage(

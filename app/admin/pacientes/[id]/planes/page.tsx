@@ -12,7 +12,6 @@ import {
   TIPO_PLAN_LABEL,
   formatearFechaCorta,
 } from '@/lib/seguimiento'
-
 export const dynamic = 'force-dynamic'
 
 type Plan = {

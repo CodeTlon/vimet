@@ -2,7 +2,6 @@ import { ClipboardList, FileWarning } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/server'
 import { formatearFechaCorta, SEXO_LABEL, ACTIVIDAD_DIARIA_LABEL } from '@/lib/seguimiento'
-
 export const metadata = { title: 'Mi ficha' }
 export const dynamic = 'force-dynamic'
 

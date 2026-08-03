@@ -7,7 +7,6 @@ import {
   categoriaCondicionFisica,
   formatearFechaCorta,
 } from '@/lib/seguimiento'
-
 export const metadata = { title: 'Mi progreso' }
 export const dynamic = 'force-dynamic'
 

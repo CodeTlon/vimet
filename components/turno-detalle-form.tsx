@@ -2,7 +2,8 @@
 
 import { Check, CheckCheck, UserX, X } from 'lucide-react'
 import { useRef } from 'react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import { actualizarTurnoStaffAction, type TurnoState } from '@/actions/turnos'
 import { useAutoHideMessage, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
@@ -26,7 +27,7 @@ function StateButtons({
   estadoRef,
 }: {
   disableConfirm: boolean
-  estadoRef: React.RefObject<HTMLInputElement>
+  estadoRef: React.RefObject<HTMLInputElement | null>
 }) {
   const { pending } = useFormStatus()
   return (
@@ -60,7 +61,7 @@ export function TurnoDetalleForm({
   estadoActual: string
   notas: string | null
 }) {
-  const [state, formAction] = useFormState(actualizarTurnoStaffAction, initialState)
+  const [state, formAction] = useActionState(actualizarTurnoStaffAction, initialState)
   const msgRef = useScrollToMessage(state)
   const visible = useAutoHideMessage(state)
   const estadoRef = useRef<HTMLInputElement>(null)

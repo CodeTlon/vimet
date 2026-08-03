@@ -2,7 +2,8 @@
 
 import { Clock, MessageCircle, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import {
   actualizarHorarioAction,
@@ -68,7 +69,7 @@ function EliminarFranjaForm({
   id: number
   onCancelados: (cancelados: CanceladoInfo[]) => void
 }) {
-  const [state, action] = useFormState<HorarioState, FormData>(eliminarHorarioAction, {})
+  const [state, action] = useActionState<HorarioState, FormData>(eliminarHorarioAction, {})
 
   useEffect(() => {
     if (state.cancelados?.length) onCancelados(state.cancelados)
@@ -132,7 +133,7 @@ function TurnosCanceladosAviso({ cancelados }: { cancelados: CanceladoInfo[] }) 
 
 export function HorariosEditor({ horarios }: { horarios: Horario[] }) {
   const [editing, setEditing] = useState<Horario | null>(null)
-  const [state, action] = useFormState<HorarioState, FormData>(
+  const [state, action] = useActionState<HorarioState, FormData>(
     editing ? actualizarHorarioAction : agregarHorarioAction,
     {},
   )
