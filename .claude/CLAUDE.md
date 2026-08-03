@@ -117,7 +117,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 | `lib/supabase/client.ts` | Cliente Supabase browser |
 | `lib/supabase/middleware.ts` | Helper para refresh de session en middleware |
 | `lib/supabase/auth-helpers.ts` | `getUserAndProfile` / `requireAuth` / `requireStaff` |
-| `middleware.ts` | Auth middleware: protege /mis-*, /feedback-semanal, /turnos/*, /admin/* |
+| `proxy.ts` | Auth middleware (renombrado de `middleware.ts` en Next 16): protege /mis-*, /feedback-semanal, /turnos/*, /admin/* |
 | `actions/auth.ts` | Server Actions: login, register, logout, nuevaContrasena, recuperarContrasena |
 | `actions/turnos.ts` | Server Actions: crear, cancelar, actualizar estado. Para servicio tipo combo, `crearTurnoAction` inserta un turno por profesional vinculados vía `turno_par_id`; `cancelarTurnoAction` y `actualizarTurnoStaffAction` propagan el cambio al turno vinculado (esta última con cliente admin, porque RLS no deja a un profesional escribir el turno del otro). `marcarNoAsistioVencidos` — barrido perezoso (sin cron) que pasa a `no_asistio` los turnos `pendiente` cuyo horario + 15min de gracia ya pasó; se llama al principio de las páginas que listan/muestran turnos (mis-turnos, admin dashboard/calendario/turno detalle) |
 | `actions/contacto.ts` | Server Action: enviar email contacto |
