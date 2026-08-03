@@ -1,5 +1,6 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
+
 import { HORAS_CORTE_RESERVA, hoyArgentina, horaArgentina } from '@/lib/datetime'
-import { createClient } from '@/lib/supabase/server'
 
 export type Slot = { hora_inicio: string; hora_fin: string }
 
@@ -21,20 +22,22 @@ export function diaSemana(fechaISO: string): number {
   return new Date(`${fechaISO}T00:00:00Z`).getUTCDay()
 }
 
-export async function getSlotsDisponibles({
-  profesionalId,
-  fecha,
-  duracion,
-  modalidad,
-}: {
-  profesionalId: string
-  fecha: string
-  duracion: number
-  modalidad?: 'presencial' | 'virtual'
-}): Promise<Slot[]> {
+export async function getSlotsDisponibles(
+  supabase: SupabaseClient,
+  {
+    profesionalId,
+    fecha,
+    duracion,
+    modalidad,
+  }: {
+    profesionalId: string
+    fecha: string
+    duracion: number
+    modalidad?: 'presencial' | 'virtual'
+  },
+): Promise<Slot[]> {
   if (!profesionalId || !fecha || !duracion) return []
 
-  const supabase = await createClient()
   const dia = diaSemana(fecha)
 
   let horariosQuery = supabase
@@ -109,16 +112,18 @@ export async function getSlotsDisponibles({
 
 // Slots donde TODOS los profesionales activos (nutricionista + entrenador)
 // están libres a la vez — para servicios "combo" que requieren a ambos.
-export async function getSlotsDisponiblesCombo({
-  fecha,
-  duracion,
-  modalidad,
-}: {
-  fecha: string
-  duracion: number
-  modalidad?: 'presencial' | 'virtual'
-}): Promise<Slot[]> {
-  const supabase = await createClient()
+export async function getSlotsDisponiblesCombo(
+  supabase: SupabaseClient,
+  {
+    fecha,
+    duracion,
+    modalidad,
+  }: {
+    fecha: string
+    duracion: number
+    modalidad?: 'presencial' | 'virtual'
+  },
+): Promise<Slot[]> {
   const { data: profesionales } = await supabase
     .from('profiles')
     .select('id')
@@ -129,7 +134,7 @@ export async function getSlotsDisponiblesCombo({
 
   const listas = await Promise.all(
     profesionales.map((p) =>
-      getSlotsDisponibles({ profesionalId: p.id, fecha, duracion, modalidad }),
+      getSlotsDisponibles(supabase, { profesionalId: p.id, fecha, duracion, modalidad }),
     ),
   )
 
@@ -142,8 +147,7 @@ export async function getSlotsDisponiblesCombo({
 }
 
 // ids de los profesionales activos que participan de un servicio combo.
-export async function getProfesionalesCombo(): Promise<string[]> {
-  const supabase = await createClient()
+export async function getProfesionalesCombo(supabase: SupabaseClient): Promise<string[]> {
   const { data } = await supabase
     .from('profiles')
     .select('id')

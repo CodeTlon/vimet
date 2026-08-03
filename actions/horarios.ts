@@ -203,7 +203,7 @@ type TurnoAfectado = {
 // contenidos en ninguna franja activa (no alcanza con "se solapaba con la
 // franja que se tocó": si otra franja del mismo día lo sigue cubriendo, el
 // turno queda cubierto igual y no hay que cancelarlo).
-async function turnosSinCobertura(
+export async function turnosSinCobertura(
   supabase: Awaited<ReturnType<typeof createClient>>,
   profesionalId: string,
   dias: number[],
@@ -241,7 +241,7 @@ async function turnosSinCobertura(
 // Cancela los turnos dados y avisa por email a cada paciente afectado.
 // Best-effort: si un email falla no revierte la cancelación (el turno ya no
 // tiene horario real).
-async function cancelarYNotificar(
+export async function cancelarYNotificar(
   supabase: Awaited<ReturnType<typeof createClient>>,
   afectados: TurnoAfectado[],
 ): Promise<CanceladoInfo[]> {

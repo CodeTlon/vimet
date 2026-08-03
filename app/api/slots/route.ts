@@ -1,9 +1,18 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { getSlotsDisponibles, getSlotsDisponiblesCombo } from '@/lib/booking/slots'
+import { createClientFromToken } from '@/lib/supabase/bearer'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
+
+// La app mobile no tiene cookies — manda el access_token por Authorization
+// header. La web sigue usando la sesión de cookies como siempre.
+async function getClient(request: NextRequest) {
+  const auth = request.headers.get('authorization') ?? ''
+  if (auth.startsWith('Bearer ')) return createClientFromToken(auth.slice(7))
+  return createClient()
+}
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl
@@ -17,10 +26,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 })
   }
 
+  const supabase = await getClient(request)
+
   let duracion = 60
   let esCombo = false
   if (servicioId) {
-    const supabase = await createClient()
     const { data } = await supabase
       .from('servicios')
       .select('duracion_minutos, tipo')
@@ -31,7 +41,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (esCombo) {
-    const slots = await getSlotsDisponiblesCombo({ fecha, duracion, modalidad })
+    const slots = await getSlotsDisponiblesCombo(supabase, { fecha, duracion, modalidad })
     return NextResponse.json({ slots })
   }
 
@@ -39,6 +49,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 })
   }
 
-  const slots = await getSlotsDisponibles({ profesionalId, fecha, duracion, modalidad })
+  const slots = await getSlotsDisponibles(supabase, { profesionalId, fecha, duracion, modalidad })
   return NextResponse.json({ slots })
 }

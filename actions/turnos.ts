@@ -106,42 +106,26 @@ async function profesionalDisponible(
   return !choques?.length
 }
 
-export async function crearTurnoAction(
-  _prev: unknown,
-  formData: FormData,
+// Lógica compartida por la Server Action web (cookies) y por
+// app/api/mobile/turnos/crear (bearer token) — ver lib/supabase/bearer.ts.
+export async function crearTurno(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  d: z.infer<typeof crearSchema>,
 ): Promise<TurnoState> {
-  const parsed = crearSchema.safeParse({
-    profesional_id: formData.get('profesional_id'),
-    servicio_id: formData.get('servicio_id'),
-    fecha: formData.get('fecha'),
-    hora_inicio: formData.get('hora_inicio'),
-    hora_fin: formData.get('hora_fin'),
-    modalidad: formData.get('modalidad') ?? 'presencial',
-    notas: formData.get('notas') ?? '',
-  })
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
-  }
-
-  if (parsed.data.fecha < hoyArgentina()) {
+  if (d.fecha < hoyArgentina()) {
     return { error: 'No podés reservar un turno en una fecha pasada.' }
   }
-  if (parsed.data.hora_fin <= parsed.data.hora_inicio) {
+  if (d.hora_fin <= d.hora_inicio) {
     return { error: 'El horario del turno es inválido.' }
   }
-  if (turnoCorteDesde(parsed.data.fecha, parsed.data.hora_inicio) < new Date()) {
+  if (turnoCorteDesde(d.fecha, d.hora_inicio) < new Date()) {
     return {
       error: `Los turnos se reservan con al menos ${HORAS_CORTE_RESERVA} horas de anticipación.`,
     }
   }
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'Tenés que iniciar sesión.' }
-
-  const servicioId = Number(parsed.data.servicio_id)
+  const servicioId = Number(d.servicio_id)
   const { data: servicio } = await supabase
     .from('servicios')
     .select('tipo')
@@ -149,14 +133,14 @@ export async function crearTurnoAction(
     .maybeSingle()
 
   const franja: Franja = {
-    fecha: parsed.data.fecha,
-    hora_inicio: parsed.data.hora_inicio,
-    hora_fin: parsed.data.hora_fin,
-    modalidad: parsed.data.modalidad,
+    fecha: d.fecha,
+    hora_inicio: d.hora_inicio,
+    hora_fin: d.hora_fin,
+    modalidad: d.modalidad,
   }
 
   if (servicio?.tipo === 'combo') {
-    const profesionalesIds = await getProfesionalesCombo()
+    const profesionalesIds = await getProfesionalesCombo(supabase)
     if (profesionalesIds.length < 2) {
       return { error: 'Esa modalidad no está disponible para el horario elegido.' }
     }
@@ -168,7 +152,7 @@ export async function crearTurnoAction(
     }
 
     const filas = profesionalesIds.map((profId) => ({
-      paciente_id: user.id,
+      paciente_id: userId,
       profesional_id: profId,
       servicio_id: servicioId,
       fecha: franja.fecha,
@@ -176,7 +160,7 @@ export async function crearTurnoAction(
       hora_fin: franja.hora_fin,
       modalidad: franja.modalidad,
       estado: 'pendiente' as const,
-      notas_paciente: parsed.data.notas || null,
+      notas_paciente: d.notas || null,
     }))
 
     const { data: creados, error } = await supabase.from('turnos').insert(filas).select('id')
@@ -198,20 +182,20 @@ export async function crearTurnoAction(
     return { ok: true }
   }
 
-  if (!(await profesionalDisponible(supabase, parsed.data.profesional_id, franja))) {
+  if (!(await profesionalDisponible(supabase, d.profesional_id, franja))) {
     return { error: 'Ese horario ya no está disponible.' }
   }
 
   const { error } = await supabase.from('turnos').insert({
-    paciente_id: user.id,
-    profesional_id: parsed.data.profesional_id,
+    paciente_id: userId,
+    profesional_id: d.profesional_id,
     servicio_id: servicioId,
-    fecha: parsed.data.fecha,
-    hora_inicio: parsed.data.hora_inicio,
-    hora_fin: parsed.data.hora_fin,
-    modalidad: parsed.data.modalidad,
+    fecha: d.fecha,
+    hora_inicio: d.hora_inicio,
+    hora_fin: d.hora_fin,
+    modalidad: d.modalidad,
     estado: 'pendiente',
-    notas_paciente: parsed.data.notas || null,
+    notas_paciente: d.notas || null,
   })
 
   if (error) {
@@ -219,6 +203,60 @@ export async function crearTurnoAction(
   }
 
   revalidatePath('/mis-turnos')
+  return { ok: true }
+}
+
+export async function crearTurnoAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<TurnoState> {
+  const parsed = crearSchema.safeParse({
+    profesional_id: formData.get('profesional_id'),
+    servicio_id: formData.get('servicio_id'),
+    fecha: formData.get('fecha'),
+    hora_inicio: formData.get('hora_inicio'),
+    hora_fin: formData.get('hora_fin'),
+    modalidad: formData.get('modalidad') ?? 'presencial',
+    notas: formData.get('notas') ?? '',
+  })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Tenés que iniciar sesión.' }
+
+  return crearTurno(supabase, user.id, parsed.data)
+}
+
+export async function cancelarTurno(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  id: number,
+): Promise<TurnoState> {
+  const { data: turno } = await supabase
+    .from('turnos')
+    .select('turno_par_id')
+    .eq('id', id)
+    .eq('paciente_id', userId)
+    .maybeSingle()
+
+  const ids = turno?.turno_par_id ? [id, turno.turno_par_id] : [id]
+
+  const { data: actualizados } = await supabase
+    .from('turnos')
+    .update({ estado: 'cancelado' })
+    .in('id', ids)
+    .eq('paciente_id', userId)
+    .in('estado', ['pendiente', 'confirmado'])
+    .gte('fecha', hoyArgentina())
+    .select('id')
+
+  revalidatePath('/mis-turnos')
+  if (!actualizados?.length) return { error: 'No se pudo cancelar el turno.' }
   return { ok: true }
 }
 
@@ -232,24 +270,37 @@ export async function cancelarTurnoAction(formData: FormData) {
   } = await supabase.auth.getUser()
   if (!user) return
 
+  await cancelarTurno(supabase, user.id, id)
+}
+
+export async function confirmarTurno(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  id: number,
+): Promise<TurnoState> {
   const { data: turno } = await supabase
     .from('turnos')
-    .select('turno_par_id')
+    .select('turno_par_id, fecha, hora_inicio')
     .eq('id', id)
-    .eq('paciente_id', user.id)
+    .eq('paciente_id', userId)
     .maybeSingle()
+  if (!turno || turnoCorteDesde(turno.fecha, turno.hora_inicio) < new Date()) {
+    return { error: 'Este turno ya no se puede confirmar.' }
+  }
 
-  const ids = turno?.turno_par_id ? [id, turno.turno_par_id] : [id]
+  const ids = turno.turno_par_id ? [id, turno.turno_par_id] : [id]
 
-  await supabase
+  const { data: actualizados } = await supabase
     .from('turnos')
-    .update({ estado: 'cancelado' })
+    .update({ estado: 'confirmado' })
     .in('id', ids)
-    .eq('paciente_id', user.id)
-    .in('estado', ['pendiente', 'confirmado'])
-    .gte('fecha', hoyArgentina())
+    .eq('paciente_id', userId)
+    .eq('estado', 'pendiente')
+    .select('id')
 
   revalidatePath('/mis-turnos')
+  if (!actualizados?.length) return { error: 'No se pudo confirmar el turno.' }
+  return { ok: true }
 }
 
 export async function confirmarTurnoAction(formData: FormData) {
@@ -262,24 +313,7 @@ export async function confirmarTurnoAction(formData: FormData) {
   } = await supabase.auth.getUser()
   if (!user) return
 
-  const { data: turno } = await supabase
-    .from('turnos')
-    .select('turno_par_id, fecha, hora_inicio')
-    .eq('id', id)
-    .eq('paciente_id', user.id)
-    .maybeSingle()
-  if (!turno || turnoCorteDesde(turno.fecha, turno.hora_inicio) < new Date()) return
-
-  const ids = turno.turno_par_id ? [id, turno.turno_par_id] : [id]
-
-  await supabase
-    .from('turnos')
-    .update({ estado: 'confirmado' })
-    .in('id', ids)
-    .eq('paciente_id', user.id)
-    .eq('estado', 'pendiente')
-
-  revalidatePath('/mis-turnos')
+  await confirmarTurno(supabase, user.id, id)
 }
 
 const adminEstadoSchema = z.object({
@@ -287,6 +321,69 @@ const adminEstadoSchema = z.object({
   estado: z.enum(['pendiente', 'confirmado', 'cancelado', 'completado', 'no_asistio']),
   notas_profesional: z.string().max(2000).optional().default(''),
 })
+
+// `supabase` = cliente scoped al staff logueado (cookies o bearer), ya se usa
+// para validar rol + ownership antes de tocar nada. `admin` = service role,
+// solo para propagar al turno par (RLS no deja a un profesional escribir el
+// turno del otro).
+export async function actualizarTurnoStaff(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  d: z.infer<typeof adminEstadoSchema>,
+): Promise<TurnoState> {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('rol')
+    .eq('id', userId)
+    .maybeSingle()
+  if (!profile || !['nutricionista', 'entrenador', 'admin'].includes(profile.rol)) {
+    return { error: 'No autorizado' }
+  }
+
+  const { data: actual } = await supabase
+    .from('turnos')
+    .select('estado, turno_par_id')
+    .eq('id', d.id)
+    .maybeSingle()
+  if (!actual || !['pendiente', 'confirmado'].includes(actual.estado)) {
+    return { error: 'Este turno ya está cerrado y no puede modificarse.' }
+  }
+
+  const { data: actualizado, error } = await supabase
+    .from('turnos')
+    .update({
+      estado: d.estado,
+      notas_profesional: d.notas_profesional || null,
+    })
+    .eq('id', d.id)
+    .select('id')
+
+  if (error) return { error: 'No pudimos actualizar el turno.' }
+  if (!actualizado?.length) {
+    return { error: 'No tenés permiso para modificar este turno.' }
+  }
+
+  // El turno vinculado (plan integral) pertenece al otro profesional — el
+  // cliente de sesión no puede escribirlo por RLS, así que se propaga con
+  // el cliente admin. Ya se validó arriba que el usuario es staff y que es
+  // dueño legítimo de `actual` antes de llegar acá.
+  if (actual.turno_par_id) {
+    const admin = createAdminClient()
+    await admin
+      .from('turnos')
+      .update({
+        estado: d.estado,
+        notas_profesional: d.notas_profesional || null,
+      })
+      .eq('id', actual.turno_par_id)
+    revalidatePath(`/admin/turno/${actual.turno_par_id}`)
+  }
+
+  revalidatePath('/admin/calendario')
+  revalidatePath('/admin/dashboard')
+  revalidatePath(`/admin/turno/${d.id}`)
+  return { ok: true }
+}
 
 export async function actualizarTurnoStaffAction(
   _prev: unknown,
@@ -305,56 +402,5 @@ export async function actualizarTurnoStaffAction(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('rol')
-    .eq('id', user.id)
-    .maybeSingle()
-  if (!profile || !['nutricionista', 'entrenador', 'admin'].includes(profile.rol)) {
-    return { error: 'No autorizado' }
-  }
-
-  const { data: actual } = await supabase
-    .from('turnos')
-    .select('estado, turno_par_id')
-    .eq('id', parsed.data.id)
-    .maybeSingle()
-  if (!actual || !['pendiente', 'confirmado'].includes(actual.estado)) {
-    return { error: 'Este turno ya está cerrado y no puede modificarse.' }
-  }
-
-  const { data: actualizado, error } = await supabase
-    .from('turnos')
-    .update({
-      estado: parsed.data.estado,
-      notas_profesional: parsed.data.notas_profesional || null,
-    })
-    .eq('id', parsed.data.id)
-    .select('id')
-
-  if (error) return { error: 'No pudimos actualizar el turno.' }
-  if (!actualizado?.length) {
-    return { error: 'No tenés permiso para modificar este turno.' }
-  }
-
-  // El turno vinculado (plan integral) pertenece al otro profesional — el
-  // cliente de sesión no puede escribirlo por RLS, así que se propaga con
-  // el cliente admin. Ya se validó arriba que el usuario es staff y que es
-  // dueño legítimo de `actual` antes de llegar acá.
-  if (actual.turno_par_id) {
-    const admin = createAdminClient()
-    await admin
-      .from('turnos')
-      .update({
-        estado: parsed.data.estado,
-        notas_profesional: parsed.data.notas_profesional || null,
-      })
-      .eq('id', actual.turno_par_id)
-    revalidatePath(`/admin/turno/${actual.turno_par_id}`)
-  }
-
-  revalidatePath('/admin/calendario')
-  revalidatePath('/admin/dashboard')
-  revalidatePath(`/admin/turno/${parsed.data.id}`)
-  return { ok: true }
+  return actualizarTurnoStaff(supabase, user.id, parsed.data)
 }
