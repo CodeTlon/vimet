@@ -56,13 +56,16 @@ export function Navbar() {
       setHeroDarkness(Math.min(window.scrollY / threshold, 1))
     }
     onScroll()
+    // Next resetea el scroll a 0 al navegar, pero no siempre antes de que
+    // este efecto corra (Navbar no se desmonta entre rutas de (public)) —
+    // sin este rAF de más, a veces quedaba leyendo el scrollY viejo de la
+    // página anterior y el navbar arrancaba "blanco" en el tope del Home.
+    const raf = requestAnimationFrame(onScroll)
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-    // Recalcula también en cada cambio de ruta: Navbar no se desmonta al
-    // navegar dentro de (public), así que sin `pathname` en las deps
-    // heroDarkness quedaba con el valor de la página anterior (navbar
-    // "blanco" en el tope de Home si el usuario había scrolleado antes en
-    // otra página y el navegador no disparó un scroll real al volver).
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      cancelAnimationFrame(raf)
+    }
   }, [pathname])
 
   useEffect(() => {
