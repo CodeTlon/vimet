@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarClock, CalendarDays, LayoutDashboard, LogOut, Menu, Newspaper, Settings, UsersRound, X } from 'lucide-react'
+import { CalendarClock, CalendarDays, Dumbbell, LayoutDashboard, LogOut, Menu, Newspaper, Settings, UsersRound, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -14,6 +14,7 @@ const links = [
   { href: '/admin/calendario', label: 'Calendario', icon: CalendarDays },
   { href: '/admin/pacientes', label: 'Pacientes', icon: UsersRound },
   { href: '/admin/horarios', label: 'Mis horarios', icon: CalendarClock },
+  { href: '/admin/ejercicios', label: 'Ejercicios', icon: Dumbbell },
   { href: '/admin/contenido', label: 'Contenido del sitio', icon: Newspaper },
   { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
 ] as const

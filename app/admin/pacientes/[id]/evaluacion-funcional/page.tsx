@@ -56,20 +56,22 @@ export default async function EvalFuncionalPage(
   return (
     <div className="space-y-6">
       {serieCompleta.length > 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h3 className="font-heading font-semibold text-gray-900 mb-3">
-            Evolución del puntaje total <span className="text-gray-500 font-normal">/ {PUNTAJE_MAX_FUNCIONAL}</span>
-          </h3>
-          <ExpandableChart
-            series={[
-              {
-                label: 'Puntaje',
-                color: '#E8611A',
-                data: serieCompleta.map((e) => ({ x: e.fecha, y: e.puntaje_total })),
-              },
-            ]}
-            unit="pts"
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <h3 className="font-heading font-semibold text-gray-900 mb-3">
+              Evolución del puntaje total <span className="text-gray-500 font-normal">/ {PUNTAJE_MAX_FUNCIONAL}</span>
+            </h3>
+            <ExpandableChart
+              series={[
+                {
+                  label: 'Puntaje',
+                  color: '#E8611A',
+                  data: serieCompleta.map((e) => ({ x: e.fecha, y: e.puntaje_total })),
+                },
+              ]}
+              unit="pts"
+            />
+          </div>
         </div>
       ) : null}
 
