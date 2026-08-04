@@ -27,15 +27,21 @@ export default async function EditarPlanPage(
 
   // Solo 2 columnas angostas de las 1324 filas (para armar los <select> de filtro),
   // no el catálogo completo con nombres/thumbnails — eso se busca on-demand vía /api/ejercicios.
-  const [{ data: valoresFiltro }, { data: rutina }] = tieneRutina
+  const [{ data: valoresFiltro }, { data: rutina }, { data: sesiones }] = tieneRutina
     ? await Promise.all([
         supabase.from('ejercicios').select('parte_cuerpo, equipo'),
         supabase
           .from('plan_ejercicios')
           .select('id, ejercicio_id, dia_semana, orden, series, repeticiones, descanso_seg, notas, ejercicio:ejercicios(id, nombre, imagen_url, gif_url, instrucciones)')
           .eq('plan_id', planId),
+        supabase
+          .from('sesiones_entrenamiento')
+          .select('id, dia_semana, iniciada_at, finalizada_at, sets_completados(count)')
+          .eq('plan_id', planId)
+          .order('iniciada_at', { ascending: false })
+          .limit(10),
       ])
-    : [{ data: [] }, { data: [] }]
+    : [{ data: [] }, { data: [] }, { data: [] }]
 
   const partes = Array.from(
     new Set((valoresFiltro ?? []).map((v) => v.parte_cuerpo).filter(Boolean)),
@@ -69,6 +75,34 @@ export default async function EditarPlanPage(
           ) : null
         }
       />
+      {tieneRutina && sesiones && sesiones.length > 0 && (
+        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="font-heading text-lg font-semibold text-gray-900 mb-3">Historial de entrenamientos</h3>
+          <ul className="space-y-2">
+            {sesiones.map((s) => {
+              const sets = Array.isArray(s.sets_completados) ? (s.sets_completados[0]?.count ?? 0) : 0
+              return (
+                <li
+                  key={s.id}
+                  className="flex items-center justify-between text-sm text-gray-700 border-b border-gray-50 pb-2 last:border-0"
+                >
+                  <span>
+                    {new Date(s.iniciada_at).toLocaleDateString('es-AR', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                    {s.dia_semana ? ` · ${s.dia_semana}` : ''}
+                  </span>
+                  <span className="text-gray-500">
+                    {sets} series {s.finalizada_at ? '· completo' : '· sin terminar'}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
     </div>
   )
 }
