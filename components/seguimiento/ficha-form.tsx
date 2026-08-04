@@ -1,7 +1,8 @@
 'use client'
 
 import { Save } from 'lucide-react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import { guardarFichaAction, type FichaState } from '@/actions/ficha'
 import {
@@ -68,7 +69,7 @@ export function FichaForm({
   pacienteId: string
   ficha: Ficha | null
 }) {
-  const [state, action] = useFormState(guardarFichaAction, initial)
+  const [state, action] = useActionState(guardarFichaAction, initial)
   const remountKey = useRemountKeyOnSuccess(state)
   const msgRef = useScrollToMessage(state)
   const visible = useAutoHideMessage(state)

@@ -19,7 +19,6 @@ import Link from 'next/link'
 
 import { PageHeader } from '@/components/page-header'
 import { getContenidoSitio } from '@/lib/config/contenido'
-
 const ICONS: Record<string, LucideIcon> = {
   ClipboardCheck,
   PencilRuler,

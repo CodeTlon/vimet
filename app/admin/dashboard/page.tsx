@@ -5,7 +5,6 @@ import { cancelarPendientesSinConfirmar, marcarNoAsistioVencidos } from '@/actio
 import { hoyArgentina } from '@/lib/datetime'
 import { ESTADO_TURNO_BADGE, ESTADO_TURNO_LABEL } from '@/lib/seguimiento'
 import { createClient } from '@/lib/supabase/server'
-
 export const metadata = { title: 'Dashboard' }
 export const dynamic = 'force-dynamic'
 

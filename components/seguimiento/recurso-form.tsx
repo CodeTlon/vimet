@@ -2,7 +2,8 @@
 
 import { FileImage, FileText, Link2, PlusCircle, Video } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import { crearRecursoAction, type RecursoState } from '@/actions/recursos'
 import {
@@ -42,7 +43,7 @@ function Btn() {
 
 export function RecursoForm({ pacienteId }: { pacienteId: string }) {
   const [tipo, setTipo]   = useState<TipoValue>('link')
-  const [state, action]   = useFormState(crearRecursoAction, initial)
+  const [state, action]   = useActionState(crearRecursoAction, initial)
   const formRef           = useResetOnSuccess(state)
   const msgRef            = useScrollToMessage(state)
   const visible           = useAutoHideMessage(state)

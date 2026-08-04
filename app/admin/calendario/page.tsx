@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { cancelarPendientesSinConfirmar, marcarNoAsistioVencidos } from '@/actions/turnos'
 import { hoyArgentina } from '@/lib/datetime'
 import { createClient } from '@/lib/supabase/server'
-
 export const metadata = { title: 'Calendario' }
 export const dynamic = 'force-dynamic'
 

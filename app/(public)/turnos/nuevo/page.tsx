@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation'
 
 import { BookingWizard } from '@/components/booking-wizard'
 import { createClient } from '@/lib/supabase/server'
-
 export const metadata = { title: 'Sacar turno' }
 export const dynamic = 'force-dynamic'
 

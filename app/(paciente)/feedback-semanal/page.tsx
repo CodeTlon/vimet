@@ -5,7 +5,6 @@ import { FeedbackChat, type MensajeFeedback } from '@/components/seguimiento/fee
 import { FeedbackForm } from '@/components/seguimiento/feedback-form'
 import { createClient } from '@/lib/supabase/server'
 import { formatearFechaCorta, lunesDeSemana } from '@/lib/seguimiento'
-
 export const metadata = { title: 'Feedback semanal' }
 export const dynamic  = 'force-dynamic'
 

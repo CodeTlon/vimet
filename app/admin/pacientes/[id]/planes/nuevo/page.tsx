@@ -2,7 +2,6 @@ import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 
 import { PlanForm } from '@/components/seguimiento/plan-form'
-
 export const metadata = { title: 'Nuevo plan' }
 
 export default async function NuevoPlanPage(props: { params: Promise<{ id: string }> }) {

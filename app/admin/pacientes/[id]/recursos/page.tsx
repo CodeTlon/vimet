@@ -13,7 +13,6 @@ import {
 import { eliminarRecursoAction, toggleVisibilidadRecursoAction } from '@/actions/recursos'
 import { RecursoForm } from '@/components/seguimiento/recurso-form'
 import { createClient } from '@/lib/supabase/server'
-
 export const dynamic = 'force-dynamic'
 
 type Recurso = {

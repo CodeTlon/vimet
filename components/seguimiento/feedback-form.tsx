@@ -1,7 +1,8 @@
 'use client'
 
 import { Send } from 'lucide-react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import { enviarFeedbackAction, type FeedbackState } from '@/actions/feedback'
 import { useAutoHideMessage, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
@@ -30,7 +31,7 @@ function Btn() {
 // (ver app/(paciente)/feedback-semanal/page.tsx) — por eso no recibe valores
 // existentes: una vez enviado, esa semana pasa a mostrarse en modo solo lectura.
 export function FeedbackForm() {
-  const [state, action] = useFormState(enviarFeedbackAction, initial)
+  const [state, action] = useActionState(enviarFeedbackAction, initial)
   const msgRef = useScrollToMessage(state)
   const visible = useAutoHideMessage(state)
   const semana = lunesDeSemana()

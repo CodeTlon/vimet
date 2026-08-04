@@ -2,7 +2,7 @@
 
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { useFormState } from 'react-dom'
+import { useActionState } from 'react';
 
 import { eliminarEvaluacionAction, type EvalState } from '@/actions/evaluaciones'
 import { EvaluacionForm } from '@/components/seguimiento/evaluacion-form'
@@ -39,7 +39,7 @@ export function EvaluacionesPanel({
   evaluaciones: Evaluacion[]
 }) {
   const [editing, setEditing] = useState<Evaluacion | null>(null)
-  const [deleteState, deleteAction] = useFormState(eliminarEvaluacionAction, initial)
+  const [deleteState, deleteAction] = useActionState(eliminarEvaluacionAction, initial)
   const deleteVisible = useAutoHideMessage(deleteState)
 
   return (

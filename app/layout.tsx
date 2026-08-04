@@ -4,7 +4,6 @@ import { DM_Sans, Outfit } from 'next/font/google'
 import { HashInviteHandler } from '@/components/hash-invite-handler'
 
 import './globals.css'
-
 const outfit = Outfit({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],

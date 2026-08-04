@@ -1,6 +1,6 @@
 'use client'
 
-import { useFormState } from 'react-dom'
+import { useActionState } from 'react';
 
 import { cambiarPasswordAction, configurarProfesionalAction, type StaffState } from '@/actions/staff'
 
@@ -25,7 +25,7 @@ function StatusMsg({ state }: { state: StaffState }) {
 }
 
 export function ConfigurarProfesionalForm() {
-  const [state, action, pending] = useFormState(configurarProfesionalAction, {})
+  const [state, action, pending] = useActionState(configurarProfesionalAction, {})
 
   return (
     <FormSection
@@ -68,7 +68,7 @@ export function ConfigurarProfesionalForm() {
 }
 
 export function CambiarPasswordForm() {
-  const [state, action, pending] = useFormState(cambiarPasswordAction, {})
+  const [state, action, pending] = useActionState(cambiarPasswordAction, {})
 
   return (
     <FormSection title="Cambiar contraseña">

@@ -2,7 +2,8 @@
 
 import { Plus, Save } from 'lucide-react'
 import { useEffect } from 'react'
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import {
   actualizarEvaluacionAction,
@@ -60,7 +61,7 @@ export function EvaluacionForm({
   onCancel?: () => void
 }) {
   const editing = Boolean(evaluacion)
-  const [state, action] = useFormState(
+  const [state, action] = useActionState(
     editing ? actualizarEvaluacionAction : crearEvaluacionAction,
     initial,
   )

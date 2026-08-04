@@ -2,7 +2,7 @@
 
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { useFormState } from 'react-dom'
+import { useActionState } from 'react';
 
 import { eliminarMedicionAction, type MedicionState } from '@/actions/mediciones'
 import { MedicionForm } from '@/components/seguimiento/medicion-form'
@@ -33,7 +33,7 @@ export function MedicionesPanel({
   mediciones: Medicion[]
 }) {
   const [editing, setEditing] = useState<Medicion | null>(null)
-  const [deleteState, deleteAction] = useFormState(eliminarMedicionAction, initial)
+  const [deleteState, deleteAction] = useActionState(eliminarMedicionAction, initial)
   const deleteVisible = useAutoHideMessage(deleteState)
 
   return (

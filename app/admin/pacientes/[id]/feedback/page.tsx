@@ -5,7 +5,6 @@ import { FeedbackChat, type MensajeFeedback } from '@/components/seguimiento/fee
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
 import { formatearFechaCorta, lunesDeSemana } from '@/lib/seguimiento'
-
 export const dynamic = 'force-dynamic'
 
 type Feedback = {

@@ -10,7 +10,6 @@ import {
   ESTADO_OBJETIVO_LABEL,
   formatearFechaCorta,
 } from '@/lib/seguimiento'
-
 type EstadoObjetivo = keyof typeof ESTADO_OBJETIVO_LABEL
 
 export const dynamic = 'force-dynamic'

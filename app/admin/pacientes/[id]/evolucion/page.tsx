@@ -3,7 +3,6 @@ import { EvolucionEntryItem } from '@/components/seguimiento/evolucion-entry-ite
 import { EvolucionForm } from '@/components/seguimiento/evolucion-form'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
-
 export const dynamic = 'force-dynamic'
 
 type Entry = {

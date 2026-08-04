@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-
 export const metadata: Metadata = { title: 'Términos y condiciones' }
 
 const LAST_UPDATE = '10 de mayo de 2026'

@@ -1,6 +1,7 @@
 'use client'
 
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import { actualizarPerfilPublicoAction, type ContenidoState } from '@/actions/contenido'
 import { useResetOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
@@ -52,7 +53,7 @@ export function PerfilPublicoForm({
   especialidades: readonly string[]
   areasTrabajo: readonly AreaTrabajo[]
 }) {
-  const [state, formAction] = useFormState<ContenidoState, FormData>(actualizarPerfilPublicoAction, {})
+  const [state, formAction] = useActionState<ContenidoState, FormData>(actualizarPerfilPublicoAction, {})
   const formRef = useResetOnSuccess(state)
   const msgRef = useScrollToMessage(state)
 

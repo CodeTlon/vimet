@@ -3,7 +3,6 @@ import { PerfilPublicoForm } from '@/components/admin/perfil-publico-form'
 import { getProfesionales } from '@/lib/config/contenido'
 import { requireStaff } from '@/lib/supabase/auth-helpers'
 import { createClient } from '@/lib/supabase/server'
-
 export const metadata = { title: 'Configuración · VIMET' }
 
 export default async function ConfiguracionPage() {

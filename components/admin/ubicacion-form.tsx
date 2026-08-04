@@ -1,6 +1,7 @@
 'use client'
 
-import { useFormState, useFormStatus } from 'react-dom'
+import { useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
 
 import { actualizarUbicacionAction, type ContenidoState } from '@/actions/contenido'
 import { useResetOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
@@ -40,7 +41,7 @@ export function UbicacionForm({
   instagramHandle: string
   instagramUrl: string
 }) {
-  const [state, formAction] = useFormState<ContenidoState, FormData>(actualizarUbicacionAction, {})
+  const [state, formAction] = useActionState<ContenidoState, FormData>(actualizarUbicacionAction, {})
   const formRef = useResetOnSuccess(state)
   const msgRef = useScrollToMessage(state)
 
