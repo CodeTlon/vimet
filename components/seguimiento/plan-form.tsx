@@ -85,7 +85,7 @@ export function PlanForm({
   const [fechaDesde, setFechaDesde] = useState(p?.fecha_desde ?? hoyArgentina())
 
   return (
-    <form key={remountKey} action={action} className="space-y-6" encType="multipart/form-data">
+    <form key={remountKey} action={action} className="space-y-6">
       <input type="hidden" name="paciente_id" value={pacienteId} />
       {editing ? <input type="hidden" name="id" value={p!.id} /> : null}
 

@@ -59,7 +59,6 @@ export function RecursoForm({ pacienteId }: { pacienteId: string }) {
     <form
       ref={formRef}
       action={action}
-      encType="multipart/form-data"
       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4"
     >
       <input type="hidden" name="paciente_id" value={pacienteId} />

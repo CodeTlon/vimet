@@ -64,7 +64,7 @@ export function PerfilPublicoForm({
         Esta información se muestra en la página pública &quot;Nosotros&quot;.
       </p>
 
-      <form ref={formRef} action={formAction} className="space-y-4" encType="multipart/form-data">
+      <form ref={formRef} action={formAction} className="space-y-4">
         <input type="hidden" name="profile_id" value={profileId} />
 
         <div ref={msgRef}>
