@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 import { toggleActivoAction } from '@/actions/staff'
 import { Pagination } from '@/components/pagination'
+import { PacienteDeleteButton } from '@/components/paciente-delete-button'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
 export const metadata = { title: 'Pacientes' }
@@ -15,6 +16,7 @@ type Paciente = {
   email: string | null
   telefono: string | null
   activo: boolean
+  activado_en: string | null
   created_at: string
 }
 
@@ -31,13 +33,18 @@ export default async function PacientesPage(
   const [{ data, count }, { count: activosCount }, { count: pendientesCount }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, nombre, apellido, email, telefono, activo, created_at', { count: 'exact' })
+      .select('id, nombre, apellido, email, telefono, activo, activado_en, created_at', { count: 'exact' })
       .eq('rol', 'paciente')
       .order('activo', { ascending: true })   // pendientes primero
       .order('created_at', { ascending: false })
       .range(from, to),
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('rol', 'paciente').eq('activo', true),
-    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('rol', 'paciente').eq('activo', false),
+    supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('rol', 'paciente')
+      .eq('activo', false)
+      .is('activado_en', null),
   ])
 
   const pacientes = (data ?? []) as Paciente[]
@@ -82,8 +89,8 @@ export default async function PacientesPage(
                     )}
                   </div>
                   {!p.activo && (
-                    <span className="text-xs font-medium text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
-                      Pendiente
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 border ${p.activado_en ? 'text-gray-500 bg-gray-100 border-gray-200' : 'text-amber-700 bg-amber-100 border-amber-200'}`}>
+                      {p.activado_en ? 'Inactivo' : 'Pendiente'}
                     </span>
                   )}
                 </div>
@@ -137,6 +144,7 @@ export default async function PacientesPage(
                       </form>
                     </>
                   )}
+                  <PacienteDeleteButton id={p.id} nombre={`${p.nombre} ${p.apellido}`} />
                 </div>
               </li>
             ))}
@@ -165,8 +173,8 @@ export default async function PacientesPage(
                           <span>{p.nombre} {p.apellido}</span>
                         )}
                         {!p.activo && (
-                          <span className="text-xs font-medium text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">
-                            Pendiente
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${p.activado_en ? 'text-gray-500 bg-gray-100 border-gray-200' : 'text-amber-700 bg-amber-100 border-amber-200'}`}>
+                            {p.activado_en ? 'Inactivo' : 'Pendiente'}
                           </span>
                         )}
                       </div>
@@ -230,6 +238,7 @@ export default async function PacientesPage(
                             </Link>
                           </>
                         )}
+                        <PacienteDeleteButton id={p.id} nombre={`${p.nombre} ${p.apellido}`} />
                       </div>
                     </td>
                   </tr>
