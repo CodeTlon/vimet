@@ -11,6 +11,6 @@ export default function robots(): MetadataRoute.Robots {
         '/mis-recursos', '/mis-turnos', '/feedback-semanal',
       ],
     },
-    sitemap: 'https://vimet.com.ar/sitemap.xml',
+    sitemap: 'https://vimetsalud.com.ar/sitemap.xml',
   }
 }

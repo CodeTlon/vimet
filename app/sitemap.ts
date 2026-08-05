@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 
-const BASE_URL = 'https://vimet.com.ar'
+const BASE_URL = 'https://vimetsalud.com.ar'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const routes = ['', '/servicios', '/metodologia', '/nosotros', '/faq', '/contacto', '/turnos/nuevo', '/privacidad', '/terminos']
