@@ -14,12 +14,16 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('rol, nombre, apellido')
+    .select('rol, nombre, apellido, debe_cambiar_password')
     .eq('id', user.id)
     .maybeSingle()
 
   if (!profile || !['nutricionista', 'entrenador', 'admin'].includes(profile.rol)) {
     redirect('/mis-turnos')
+  }
+
+  if (profile.debe_cambiar_password) {
+    redirect('/auth/nueva-contrasena?flow=recovery')
   }
 
   return (

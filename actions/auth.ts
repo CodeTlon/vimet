@@ -219,14 +219,16 @@ export async function nuevaContrasenaAction(_prev: unknown, formData: FormData):
   // Datos de perfil: para invitados (staff/paciente nuevo) que llegan sin nombre.
   // Solo actualizamos los campos que vengan cargados → un reset de contraseña
   // de alguien existente que los deje vacíos no pisa lo que ya tenía.
-  const perfilUpdate: Record<string, string> = {}
+  // debe_cambiar_password se limpia siempre: si estaba en true, este guardado
+  // es justamente lo que lo cierra (cuentas creadas a mano con password temporal).
+  const perfilUpdate: Record<string, string | boolean> = { debe_cambiar_password: false }
   const nombre = String(formData.get('nombre') ?? '').trim()
   const apellido = String(formData.get('apellido') ?? '').trim()
   const telefono = String(formData.get('telefono') ?? '').trim()
   if (nombre) perfilUpdate.nombre = nombre
   if (apellido) perfilUpdate.apellido = apellido
   if (telefono) perfilUpdate.telefono = telefono
-  if (user?.id && Object.keys(perfilUpdate).length > 0) {
+  if (user?.id) {
     await supabase.from('profiles').update(perfilUpdate).eq('id', user.id)
   }
 
