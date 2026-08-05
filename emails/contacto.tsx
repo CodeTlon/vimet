@@ -27,7 +27,7 @@ export default function ContactoEmail({ nombre, email, telefono, mensaje }: Prop
   return (
     <Html lang="es">
       <Head />
-      <Preview>Nuevo mensaje de contacto desde vimet.com.ar</Preview>
+      <Preview>Nuevo mensaje de contacto desde vimetsalud.com.ar</Preview>
       <Tailwind>
         <Body style={{ backgroundColor: '#FAFAFA', margin: 0, padding: '24px 0' }}>
           <Container
@@ -131,7 +131,7 @@ export default function ContactoEmail({ nombre, email, telefono, mensaje }: Prop
                 VIMET · Vida y Metabolismo · Córdoba, Argentina
               </Text>
               <Text style={{ margin: '4px 0 0', fontSize: 11, color: '#B8B8B8' }}>
-                Este email fue enviado automáticamente desde vimet.com.ar
+                Este email fue enviado automáticamente desde vimetsalud.com.ar
               </Text>
             </Section>
           </Container>
@@ -143,19 +143,11 @@ export default function ContactoEmail({ nombre, email, telefono, mensaje }: Prop
 
 function DataRow({ label, value, link }: { label: string; value: string; link?: string }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        gap: 16,
-        padding: '12px 0',
-        borderBottom: '1px solid #F0F0F0',
-      }}
-    >
+    <div style={{ padding: '10px 0', borderBottom: '1px solid #F0F0F0' }}>
       <Text
         style={{
-          margin: 0,
-          fontSize: 12,
+          margin: '0 0 2px',
+          fontSize: 11,
           fontWeight: 600,
           color: '#7A7A7A',
           textTransform: 'uppercase',
@@ -168,7 +160,6 @@ function DataRow({ label, value, link }: { label: string; value: string; link?: 
         <a
           href={link}
           style={{
-            margin: 0,
             fontSize: 14,
             color: ORANGE,
             textDecoration: 'none',
