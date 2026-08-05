@@ -33,7 +33,17 @@ const schema = z.object({
     })
     .refine((v) => v === null || (v > 20 && v < 400), 'Peso inválido'),
   observaciones: z.string().max(4000).optional().or(z.literal('')),
-})
+}).refine(
+  (d) =>
+    d.estado_fisico != null ||
+    d.animo != null ||
+    d.energia != null ||
+    d.adherencia_entrenamiento != null ||
+    d.adherencia_alimentacion != null ||
+    d.peso_autoreporte_kg != null ||
+    (d.observaciones ?? '').trim() !== '',
+  { message: 'Cargá al menos un dato del feedback.', path: ['estado_fisico'] },
+)
 
 const FEEDBACK_ALLOWED_MIME = [
   'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf',

@@ -46,6 +46,15 @@ export async function crearEjercicioCustomAction(
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
   const d = parsed.data
 
+  // ponytail: dedup simple por nombre (case-insensitive). No chequea hash de
+  // archivo — si hace falta detectar el mismo video con nombre distinto, sumarlo.
+  const { data: existente } = await ctx.supabase
+    .from('ejercicios')
+    .select('id')
+    .ilike('nombre', d.nombre.trim())
+    .maybeSingle()
+  if (existente) return { error: 'Ya existe un ejercicio con ese nombre.' }
+
   const file = formData.get('gif') as File | null
   if (!file || file.size === 0) return { error: 'Generá el GIF antes de guardar.' }
   if (file.type !== 'image/gif') return { error: 'El archivo generado no es un GIF.' }
@@ -79,12 +88,15 @@ export async function crearEjercicioCustomAction(
   return { ok: true }
 }
 
-export async function eliminarEjercicioCustomAction(formData: FormData) {
+export async function eliminarEjercicioCustomAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<EjercicioCustomState> {
   const id = Number(formData.get('id'))
-  if (!id) return
+  if (!id) return { error: 'Datos inválidos' }
 
   const ctx = await requireStaff()
-  if ('error' in ctx) return
+  if ('error' in ctx) return { error: ctx.error }
 
   const { data: ejercicio } = await ctx.supabase
     .from('ejercicios')
@@ -92,11 +104,22 @@ export async function eliminarEjercicioCustomAction(formData: FormData) {
     .eq('id', id)
     .eq('origen', 'staff')
     .maybeSingle()
-  if (!ejercicio) return
+  if (!ejercicio) return { error: 'Ejercicio no encontrado.' }
+
+  // Borrar primero la fila: si la FK `plan_ejercicios.ejercicio_id` (on delete
+  // restrict) rechaza el delete porque el ejercicio está en uso, el GIF del
+  // storage queda intacto (antes se borraba el storage primero y quedaba huérfano).
+  const { error } = await ctx.supabase.from('ejercicios').delete().eq('id', id).eq('origen', 'staff')
+  if (error) {
+    if (error.code === '23503') {
+      return { error: 'No se puede borrar: este ejercicio está siendo usado en un plan. Quitalo del plan primero.' }
+    }
+    return { error: 'No se pudo eliminar el ejercicio.' }
+  }
 
   const path = ejercicio.gif_url?.split('/ejercicios-media/')[1]
   if (path) await ctx.supabase.storage.from('ejercicios-media').remove([path])
 
-  await ctx.supabase.from('ejercicios').delete().eq('id', id).eq('origen', 'staff')
   revalidatePath('/admin/ejercicios')
+  return { ok: true }
 }
