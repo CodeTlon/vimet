@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
+import { emailExists } from '@/lib/auth/email-exists'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
@@ -11,6 +12,12 @@ export type AuthState = {
   ok?: boolean
   error?: string
   fields?: Record<string, string>
+  /**
+   * Login fallido: `true` solo si el email ni siquiera existe como cuenta.
+   * El form lo usa para vaciar el campo email; con `false`/undefined lo deja
+   * cargado para que el usuario reintente solo la contraseña.
+   */
+  clearEmail?: boolean
 }
 
 const loginSchema = z.object({
@@ -45,7 +52,12 @@ export async function loginAction(_prev: unknown, formData: FormData): Promise<A
   const { error } = await supabase.auth.signInWithPassword(parsed.data)
 
   if (error) {
-    return { error: 'Email o contraseña incorrectos.' }
+    // El mensaje es idéntico exista o no la cuenta (no filtramos qué emails
+    // están registrados). Lo único que cambia es si el form conserva el email
+    // tipeado: si la cuenta existe, el error casi seguro es la contraseña y
+    // hacerlo retipear todo es molesto al pedo.
+    const existe = await emailExists(parsed.data.email)
+    return { error: 'Email o contraseña incorrectos.', clearEmail: !existe }
   }
 
   const {

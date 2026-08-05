@@ -3,9 +3,10 @@
 import { LogIn } from 'lucide-react'
 import Link from 'next/link'
 import { useFormStatus } from 'react-dom';
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 
 import { loginAction, type AuthState } from '@/actions/auth'
+import { PasswordInput } from '@/components/ui/password-input'
 
 const initialState: AuthState = {}
 
@@ -28,6 +29,21 @@ function SubmitButton() {
 
 export function LoginForm() {
   const [state, formAction] = useActionState(loginAction, initialState)
+  // El email es controlado a propósito: React resetea los inputs NO controlados
+  // del <form action={...}> al terminar la action, y hacer retipear el email
+  // cuando lo único que falló fue la contraseña es puro ruido. Solo lo vaciamos
+  // si la action avisa que esa cuenta no existe (`clearEmail`).
+  const [email, setEmail] = useState('')
+  // Ajuste de estado durante el render (no useEffect: dispararía el
+  // set-state-in-effect que el repo ya limpió). Compara contra el `state`
+  // anterior porque la action devuelve un objeto nuevo en cada submit, así un
+  // segundo intento fallido también entra.
+  const [prevState, setPrevState] = useState(state)
+  if (prevState !== state) {
+    setPrevState(state)
+    if (state.clearEmail) setEmail('')
+  }
+
   return (
     <form action={formAction} className="space-y-4">
       {state.error ? (
@@ -44,20 +60,15 @@ export function LoginForm() {
           type="email"
           name="email"
           required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           placeholder="tu@email.com"
           className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
         />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-800 mb-1.5">Contraseña</label>
-        <input
-          type="password"
-          name="password"
-          required
-          minLength={6}
-          placeholder="Tu contraseña"
-          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
-        />
+        <PasswordInput name="password" required minLength={6} placeholder="Tu contraseña" />
       </div>
       <SubmitButton />
       <div className="flex items-center justify-between text-sm border-t border-gray-100 mt-2 pt-3">
