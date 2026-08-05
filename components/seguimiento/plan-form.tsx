@@ -83,6 +83,7 @@ export function PlanForm({
   const msgRef = useScrollToMessage(state)
   const visible = useAutoHideMessage(state)
   const [fechaDesde, setFechaDesde] = useState(p?.fecha_desde ?? hoyArgentina())
+  const [tipo, setTipo] = useState(p?.tipo ?? 'nutricion')
 
   return (
     <form key={remountKey} action={action} className="space-y-6">
@@ -104,7 +105,13 @@ export function PlanForm({
 
       <Section title="Datos del plan">
         <Field label="Tipo">
-          <select name="tipo" defaultValue={p?.tipo ?? 'nutricion'} className={inputBase} required>
+          <select
+            name="tipo"
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value as typeof tipo)}
+            className={inputBase}
+            required
+          >
             <option value="nutricion">Nutrición</option>
             <option value="entrenamiento">Entrenamiento</option>
             <option value="combo">Combo</option>
@@ -163,6 +170,7 @@ export function PlanForm({
         </FullField>
       </Section>
 
+      {tipo !== 'entrenamiento' && (
       <Section title="Pautas nutricionales">
         <FullField label="Pautas generales">
           <NotaTextarea
@@ -219,7 +227,9 @@ export function PlanForm({
           />
         </Field>
       </Section>
+      )}
 
+      {tipo !== 'nutricion' && (
       <Section title="Datos de entrenamiento">
         <Field label="Disciplina">
           <input name="disciplina" defaultValue={p?.disciplina ?? ''} placeholder="Ej: Musculación" className={inputBase} />
@@ -294,6 +304,7 @@ export function PlanForm({
           />
         </Field>
       </Section>
+      )}
 
       {rutina}
 
