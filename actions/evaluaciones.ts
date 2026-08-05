@@ -34,7 +34,20 @@ const schema = z.object({
   fuerza_superior: intInRange(15),
   resistencia_metabolica: intInRange(20),
   observaciones: z.string().max(2000).optional().or(z.literal('')),
-})
+}).refine(
+  (d) =>
+    [
+      d.test_wells_adams,
+      d.test_thomas,
+      d.test_dorsiflexion,
+      d.test_sentadilla,
+      d.test_estabilidad,
+      d.fuerza_inferior,
+      d.fuerza_superior,
+      d.resistencia_metabolica,
+    ].some((v) => v != null),
+  { message: 'Cargá al menos un test.', path: ['test_wells_adams'] },
+)
 
 async function getStaff() {
   const supabase = await createClient()
