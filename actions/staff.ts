@@ -8,6 +8,28 @@ import { requireStaff } from '@/lib/supabase/auth-helpers'
 
 export type StaffState = { ok?: boolean; error?: string }
 
+// Los buckets `planes`/`recursos` no cascadean solos al borrar el usuario de
+// auth.users — hay que limpiarlos a mano antes de que quede el registro
+// huérfano. `recursos` tiene subcarpetas (r/, f/), por eso es recursivo.
+async function removeAllUnderPrefix(
+  admin: ReturnType<typeof createAdminClient>,
+  bucket: string,
+  prefix: string,
+) {
+  const { data } = await admin.storage.from(bucket).list(prefix, { limit: 1000 })
+  if (!data || data.length === 0) return
+  const files: string[] = []
+  for (const item of data) {
+    const path = `${prefix}/${item.name}`
+    if (item.id === null) {
+      await removeAllUnderPrefix(admin, bucket, path)
+    } else {
+      files.push(path)
+    }
+  }
+  if (files.length) await admin.storage.from(bucket).remove(files)
+}
+
 const configurarProfesionalSchema = z.object({
   email: z.string().email('Email inválido'),
   tipo: z.enum(['nutricionista', 'entrenador'], { message: 'Tipo inválido' }),
@@ -103,7 +125,18 @@ export async function toggleActivoAction(formData: FormData): Promise<void> {
   if (!id) return
 
   const admin = createAdminClient()
-  const { error } = await admin.from('profiles').update({ activo }).eq('id', id)
+  const payload: { activo: boolean; activado_en?: string } = { activo }
+  if (activo) {
+    // Solo se pisa en la primera activación real (queda null en desactivaciones,
+    // así el listado puede distinguir "pendiente" de "inactivo").
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('activado_en')
+      .eq('id', id)
+      .maybeSingle()
+    if (!profile?.activado_en) payload.activado_en = new Date().toISOString()
+  }
+  const { error } = await admin.from('profiles').update(payload).eq('id', id)
   if (!error) revalidatePath('/admin/pacientes')
 }
 
@@ -135,5 +168,31 @@ export async function cambiarPasswordAction(
 
   if (error) return { error: 'No se pudo cambiar la contraseña.' }
 
+  return { ok: true }
+}
+
+export async function eliminarPacienteAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<StaffState> {
+  const { profile } = await requireStaff()
+  if (profile.rol !== 'admin') return { error: 'Solo un admin puede eliminar pacientes.' }
+
+  const id = String(formData.get('id') ?? '')
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    return { error: 'Datos inválidos' }
+  }
+
+  const admin = createAdminClient()
+  await removeAllUnderPrefix(admin, 'planes', id)
+  await removeAllUnderPrefix(admin, 'recursos', id)
+
+  // Cascada de Postgres (profiles, ficha, mediciones, planes, feedback,
+  // objetivos, turnos, etc.) ya está resuelta vía `on delete cascade` desde
+  // auth.users.id — borrar acá alcanza para todo el resto de la DB.
+  const { error } = await admin.auth.admin.deleteUser(id)
+  if (error) return { error: 'No se pudo eliminar el paciente.' }
+
+  revalidatePath('/admin/pacientes')
   return { ok: true }
 }

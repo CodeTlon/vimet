@@ -15,7 +15,12 @@ export async function POST(request: Request) {
   if (!id) return NextResponse.json({ error: 'Paciente inválido' }, { status: 400 })
 
   const admin = createAdminClient()
-  const { error } = await admin.from('profiles').update({ activo }).eq('id', id)
+  const payload: { activo: boolean; activado_en?: string } = { activo }
+  if (activo) {
+    const { data: profile } = await admin.from('profiles').select('activado_en').eq('id', id).maybeSingle()
+    if (!profile?.activado_en) payload.activado_en = new Date().toISOString()
+  }
+  const { error } = await admin.from('profiles').update(payload).eq('id', id)
   if (error) return NextResponse.json({ error: 'No se pudo actualizar.' }, { status: 400 })
 
   return NextResponse.json({ ok: true })

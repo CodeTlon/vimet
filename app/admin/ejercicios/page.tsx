@@ -1,6 +1,4 @@
-import { Trash2 } from 'lucide-react'
-
-import { eliminarEjercicioCustomAction } from '@/actions/ejercicios'
+import { EjercicioDeleteButton } from '@/components/seguimiento/ejercicio-delete-button'
 import { EjercicioUploader } from '@/components/seguimiento/ejercicio-uploader'
 import { requireStaff } from '@/lib/supabase/auth-helpers'
 import { createClient } from '@/lib/supabase/server'
@@ -61,16 +59,7 @@ export default async function EjerciciosPage() {
               <div className="p-3 space-y-1">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-medium text-gray-900">{e.nombre}</p>
-                  <form action={eliminarEjercicioCustomAction}>
-                    <input type="hidden" name="id" value={e.id} />
-                    <button
-                      type="submit"
-                      title="Eliminar"
-                      className="p-1 rounded-lg text-vimet-red hover:bg-vimet-red/10 transition-colors shrink-0"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </form>
+                  <EjercicioDeleteButton id={e.id} />
                 </div>
                 <p className="text-xs text-gray-500">
                   {[CATEGORIA_LABEL[e.categoria ?? ''] ?? e.categoria, e.parte_cuerpo].filter(Boolean).join(' · ')}

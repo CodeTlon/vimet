@@ -42,7 +42,46 @@ const vigenciaRefineOpts = {
   path: ['fecha_hasta'] as string[],
 }
 
-const baseSchema = planObjectSchema.refine(vigenciaRefine, vigenciaRefineOpts)
+const NUTRI_FIELDS = [
+  'pautas_generales',
+  'pautas_hidratacion',
+  'pre_entreno',
+  'intra_entreno',
+  'post_entreno',
+  'suplementacion',
+] as const
+const ENTRENO_FIELDS = [
+  'disciplina',
+  'experiencia_previa',
+  'frecuencia',
+  'volumen',
+  'disponibilidad_lunes',
+  'disponibilidad_martes',
+  'disponibilidad_miercoles',
+  'disponibilidad_jueves',
+  'disponibilidad_viernes',
+  'disponibilidad_sabado',
+] as const
+const tieneDatos = (d: Record<string, string | undefined>, fields: readonly string[]) =>
+  fields.some((f) => (d[f] ?? '').trim() !== '')
+
+// Un plan sin ningún dato de su tipo no le sirve a nadie: exige al menos un
+// campo cargado del grupo correspondiente (ambos grupos si es combo).
+const minimoRefine = (d: { tipo: string } & Record<string, string | undefined>) => {
+  const nutri = tieneDatos(d, NUTRI_FIELDS)
+  const entreno = tieneDatos(d, ENTRENO_FIELDS)
+  if (d.tipo === 'nutricion') return nutri
+  if (d.tipo === 'entrenamiento') return entreno
+  return nutri && entreno
+}
+const minimoRefineOpts = {
+  message: 'Cargá al menos un dato de nutrición y/o entrenamiento según el tipo de plan elegido',
+  path: ['tipo'] as string[],
+}
+
+const baseSchema = planObjectSchema
+  .refine(vigenciaRefine, vigenciaRefineOpts)
+  .refine(minimoRefine, minimoRefineOpts)
 
 const toStr = (v: string | undefined) => (v && v.trim() !== '' ? v.trim() : null)
 
@@ -141,6 +180,7 @@ export async function crearPlanAction(
 const updateSchema = planObjectSchema
   .extend({ id: z.string().regex(/^\d+$/) })
   .refine(vigenciaRefine, vigenciaRefineOpts)
+  .refine(minimoRefine, minimoRefineOpts)
 
 export async function actualizarPlanAction(
   _prev: unknown,

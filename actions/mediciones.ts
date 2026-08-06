@@ -23,7 +23,13 @@ const schema = z.object({
   kg_musculo: z.string().optional().or(z.literal('')),
   dx_antropometrico: z.string().max(500).optional().or(z.literal('')),
   observaciones: z.string().max(2000).optional().or(z.literal('')),
-})
+}).refine(
+  (d) =>
+    [d.peso_kg, d.talla_cm, d.porc_grasa, d.porc_masa_muscular, d.kg_grasa, d.kg_musculo].some(
+      (v) => (v ?? '').trim() !== '',
+    ),
+  { message: 'Cargá al menos un dato de la medición.', path: ['peso_kg'] },
+)
 
 const toNum = (v: string | undefined) => {
   if (!v || v.trim() === '') return null
@@ -54,7 +60,7 @@ export async function crearMedicionAction(
   formData: FormData,
 ): Promise<MedicionState> {
   const parsed = schema.safeParse(Object.fromEntries(formData))
-  if (!parsed.success) return { error: 'Datos inválidos' }
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
   const ctx = await getStaff()
   if ('error' in ctx) return { error: ctx.error }
@@ -95,7 +101,7 @@ export async function actualizarMedicionAction(
   formData: FormData,
 ): Promise<MedicionState> {
   const parsed = schema.safeParse(Object.fromEntries(formData))
-  if (!parsed.success) return { error: 'Datos inválidos' }
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
   if (!parsed.data.id) return { error: 'Falta el id de la medición.' }
 
   const ctx = await getStaff()

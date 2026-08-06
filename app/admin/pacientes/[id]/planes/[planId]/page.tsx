@@ -7,6 +7,26 @@ import { RutinaPanel, type RutinaItem } from '@/components/seguimiento/rutina-pa
 import { createClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
+type SetDetalle = {
+  sesion_id: number
+  plan_ejercicio_id: number
+  numero_set: number
+  peso_kg: number | null
+  repeticiones: string | null
+  duracion_seg: number | null
+  descanso_seg: number | null
+  plan_ejercicio: { descanso_seg: number | null; ejercicio: { nombre: string } | null } | null
+}
+
+const TOLERANCIA_DESCANSO_SEG = 3
+
+function tagDescanso(real: number | null, planificado: number | null | undefined) {
+  if (real == null || planificado == null) return null
+  if (real < planificado - TOLERANCIA_DESCANSO_SEG) return 'Saltó descanso'
+  if (real > planificado + TOLERANCIA_DESCANSO_SEG) return 'Agregó tiempo'
+  return null
+}
+
 export default async function EditarPlanPage(
   props: {
     params: Promise<{ id: string; planId: string }>
@@ -50,6 +70,20 @@ export default async function EditarPlanPage(
     new Set((valoresFiltro ?? []).map((v) => v.equipo).filter(Boolean)),
   ).sort() as string[]
 
+  // Detalle por serie (peso/reps/descanso real vs. planificado) para cada sesión,
+  // se pide aparte porque necesita los ids de sesiones ya resueltos.
+  const sesionIds = (sesiones ?? []).map((s) => s.id)
+  const { data: setsDetalleRaw } = sesionIds.length
+    ? await supabase
+        .from('sets_completados')
+        .select(
+          'sesion_id, plan_ejercicio_id, numero_set, peso_kg, repeticiones, duracion_seg, descanso_seg, plan_ejercicio:plan_ejercicios(descanso_seg, ejercicio:ejercicios(nombre))',
+        )
+        .in('sesion_id', sesionIds)
+        .order('id')
+    : { data: [] }
+  const setsDetalle = setsDetalleRaw as unknown as SetDetalle[] | null
+
   return (
     <div className="space-y-4">
       <Link
@@ -81,22 +115,61 @@ export default async function EditarPlanPage(
           <ul className="space-y-2">
             {sesiones.map((s) => {
               const sets = Array.isArray(s.sets_completados) ? (s.sets_completados[0]?.count ?? 0) : 0
+              const setsSesion = (setsDetalle ?? []).filter((d) => d.sesion_id === s.id)
+              const ejercicioIds = Array.from(new Set(setsSesion.map((d) => d.plan_ejercicio_id)))
               return (
-                <li
-                  key={s.id}
-                  className="flex items-center justify-between text-sm text-gray-700 border-b border-gray-50 pb-2 last:border-0"
-                >
-                  <span>
-                    {new Date(s.iniciada_at).toLocaleDateString('es-AR', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                    {s.dia_semana ? ` · ${s.dia_semana}` : ''}
-                  </span>
-                  <span className="text-gray-500">
-                    {sets} series {s.finalizada_at ? '· completo' : '· sin terminar'}
-                  </span>
+                <li key={s.id} className="border-b border-gray-50 pb-2 last:border-0">
+                  <details className="group">
+                    <summary className="flex items-center justify-between text-sm text-gray-700 cursor-pointer list-none">
+                      <span>
+                        {new Date(s.iniciada_at).toLocaleDateString('es-AR', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                        {s.dia_semana ? ` · ${s.dia_semana}` : ''}
+                      </span>
+                      <span className="text-gray-500">
+                        {sets} series {s.finalizada_at ? '· completo' : '· sin terminar'}
+                      </span>
+                    </summary>
+                    {ejercicioIds.length > 0 && (
+                      <div className="mt-2 space-y-2 pl-2 border-l-2 border-gray-100">
+                        {ejercicioIds.map((peId) => {
+                          const setsEjercicio = setsSesion.filter((d) => d.plan_ejercicio_id === peId)
+                          const nombre = setsEjercicio[0].plan_ejercicio?.ejercicio?.nombre ?? 'Ejercicio'
+                          return (
+                            <div key={peId} className="text-sm">
+                              <p className="font-medium text-gray-800">{nombre}</p>
+                              <ul className="text-gray-500">
+                                {setsEjercicio.map((d, i) => {
+                                  const planificado = d.plan_ejercicio?.descanso_seg
+                                  const tag = tagDescanso(d.descanso_seg, planificado)
+                                  return (
+                                    <li key={i} className="flex items-center gap-2">
+                                      <span className="w-14">Serie {d.numero_set}</span>
+                                      <span className="flex-1">
+                                        {d.peso_kg != null ? `${d.peso_kg} kg · ` : ''}
+                                        {d.repeticiones ?? '—'} reps
+                                      </span>
+                                      <span>
+                                        descanso {d.descanso_seg ?? '—'}s{planificado != null ? ` / ${planificado}s` : ''}
+                                      </span>
+                                      {tag && (
+                                        <span className="text-xs font-medium text-vimet-orange bg-vimet-orange/10 rounded-full px-2 py-0.5">
+                                          {tag}
+                                        </span>
+                                      )}
+                                    </li>
+                                  )
+                                })}
+                              </ul>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </details>
                 </li>
               )
             })}
