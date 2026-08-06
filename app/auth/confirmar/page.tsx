@@ -33,6 +33,27 @@ function ConfirmarInner() {
     const supabase = createClient()
     const tokenHash = searchParams.get('token_hash')
     const type = searchParams.get('type') as EmailOtpType | null
+    const code = searchParams.get('code')
+
+    if (code) {
+      // Links viejos de "Confirm signup": la plantilla anterior usaba
+      // {{ .ConfirmationURL }}, que pasa por /auth/v1/verify y vuelve acá con
+      // ?code= (el signUp corre con el cliente server, que fuerza PKCE). Esto
+      // solo puede funcionar en el mismo navegador donde se hizo el registro —
+      // el code_verifier es una cookie local — así que la plantilla nueva
+      // apunta a /auth/callback con token_hash, que se verifica server-side.
+      // Esta rama queda solo para los mails que ya están en las casillas.
+      supabase.auth.exchangeCodeForSession(code).then(async ({ error }) => {
+        if (error) {
+          setError(
+            'Este link ya fue usado o se abrió en un dispositivo distinto al que usaste para registrarte. Si ya confirmaste tu cuenta, iniciá sesión.',
+          )
+        } else {
+          router.replace(await resolveDestino(supabase, 'signup'))
+        }
+      })
+      return
+    }
 
     if (tokenHash && type) {
       // PKCE OTP flow: Supabase envía ?token_hash=...&type=signup|invite
@@ -66,7 +87,7 @@ function ConfirmarInner() {
 
       const timeout = setTimeout(() => {
         subscription.unsubscribe()
-        setError('El link venció o ya fue usado.')
+        setError('No pudimos verificar el link. Puede que ya haya sido usado o que haya vencido.')
       }, 6000)
 
       return () => {
