@@ -28,23 +28,34 @@ function ConfirmarInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
+  const [verificando, setVerificando] = useState(false)
+
+  const tokenHash = searchParams.get('token_hash')
+  const type = searchParams.get('type') as EmailOtpType | null
+
+  // Confirmar solo con click real del usuario (no en useEffect al cargar):
+  // los escáneres de link de mail (Gmail Safe Browsing, antivirus corporativo)
+  // pre-visitan la URL y ejecutan JS antes de que el usuario la abra — si
+  // verifyOtp corriera automático al montar, el token de un solo uso se quema
+  // ahí y el usuario ve "vencido" en su primer click real.
+  function confirmar() {
+    if (!tokenHash || !type) return
+    setVerificando(true)
+    const supabase = createClient()
+    supabase.auth.verifyOtp({ token_hash: tokenHash, type }).then(async ({ error }) => {
+      if (error) {
+        setVerificando(false)
+        setError('El link es inválido o ya expiró.')
+      } else {
+        router.replace(await resolveDestino(supabase, type))
+      }
+    })
+  }
 
   useEffect(() => {
-    const supabase = createClient()
-    const tokenHash = searchParams.get('token_hash')
-    const type = searchParams.get('type') as EmailOtpType | null
+    if (tokenHash && type) return
 
-    if (tokenHash && type) {
-      // PKCE OTP flow: Supabase envía ?token_hash=...&type=signup|invite
-      supabase.auth.verifyOtp({ token_hash: tokenHash, type }).then(async ({ error }) => {
-        if (error) {
-          setError('El link es inválido o ya expiró.')
-        } else {
-          router.replace(await resolveDestino(supabase, type))
-        }
-      })
-      return
-    }
+    const supabase = createClient()
 
     // Implicit flow: Supabase redirige con #access_token=...&type=... en el hash.
     // createBrowserClient procesa el hash automáticamente al inicializarse.
@@ -90,6 +101,25 @@ function ConfirmarInner() {
         <div role="alert" className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
           {error}
         </div>
+      </AuthShell>
+    )
+  }
+
+  if (tokenHash && type) {
+    return (
+      <AuthShell
+        title="Confirmá tu cuenta"
+        description="Un último paso"
+        footer={<span className="text-gray-400">El link es válido por un solo click</span>}
+      >
+        <button
+          type="button"
+          onClick={confirmar}
+          disabled={verificando}
+          className="w-full rounded-lg bg-vimet-orange px-4 py-3 font-semibold text-white hover:bg-vimet-orange/90 disabled:opacity-60"
+        >
+          {verificando ? 'Confirmando…' : 'Confirmar cuenta'}
+        </button>
       </AuthShell>
     )
   }
