@@ -118,7 +118,7 @@ export default function TurnoCanceladoEmail({
                 VIMET · Vida y Metabolismo · Córdoba, Argentina
               </Text>
               <Text style={{ margin: '4px 0 0', fontSize: 11, color: '#B8B8B8' }}>
-                Este email fue enviado automáticamente desde vimet.com.ar
+                Este email fue enviado automáticamente desde vimetsalud.com.ar
               </Text>
             </Section>
           </Container>
