@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { pareceUnPdf } from '@/lib/file-sniff'
 import { createClient } from '@/lib/supabase/server'
 
 export type PlanState = { ok?: boolean; error?: string; planId?: number }
@@ -158,6 +159,7 @@ export async function crearPlanAction(
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
     archivo_path = `${d.paciente_id}/${Date.now()}_${safeName}`
     const buf = Buffer.from(await file.arrayBuffer())
+    if (!pareceUnPdf(buf)) return { error: 'El archivo no es un PDF válido.' }
     const { error: upErr } = await ctx.supabase.storage
       .from('planes')
       .upload(archivo_path, buf, { contentType: 'application/pdf', upsert: false })
@@ -196,21 +198,30 @@ export async function actualizarPlanAction(
   const id = Number(d.id)
   const file = formData.get('archivo') as File | null
 
-  const payload: Record<string, unknown> = buildPayload(d, ctx.user.id)
+  // El dueño real del plan sale de la DB, no del form: un paciente_id
+  // hidden desactualizado o manipulado no debe poder reasignar el plan.
+  const { data: existente } = await ctx.supabase
+    .from('planes')
+    .select('paciente_id, archivo_path')
+    .eq('id', id)
+    .maybeSingle()
+  if (!existente) return { error: 'Ese plan ya no existe.' }
+
+  const payload: Record<string, unknown> = buildPayload(
+    { ...d, paciente_id: existente.paciente_id },
+    ctx.user.id,
+  )
 
   if (file && file.size > 0) {
     if (file.type !== 'application/pdf') return { error: 'El archivo debe ser PDF.' }
     if (file.size > 15 * 1024 * 1024) return { error: 'El PDF supera 15MB.' }
 
-    const { data: prev } = await ctx.supabase
-      .from('planes')
-      .select('archivo_path')
-      .eq('id', id)
-      .maybeSingle()
+    const prev = existente
 
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-    const archivo_path = `${d.paciente_id}/${Date.now()}_${safeName}`
+    const archivo_path = `${existente.paciente_id}/${Date.now()}_${safeName}`
     const buf = Buffer.from(await file.arrayBuffer())
+    if (!pareceUnPdf(buf)) return { error: 'El archivo no es un PDF válido.' }
     const { error: upErr } = await ctx.supabase.storage
       .from('planes')
       .upload(archivo_path, buf, { contentType: 'application/pdf', upsert: false })
@@ -227,8 +238,8 @@ export async function actualizarPlanAction(
   const { error } = await ctx.supabase.from('planes').update(payload).eq('id', id)
   if (error) return { error: 'No se pudo actualizar el plan.' }
 
-  revalidatePath(`/admin/pacientes/${d.paciente_id}/planes`)
-  revalidatePath(`/admin/pacientes/${d.paciente_id}/planes/${id}`)
+  revalidatePath(`/admin/pacientes/${existente.paciente_id}/planes`)
+  revalidatePath(`/admin/pacientes/${existente.paciente_id}/planes/${id}`)
   revalidatePath('/mis-planes')
   revalidatePath(`/mis-planes/${id}`)
   return { ok: true, planId: id }

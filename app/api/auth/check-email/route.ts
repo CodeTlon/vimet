@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { emailExists } from '@/lib/auth/email-exists'
+import { ipDeRequest, rateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,11 +18,16 @@ const schema = z.object({ email: z.string().email() })
  * Es un endpoint sin autenticar (en el login todavía no hay sesión), así que
  * confirma la existencia de una cuenta a quien lo llame. Ese trade-off ya
  * estaba tomado en el registro (`/api/mobile/auth/registro` responde "Ya
- * existe una cuenta con ese email"). Rate limit: no hay utilidad propia en el
- * repo; el único freno real hoy es el de la plataforma. Si en algún momento
- * se suma rate limiting server-side, esta ruta es candidata de primera.
+ * existe una cuenta con ese email"). Rate limit por IP: frena el barrido
+ * masivo de emails; no elimina la confirmación puntual (trade-off aceptado
+ * arriba), sólo el uso como oráculo a escala.
  */
 export async function POST(request: Request) {
+  const ip = ipDeRequest(request)
+  if (!rateLimit(`check-email:${ip}`, 20, 10 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Demasiados intentos' }, { status: 429 })
+  }
+
   const body = await request.json().catch(() => null)
   const parsed = schema.safeParse(body)
   if (!parsed.success) {

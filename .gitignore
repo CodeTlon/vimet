@@ -42,3 +42,6 @@ next-env.d.ts
 /blob-report/
 /.playwright/
 .serena/
+
+# Supabase CLI local cache (link state, no va en el repo)
+supabase/.temp/

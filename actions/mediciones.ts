@@ -8,6 +8,20 @@ import { createClient } from '@/lib/supabase/server'
 
 export type MedicionState = { ok?: boolean; error?: string }
 
+// Campo numérico opcional cargado como string desde un <input>: si viene con
+// contenido, tiene que parsear a un número dentro de un rango fisiológico
+// razonable. Vacío sigue siendo válido (no todos los campos se cargan juntos).
+const numStr = (min: number, max: number, label: string) =>
+  z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine((v) => {
+      if (!v || v.trim() === '') return true
+      const n = Number(v.replace(',', '.'))
+      return Number.isFinite(n) && n >= min && n <= max
+    }, `${label} debe estar entre ${min} y ${max}`)
+
 const schema = z.object({
   id: z.coerce.number().int().positive().optional(),
   paciente_id: z.string().uuid(),
@@ -15,12 +29,12 @@ const schema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .refine((v) => v >= haceDiasArgentina(7) && v <= hoyArgentina(), 'La fecha debe estar dentro de los últimos 7 días'),
-  peso_kg: z.string().optional().or(z.literal('')),
-  talla_cm: z.string().optional().or(z.literal('')),
-  porc_grasa: z.string().optional().or(z.literal('')),
-  porc_masa_muscular: z.string().optional().or(z.literal('')),
-  kg_grasa: z.string().optional().or(z.literal('')),
-  kg_musculo: z.string().optional().or(z.literal('')),
+  peso_kg: numStr(1, 400, 'El peso'),
+  talla_cm: numStr(30, 250, 'La talla'),
+  porc_grasa: numStr(0, 100, 'El % de grasa'),
+  porc_masa_muscular: numStr(0, 100, 'El % de masa muscular'),
+  kg_grasa: numStr(0, 200, 'Los kg de grasa'),
+  kg_musculo: numStr(0, 200, 'Los kg de músculo'),
   dx_antropometrico: z.string().max(500).optional().or(z.literal('')),
   observaciones: z.string().max(2000).optional().or(z.literal('')),
 }).refine(

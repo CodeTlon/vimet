@@ -12,7 +12,7 @@ const registerSchema = z
     apellido: z.string().min(1, 'El apellido es obligatorio'),
     email: z.string().email('Email inválido'),
     telefono: z.string().optional().default(''),
-    password: z.string().min(6, 'Mínimo 6 caracteres'),
+    password: z.string().min(8, 'Mínimo 8 caracteres'),
     password_confirm: z.string(),
   })
   .refine((d) => d.password === d.password_confirm, {

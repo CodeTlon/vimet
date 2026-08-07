@@ -2,17 +2,17 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireMobileStaff } from '@/lib/supabase/bearer'
+import { requireMobileAdmin } from '@/lib/supabase/bearer'
 
 export const dynamic = 'force-dynamic'
 
 const schema = z.object({
   email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Mínimo 6 caracteres'),
+  password: z.string().min(8, 'Mínimo 8 caracteres'),
 })
 
 export async function POST(request: Request) {
-  const ctx = await requireMobileStaff(request)
+  const ctx = await requireMobileAdmin(request)
   if ('error' in ctx) return NextResponse.json({ error: ctx.error }, { status: ctx.status })
 
   const parsed = schema.safeParse(await request.json().catch(() => null))

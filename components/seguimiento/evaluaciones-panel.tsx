@@ -39,7 +39,7 @@ export function EvaluacionesPanel({
   evaluaciones: Evaluacion[]
 }) {
   const [editing, setEditing] = useState<Evaluacion | null>(null)
-  const [deleteState, deleteAction] = useActionState(eliminarEvaluacionAction, initial)
+  const [deleteState, deleteAction, deletePending] = useActionState(eliminarEvaluacionAction, initial)
   const deleteVisible = useAutoHideMessage(deleteState)
 
   return (
@@ -107,7 +107,8 @@ export function EvaluacionesPanel({
                     <input type="hidden" name="paciente_id" value={pacienteId} />
                     <button
                       type="submit"
-                      className="inline-flex items-center gap-1 text-sm text-vimet-red hover:underline"
+                      disabled={deletePending}
+                      className="inline-flex items-center gap-1 text-sm text-vimet-red hover:underline disabled:opacity-50"
                     >
                       <Trash2 className="size-4" /> Eliminar
                     </button>

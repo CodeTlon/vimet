@@ -37,6 +37,24 @@ const nextConfig = {
             key: 'Strict-Transport-Security',
             value: 'max-age=63072000; includeSubDomains; preload',
           },
+          // ponytail: sin nonces por script (requeriría middleware). 'unsafe-inline'
+          // en script/style es el techo conocido de esta CSP; igual corta la
+          // superficie real (scripts/conexiones a orígenes ajenos). Subir a
+          // nonce-based strict-dynamic si en algún momento se audita esto en serio.
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https://*.supabase.co",
+              "font-src 'self' data:",
+              "connect-src 'self' https://*.supabase.co",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join('; '),
+          },
         ],
       },
     ]

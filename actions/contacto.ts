@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import ContactoEmail from '@/emails/contacto'
 import { brand } from '@/lib/config/team'
+import { ipDeLaRequest, rateLimit } from '@/lib/rate-limit'
 
 export type ContactoState = {
   ok?: boolean
@@ -33,6 +34,11 @@ export async function contactoAction(
   const parsed = schema.safeParse(fields)
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos', fields }
+  }
+
+  const ip = await ipDeLaRequest()
+  if (!rateLimit(`contacto:${ip}`, 3, 10 * 60 * 1000)) {
+    return { error: 'Demasiados mensajes. Probá de nuevo en un rato.', fields }
   }
 
   const apiKey = process.env.RESEND_API_KEY

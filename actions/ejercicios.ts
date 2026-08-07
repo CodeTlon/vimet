@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { pareceUnGif } from '@/lib/file-sniff'
 import { createClient } from '@/lib/supabase/server'
 
 export type EjercicioCustomState = { ok?: boolean; error?: string }
@@ -61,6 +62,7 @@ export async function crearEjercicioCustomAction(
   if (file.size > MAX_BYTES) return { error: 'El GIF supera el límite de 8 MB — recortá un rango más corto.' }
 
   const buf = Buffer.from(await file.arrayBuffer())
+  if (!pareceUnGif(buf)) return { error: 'El archivo generado no es un GIF.' }
   const storagePath = `custom/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.gif`
 
   const { error: upErr } = await ctx.supabase.storage

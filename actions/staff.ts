@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireStaff } from '@/lib/supabase/auth-helpers'
+import { requireAdmin, requireStaff } from '@/lib/supabase/auth-helpers'
 
 export type StaffState = { ok?: boolean; error?: string }
 
@@ -37,7 +37,7 @@ const configurarProfesionalSchema = z.object({
 
 const passwordSchema = z.object({
   email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Mínimo 6 caracteres'),
+  password: z.string().min(8, 'Mínimo 8 caracteres'),
 })
 
 // tipo de servicio que corresponde a cada rol
@@ -50,7 +50,7 @@ export async function configurarProfesionalAction(
   _prev: unknown,
   formData: FormData,
 ): Promise<StaffState> {
-  await requireStaff()
+  await requireAdmin()
 
   const parsed = configurarProfesionalSchema.safeParse({
     email: formData.get('email'),
@@ -118,7 +118,7 @@ export async function configurarProfesionalAction(
 }
 
 export async function toggleActivoAction(formData: FormData): Promise<void> {
-  await requireStaff()
+  await requireAdmin()
 
   const id = String(formData.get('id') ?? '')
   const activo = formData.get('activo') === 'true'
@@ -144,7 +144,7 @@ export async function cambiarPasswordAction(
   _prev: unknown,
   formData: FormData,
 ): Promise<StaffState> {
-  await requireStaff()
+  await requireAdmin()
 
   const parsed = passwordSchema.safeParse({
     email: formData.get('email'),

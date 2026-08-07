@@ -33,7 +33,7 @@ export function MedicionesPanel({
   mediciones: Medicion[]
 }) {
   const [editing, setEditing] = useState<Medicion | null>(null)
-  const [deleteState, deleteAction] = useActionState(eliminarMedicionAction, initial)
+  const [deleteState, deleteAction, deletePending] = useActionState(eliminarMedicionAction, initial)
   const deleteVisible = useAutoHideMessage(deleteState)
 
   return (
@@ -103,7 +103,8 @@ export function MedicionesPanel({
                           <input type="hidden" name="paciente_id" value={pacienteId} />
                           <button
                             type="submit"
-                            className="text-vimet-red hover:text-vimet-red/80"
+                            disabled={deletePending}
+                            className="text-vimet-red hover:text-vimet-red/80 disabled:opacity-50"
                             aria-label="Eliminar"
                           >
                             <Trash2 className="size-4" />
