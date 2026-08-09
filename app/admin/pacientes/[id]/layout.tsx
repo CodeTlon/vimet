@@ -36,6 +36,7 @@ export default async function PacienteLayout(
     { href: `/admin/pacientes/${params.id}/planes`, label: 'Planes' },
     { href: `/admin/pacientes/${params.id}/feedback`, label: 'Feedback' },
     { href: `/admin/pacientes/${params.id}/evolucion`, label: 'Evolución' },
+    { href: `/admin/pacientes/${params.id}/wearable`, label: 'Reloj' },
     { href: `/admin/pacientes/${params.id}/objetivos`, label: 'Objetivos' },
     { href: `/admin/pacientes/${params.id}/recursos`, label: 'Recursos' },
   ]

@@ -6,6 +6,8 @@ export type Slot = { hora_inicio: string; hora_fin: string }
 
 const SLOT_STEP_MINUTES = 15
 
+const HORA_REGEX = /^([01]\d|2[0-3]):[0-5]\d/
+
 function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(':').map(Number)
   return h * 60 + (m ?? 0)
@@ -93,8 +95,14 @@ export async function getSlotsDisponibles(
 
   const slots: Slot[] = []
   for (const h of horarios) {
-    const wStart = toMinutes(h.hora_inicio.slice(0, 5))
-    const wEnd = toMinutes(h.hora_fin.slice(0, 5))
+    const horaInicio = h.hora_inicio.slice(0, 5)
+    const horaFin = h.hora_fin.slice(0, 5)
+    // Una franja con formato inválido o hora_fin <= hora_inicio (guardada antes de
+    // validar el alta del lado de la app mobile) no debe tirar abajo el día entero:
+    // se ignora esa franja puntual y se sigue con el resto de horarios del profesional.
+    if (!HORA_REGEX.test(horaInicio) || !HORA_REGEX.test(horaFin) || horaFin <= horaInicio) continue
+    const wStart = toMinutes(horaInicio)
+    const wEnd = toMinutes(horaFin)
     for (let t = wStart; t + duracion <= wEnd; t += SLOT_STEP_MINUTES) {
       const inicio = t
       const fin = t + duracion
