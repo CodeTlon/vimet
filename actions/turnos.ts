@@ -128,9 +128,13 @@ export async function crearTurno(
   const servicioId = Number(d.servicio_id)
   const { data: servicio } = await supabase
     .from('servicios')
-    .select('tipo')
+    .select('tipo, profesional_id')
     .eq('id', servicioId)
     .maybeSingle()
+
+  if (!servicio) {
+    return { error: 'Ese servicio ya no está disponible.' }
+  }
 
   const franja: Franja = {
     fecha: d.fecha,
@@ -169,7 +173,7 @@ export async function crearTurno(
     }
 
     // Vincular cada fila con "la otra" (solo soporta el caso de a pares).
-    await Promise.all(
+    const vinculos = await Promise.all(
       creados.map((fila, i) =>
         supabase
           .from('turnos')
@@ -177,9 +181,18 @@ export async function crearTurno(
           .eq('id', fila.id),
       ),
     )
+    if (vinculos.some((r) => r.error)) {
+      // Uno de los dos updates falló: no dejamos turnos "combo" huérfanos.
+      await supabase.from('turnos').delete().in('id', creados.map((f) => f.id))
+      return { error: 'No pudimos reservar el turno. Probá nuevamente.' }
+    }
 
     revalidatePath('/mis-turnos')
     return { ok: true }
+  }
+
+  if (servicio.profesional_id && servicio.profesional_id !== d.profesional_id) {
+    return { error: 'Ese profesional no ofrece el servicio elegido.' }
   }
 
   if (!(await profesionalDisponible(supabase, d.profesional_id, franja))) {

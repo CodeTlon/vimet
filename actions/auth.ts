@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { emailExists } from '@/lib/auth/email-exists'
+import { ipDeLaRequest, rateLimit } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
@@ -31,7 +32,7 @@ const registerSchema = z
     apellido: z.string().min(1, 'El apellido es obligatorio'),
     email: z.string().email('Email inválido'),
     telefono: z.string().optional().default(''),
-    password: z.string().min(6, 'Mínimo 6 caracteres'),
+    password: z.string().min(8, 'Mínimo 8 caracteres'),
     password_confirm: z.string(),
   })
   .refine((d) => d.password === d.password_confirm, {
@@ -46,6 +47,11 @@ export async function loginAction(_prev: unknown, formData: FormData): Promise<A
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+  }
+
+  const ip = await ipDeLaRequest()
+  if (!rateLimit(`login:${ip}:${parsed.data.email}`, 10, 5 * 60 * 1000)) {
+    return { error: 'Demasiados intentos. Probá de nuevo en unos minutos.' }
   }
 
   const supabase = await createClient()
@@ -141,6 +147,14 @@ export async function recuperarContrasenaAction(
     return { error: 'Ingresá un email válido.' }
   }
 
+  const ip = await ipDeLaRequest()
+  const okIp = rateLimit(`recuperar-ip:${ip}`, 10, 60 * 60 * 1000)
+  const okEmail = rateLimit(`recuperar-email:${parsed.data}`, 3, 60 * 60 * 1000)
+  if (!okIp || !okEmail) {
+    // Mismo mensaje "ok" que el caso normal: no delatamos el rate limit.
+    return { ok: true, fields: { email: parsed.data } }
+  }
+
   const supabase = await createClient()
   // Código de 8 dígitos en vez de link clickeable: un link de un solo uso se
   // puede quemar solo con que el cliente de mail lo pre-visite (link preview),
@@ -158,7 +172,7 @@ const codigoRecuperacionSchema = z
   .object({
     email: z.string().email(),
     token: z.string().min(8, 'Código inválido').max(8, 'Código inválido'),
-    password: z.string().min(6, 'Mínimo 6 caracteres'),
+    password: z.string().min(8, 'Mínimo 8 caracteres'),
     confirm: z.string(),
   })
   .refine((d) => d.password === d.confirm, {
@@ -179,6 +193,11 @@ export async function confirmarRecuperacionAction(
   })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos', fields: { email } }
+  }
+
+  const ip = await ipDeLaRequest()
+  if (!rateLimit(`confirmar-recuperacion:${ip}:${parsed.data.email}`, 5, 15 * 60 * 1000)) {
+    return { error: 'Demasiados intentos. Pedí un código nuevo en unos minutos.', fields: { email } }
   }
 
   const supabase = await createClient()

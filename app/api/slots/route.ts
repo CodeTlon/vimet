@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { getSlotsDisponibles, getSlotsDisponiblesCombo } from '@/lib/booking/slots'
+import { ipDeRequest, rateLimit } from '@/lib/rate-limit'
 import { createClientFromToken } from '@/lib/supabase/bearer'
 import { createClient } from '@/lib/supabase/server'
 
@@ -15,6 +16,10 @@ async function getClient(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  if (!rateLimit(`slots:${ipDeRequest(request)}`, 60, 60 * 1000)) {
+    return NextResponse.json({ error: 'Demasiados intentos' }, { status: 429 })
+  }
+
   const url = request.nextUrl
   const profesionalId = url.searchParams.get('profesional_id') ?? ''
   const fecha = url.searchParams.get('fecha') ?? ''

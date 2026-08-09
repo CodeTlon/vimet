@@ -42,3 +42,14 @@ export async function requireStaff() {
   }
   return { user, profile }
 }
+
+// Para acciones que tocan cuentas de otro staff (passwords, roles, alta/baja):
+// requireStaff() sólo exige "no ser paciente", no alcanza para eso.
+export async function requireAdmin() {
+  const { user, profile } = await getUserAndProfile()
+  if (!user || !profile) redirect('/login')
+  if (profile.rol !== 'admin') {
+    redirect('/mis-turnos')
+  }
+  return { user, profile }
+}

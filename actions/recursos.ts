@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { pareceUnPdf, pareceUnVideo } from '@/lib/file-sniff'
 import { optimizeImage } from '@/lib/storage/optimize-image'
 import { createClient } from '@/lib/supabase/server'
 
@@ -114,6 +115,10 @@ export async function crearRecursoAction(
       buf = await optimizeImage(buf)
       contentType = 'image/webp'
       storage_path = storage_path.replace(/\.\w+$/, '') + '.webp'
+    } else if (t === 'pdf' && !pareceUnPdf(buf)) {
+      return { error: 'El archivo no es un PDF válido.' }
+    } else if (t === 'video' && !pareceUnVideo(buf, file.type)) {
+      return { error: 'El archivo no es un video válido.' }
     }
 
     const { error: upErr } = await ctx.supabase.storage

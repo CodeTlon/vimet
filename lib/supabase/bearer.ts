@@ -38,3 +38,19 @@ export async function requireMobileStaff(request: Request) {
   }
   return ctx
 }
+
+// Para rutas que tocan cuentas de otro staff (passwords, roles, alta/baja):
+// requireMobileStaff() sólo exige "no ser paciente", no alcanza para eso.
+export async function requireMobileAdmin(request: Request) {
+  const ctx = await requireMobileUser(request)
+  if ('error' in ctx) return ctx
+  const { data: profile } = await ctx.supabase
+    .from('profiles')
+    .select('rol')
+    .eq('id', ctx.user.id)
+    .maybeSingle()
+  if (!profile || profile.rol !== 'admin') {
+    return { error: 'No autorizado' as const, status: 403 as const }
+  }
+  return ctx
+}

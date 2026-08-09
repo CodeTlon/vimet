@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 import { lunesDeSemanaArgentina } from '@/lib/datetime'
+import { pareceUnPdf } from '@/lib/file-sniff'
 import { optimizeImage } from '@/lib/storage/optimize-image'
 import { createClient } from '@/lib/supabase/server'
 
@@ -127,6 +128,8 @@ export async function enviarFeedbackAction(
       buf = await optimizeImage(buf)
       contentType = 'image/webp'
       adjunto_path = adjunto_path.replace(/\.\w+$/, '') + '.webp'
+    } else if (!pareceUnPdf(buf)) {
+      return { error: 'El archivo no es un PDF válido.' }
     }
 
     const { error: upErr } = await supabase.storage
