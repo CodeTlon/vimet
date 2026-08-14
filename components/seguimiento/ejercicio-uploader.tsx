@@ -1,10 +1,11 @@
 'use client'
 
 import GIF from 'gif.js'
-import { Film, Loader2, Upload } from 'lucide-react'
+import { Film, Loader2, Upload, Youtube } from 'lucide-react'
 import { useRef, useState, useTransition } from 'react'
 
 import { crearEjercicioCustomAction } from '@/actions/ejercicios'
+import { extraerYoutubeId, miniaturaYoutube } from '@/lib/youtube'
 
 const MAX_DUR = 6
 const MIN_DUR = 0.3
@@ -33,6 +34,9 @@ export function EjercicioUploader() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPending, startTransition] = useTransition()
 
+  const [modo, setModo] = useState<'gif' | 'youtube'>('gif')
+  const [youtubeUrl, setYoutubeUrl] = useState('')
+
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [duration, setDuration] = useState(0)
   const [inicio, setInicio] = useState(0)
@@ -49,6 +53,9 @@ export function EjercicioUploader() {
   const [instrucciones, setInstrucciones] = useState('')
   const [message, setMessage] = useState<{ ok?: boolean; error?: string } | null>(null)
 
+  const youtubeId = modo === 'youtube' ? extraerYoutubeId(youtubeUrl) : null
+  const listoParaFormulario = modo === 'gif' ? !!gifPreviewUrl : !!youtubeId
+
   function resetTodo() {
     if (videoUrl) URL.revokeObjectURL(videoUrl)
     if (gifPreviewUrl) URL.revokeObjectURL(gifPreviewUrl)
@@ -58,9 +65,15 @@ export function EjercicioUploader() {
     setFin(0)
     setGifBlob(null)
     setGifPreviewUrl(null)
+    setYoutubeUrl('')
     setNombre('')
     setParteCuerpo('')
     setInstrucciones('')
+  }
+
+  function cambiarModo(m: 'gif' | 'youtube') {
+    resetTodo()
+    setModo(m)
   }
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -134,13 +147,18 @@ export function EjercicioUploader() {
   }
 
   function guardar() {
-    if (!gifBlob || !nombre.trim()) return
+    if (!nombre.trim() || !listoParaFormulario) return
     const fd = new FormData()
     fd.set('nombre', nombre.trim())
     fd.set('categoria', categoria)
     fd.set('parte_cuerpo', parteCuerpo)
     fd.set('instrucciones', instrucciones)
-    fd.set('gif', new File([gifBlob], 'ejercicio.gif', { type: 'image/gif' }))
+    if (modo === 'youtube') {
+      fd.set('youtube_url', youtubeUrl.trim())
+    } else {
+      if (!gifBlob) return
+      fd.set('gif', new File([gifBlob], 'ejercicio.gif', { type: 'image/gif' }))
+    }
 
     startTransition(async () => {
       const res = await crearEjercicioCustomAction(undefined, fd)
@@ -156,7 +174,51 @@ export function EjercicioUploader() {
         Subir ejercicio propio
       </h3>
 
-      {!videoUrl ? (
+      <div className="inline-flex rounded-lg border border-gray-200 p-1 text-sm">
+        <button
+          type="button"
+          onClick={() => cambiarModo('gif')}
+          className={`px-3 py-1.5 rounded-md font-medium transition-colors ${modo === 'gif' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          Video (GIF)
+        </button>
+        <button
+          type="button"
+          onClick={() => cambiarModo('youtube')}
+          className={`px-3 py-1.5 rounded-md font-medium transition-colors ${modo === 'youtube' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          Link de YouTube
+        </button>
+      </div>
+
+      {modo === 'youtube' ? (
+        <div className="space-y-3">
+          <input
+            value={youtubeUrl}
+            onChange={(e) => setYoutubeUrl(e.target.value)}
+            placeholder="https://www.youtube.com/watch?v=..."
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+          />
+          {youtubeUrl.trim() && !youtubeId ? (
+            <p className="text-xs text-vimet-red">No pudimos reconocer ese link como un video de YouTube.</p>
+          ) : null}
+          {youtubeId ? (
+            <div className="relative w-full max-w-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={miniaturaYoutube(youtubeId)}
+                alt="Miniatura del video de YouTube"
+                className="w-full aspect-video object-cover rounded-lg border border-gray-100"
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="size-12 rounded-full bg-red-600/90 flex items-center justify-center">
+                  <Youtube className="size-6 text-white" />
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : !videoUrl ? (
         <label className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 p-8 text-center text-sm text-gray-500 cursor-pointer hover:border-vimet-orange/40 hover:text-vimet-orange transition-colors">
           <Upload className="size-6" />
           Elegí un video corto (de tu celular o de otra fuente)
@@ -226,10 +288,12 @@ export function EjercicioUploader() {
         </div>
       )}
 
-      {gifPreviewUrl ? (
+      {listoParaFormulario ? (
         <div className="space-y-3 border-t border-gray-100 pt-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={gifPreviewUrl} alt="Vista previa del GIF generado" className="max-w-[240px] rounded-lg border border-gray-100" />
+          {modo === 'gif' && gifPreviewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={gifPreviewUrl} alt="Vista previa del GIF generado" className="max-w-[240px] rounded-lg border border-gray-100" />
+          ) : null}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input

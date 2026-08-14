@@ -40,7 +40,7 @@ export default async function MiPlanDetallePage(
       ? await supabase
           .from('plan_ejercicios')
           .select(
-            'id, dia_semana, series, repeticiones, descanso_seg, notas, ejercicio:ejercicios(nombre, gif_url, imagen_url, atribucion, instrucciones)',
+            'id, dia_semana, series, repeticiones, descanso_seg, notas, ejercicio:ejercicios(nombre, gif_url, imagen_url, youtube_url, atribucion, instrucciones)',
           )
           .eq('plan_id', Number(params.id))
           .order('orden')

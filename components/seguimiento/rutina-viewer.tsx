@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useState } from 'react'
 
 import { EjercicioModal, type EjercicioDetalle } from '@/components/seguimiento/ejercicio-modal'
+import { EjercicioYoutubeThumbnail } from '@/components/seguimiento/ejercicio-youtube-thumbnail'
 
 const DIA_LABEL: Record<string, string> = {
   lunes: 'Lunes',
@@ -27,6 +28,7 @@ export type RutinaEjercicio = {
     nombre: string
     gif_url: string | null
     imagen_url: string | null
+    youtube_url: string | null
     atribucion: string | null
     instrucciones: string | null
   } | null
@@ -82,69 +84,88 @@ export function RutinaViewer({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {rutina
                   .filter((r) => (r.dia_semana ?? '') === dia)
-                  .map((r, idx) => (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() =>
-                        r.ejercicio &&
-                        setEjercicioAbierto({
-                          nombre: r.ejercicio.nombre,
-                          gif_url: r.ejercicio.gif_url,
-                          imagen_url: r.ejercicio.imagen_url,
-                          instrucciones: r.ejercicio.instrucciones,
-                        })
-                      }
-                      className="group flex items-center gap-4 rounded-lg border border-gray-100 p-3 text-left hover:border-vimet-orange/40"
-                    >
-                      {r.ejercicio?.imagen_url || r.ejercicio?.gif_url ? (
-                        <span className="relative size-24 lg:size-36 print:size-40 rounded-md overflow-hidden shrink-0 bg-gray-100">
-                          {r.ejercicio.imagen_url ? (
-                            <Image
-                              src={r.ejercicio.imagen_url}
-                              alt={r.ejercicio.nombre}
-                              width={144}
-                              height={144}
-                              unoptimized
-                              className="absolute inset-0 size-full object-cover transition-opacity group-hover:opacity-0"
-                            />
-                          ) : null}
-                          {r.ejercicio.gif_url ? (
-                            <Image
-                              src={r.ejercicio.gif_url}
-                              alt={r.ejercicio.nombre}
-                              width={144}
-                              height={144}
-                              unoptimized
-                              className="absolute inset-0 size-full object-cover opacity-0 transition-opacity group-hover:opacity-100 print:hidden"
-                            />
-                          ) : null}
-                        </span>
-                      ) : (
-                        <div className="size-24 lg:size-36 print:size-40 rounded-md bg-gray-100 shrink-0" />
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900">
-                          {idx + 1}. {r.ejercicio?.nombre}
-                        </p>
-                        <p className="text-xs text-gray-600 mt-0.5">
-                          {[
-                            r.series ? `${r.series} series` : null,
-                            r.repeticiones ? `${r.repeticiones} reps` : null,
-                            r.descanso_seg ? `${r.descanso_seg}s descanso` : null,
-                          ]
-                            .filter(Boolean)
-                            .join(' · ') || '—'}
-                        </p>
-                        {r.notas ? <p className="text-xs text-gray-500 mt-0.5">{r.notas}</p> : null}
-                        {r.ejercicio?.instrucciones ? (
-                          <p className="text-xs text-gray-400 line-clamp-3 print:line-clamp-6 mt-0.5">
-                            {r.ejercicio.instrucciones}
+                  .map((r, idx) => {
+                    const youtubeUrl = r.ejercicio?.youtube_url
+                    const contenido = (
+                      <>
+                        {youtubeUrl ? (
+                          <EjercicioYoutubeThumbnail
+                            url={youtubeUrl}
+                            alt={r.ejercicio?.nombre ?? ''}
+                            className="size-24 lg:size-36 print:size-40 rounded-md shrink-0"
+                          />
+                        ) : r.ejercicio?.imagen_url || r.ejercicio?.gif_url ? (
+                          <span className="relative size-24 lg:size-36 print:size-40 rounded-md overflow-hidden shrink-0 bg-gray-100">
+                            {r.ejercicio.imagen_url ? (
+                              <Image
+                                src={r.ejercicio.imagen_url}
+                                alt={r.ejercicio.nombre}
+                                width={144}
+                                height={144}
+                                unoptimized
+                                className="absolute inset-0 size-full object-cover transition-opacity group-hover:opacity-0"
+                              />
+                            ) : null}
+                            {r.ejercicio.gif_url ? (
+                              <Image
+                                src={r.ejercicio.gif_url}
+                                alt={r.ejercicio.nombre}
+                                width={144}
+                                height={144}
+                                unoptimized
+                                className="absolute inset-0 size-full object-cover opacity-0 transition-opacity group-hover:opacity-100 print:hidden"
+                              />
+                            ) : null}
+                          </span>
+                        ) : (
+                          <div className="size-24 lg:size-36 print:size-40 rounded-md bg-gray-100 shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900">
+                            {idx + 1}. {r.ejercicio?.nombre}
                           </p>
-                        ) : null}
-                      </div>
-                    </button>
-                  ))}
+                          <p className="text-xs text-gray-600 mt-0.5">
+                            {[
+                              r.series ? `${r.series} series` : null,
+                              r.repeticiones ? `${r.repeticiones} reps` : null,
+                              r.descanso_seg ? `${r.descanso_seg}s descanso` : null,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ') || '—'}
+                          </p>
+                          {r.notas ? <p className="text-xs text-gray-500 mt-0.5">{r.notas}</p> : null}
+                          {r.ejercicio?.instrucciones ? (
+                            <p className="text-xs text-gray-400 line-clamp-3 print:line-clamp-6 mt-0.5">
+                              {r.ejercicio.instrucciones}
+                            </p>
+                          ) : null}
+                        </div>
+                      </>
+                    )
+                    const className = 'group flex items-center gap-4 rounded-lg border border-gray-100 p-3 text-left hover:border-vimet-orange/40'
+                    return youtubeUrl ? (
+                      <a key={r.id} href={youtubeUrl} target="_blank" rel="noopener noreferrer" className={className}>
+                        {contenido}
+                      </a>
+                    ) : (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() =>
+                          r.ejercicio &&
+                          setEjercicioAbierto({
+                            nombre: r.ejercicio.nombre,
+                            gif_url: r.ejercicio.gif_url,
+                            imagen_url: r.ejercicio.imagen_url,
+                            instrucciones: r.ejercicio.instrucciones,
+                          })
+                        }
+                        className={className}
+                      >
+                        {contenido}
+                      </button>
+                    )
+                  })}
               </div>
             )}
           </div>

@@ -12,6 +12,7 @@ import {
 } from '@/actions/plan-ejercicios'
 import { EjercicioModal, type EjercicioDetalle } from '@/components/seguimiento/ejercicio-modal'
 import { EjercicioPicker, type EjercicioResultado } from '@/components/seguimiento/ejercicio-picker'
+import { EjercicioYoutubeThumbnail } from '@/components/seguimiento/ejercicio-youtube-thumbnail'
 import { NotaTextarea } from '@/components/ui/nota-textarea'
 
 const DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'] as const
@@ -42,6 +43,7 @@ export type RutinaItem = {
     nombre: string
     imagen_url: string | null
     gif_url: string | null
+    youtube_url: string | null
     instrucciones: string | null
   } | null
 }
@@ -118,6 +120,7 @@ export function RutinaPanel({
               nombre: ejercicio.nombre,
               imagen_url: ejercicio.imagen_url,
               gif_url: ejercicio.gif_url,
+              youtube_url: ejercicio.youtube_url,
               instrucciones: ejercicio.instrucciones,
             },
           },
@@ -268,43 +271,59 @@ export function RutinaPanel({
                     >
                       <td className="py-2 pr-2 text-gray-500">{idx + 1}</td>
                       <td className="py-2 pr-2 font-medium text-gray-900">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            item.ejercicio &&
-                            setEjercicioAbierto({
-                              nombre: item.ejercicio.nombre,
-                              gif_url: item.ejercicio.gif_url,
-                              imagen_url: item.ejercicio.imagen_url,
-                              instrucciones: item.ejercicio.instrucciones,
-                            })
-                          }
-                          className="group flex items-center gap-2 text-left hover:text-vimet-orange"
-                        >
-                          {item.ejercicio?.imagen_url ? (
-                            <span className="relative size-16 lg:size-28 rounded-md overflow-hidden shrink-0 bg-gray-100">
-                              <Image
-                                src={item.ejercicio.imagen_url}
-                                alt=""
-                                width={112}
-                                height={112}
-                                unoptimized
-                                className="absolute inset-0 size-full object-cover transition-opacity group-hover:opacity-0"
-                              />
-                              {item.ejercicio.gif_url ? (
+                        {item.ejercicio?.youtube_url ? (
+                          <a
+                            href={item.ejercicio.youtube_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex items-center gap-2 text-left hover:text-vimet-orange"
+                          >
+                            <EjercicioYoutubeThumbnail
+                              url={item.ejercicio.youtube_url}
+                              alt=""
+                              className="size-16 lg:size-28 rounded-md shrink-0"
+                            />
+                            <span>{item.ejercicio.nombre}</span>
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              item.ejercicio &&
+                              setEjercicioAbierto({
+                                nombre: item.ejercicio.nombre,
+                                gif_url: item.ejercicio.gif_url,
+                                imagen_url: item.ejercicio.imagen_url,
+                                instrucciones: item.ejercicio.instrucciones,
+                              })
+                            }
+                            className="group flex items-center gap-2 text-left hover:text-vimet-orange"
+                          >
+                            {item.ejercicio?.imagen_url ? (
+                              <span className="relative size-16 lg:size-28 rounded-md overflow-hidden shrink-0 bg-gray-100">
                                 <Image
-                                  src={item.ejercicio.gif_url}
+                                  src={item.ejercicio.imagen_url}
                                   alt=""
                                   width={112}
                                   height={112}
                                   unoptimized
-                                  className="absolute inset-0 size-full object-cover opacity-0 transition-opacity group-hover:opacity-100"
+                                  className="absolute inset-0 size-full object-cover transition-opacity group-hover:opacity-0"
                                 />
-                              ) : null}
-                            </span>
-                          ) : null}
-                          <span>{item.ejercicio?.nombre ?? '—'}</span>
-                        </button>
+                                {item.ejercicio.gif_url ? (
+                                  <Image
+                                    src={item.ejercicio.gif_url}
+                                    alt=""
+                                    width={112}
+                                    height={112}
+                                    unoptimized
+                                    className="absolute inset-0 size-full object-cover opacity-0 transition-opacity group-hover:opacity-100"
+                                  />
+                                ) : null}
+                              </span>
+                            ) : null}
+                            <span>{item.ejercicio?.nombre ?? '—'}</span>
+                          </button>
+                        )}
                       </td>
                       <td className="py-2 pr-2">
                         <input

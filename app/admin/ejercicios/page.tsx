@@ -1,5 +1,6 @@
 import { EjercicioDeleteButton } from '@/components/seguimiento/ejercicio-delete-button'
 import { EjercicioUploader } from '@/components/seguimiento/ejercicio-uploader'
+import { EjercicioYoutubeThumbnail } from '@/components/seguimiento/ejercicio-youtube-thumbnail'
 import { requireStaff } from '@/lib/supabase/auth-helpers'
 import { createClient } from '@/lib/supabase/server'
 
@@ -18,6 +19,7 @@ type EjercicioCustom = {
   categoria: string | null
   parte_cuerpo: string | null
   gif_url: string | null
+  youtube_url: string | null
   instrucciones: string | null
 }
 
@@ -27,7 +29,7 @@ export default async function EjerciciosPage() {
 
   const { data } = await supabase
     .from('ejercicios')
-    .select('id, nombre, categoria, parte_cuerpo, gif_url, instrucciones')
+    .select('id, nombre, categoria, parte_cuerpo, gif_url, youtube_url, instrucciones')
     .eq('origen', 'staff')
     .order('created_at', { ascending: false })
 
@@ -50,7 +52,9 @@ export default async function EjerciciosPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {ejercicios.map((e) => (
             <div key={e.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              {e.gif_url ? (
+              {e.youtube_url ? (
+                <EjercicioYoutubeThumbnail url={e.youtube_url} alt={e.nombre} className="w-full aspect-video" />
+              ) : e.gif_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={e.gif_url} alt={e.nombre} className="w-full aspect-video object-cover bg-gray-100" />
               ) : (

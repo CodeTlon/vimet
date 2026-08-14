@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import { pareceUnGif } from '@/lib/file-sniff'
 import { createClient } from '@/lib/supabase/server'
+import { extraerYoutubeId } from '@/lib/youtube'
 
 export type EjercicioCustomState = { ok?: boolean; error?: string }
 
@@ -56,21 +57,35 @@ export async function crearEjercicioCustomAction(
     .maybeSingle()
   if (existente) return { error: 'Ya existe un ejercicio con ese nombre.' }
 
-  const file = formData.get('gif') as File | null
-  if (!file || file.size === 0) return { error: 'Generá el GIF antes de guardar.' }
-  if (file.type !== 'image/gif') return { error: 'El archivo generado no es un GIF.' }
-  if (file.size > MAX_BYTES) return { error: 'El GIF supera el límite de 8 MB — recortá un rango más corto.' }
+  // Alternativa al GIF: un link de YouTube pegado por el staff. Se guarda
+  // uno de los dos medios, nunca los dos (constraint `ejercicios_media_check`
+  // en la migración 0030 blinda esto también a nivel DB).
+  const youtubeUrlRaw = String(formData.get('youtube_url') ?? '').trim()
 
-  const buf = Buffer.from(await file.arrayBuffer())
-  if (!pareceUnGif(buf)) return { error: 'El archivo generado no es un GIF.' }
-  const storagePath = `custom/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.gif`
+  let gif_url: string | null = null
+  let youtube_url: string | null = null
+  let storagePath: string | null = null
 
-  const { error: upErr } = await ctx.supabase.storage
-    .from('ejercicios-media')
-    .upload(storagePath, buf, { contentType: 'image/gif', upsert: false })
-  if (upErr) return { error: 'No se pudo subir el GIF.' }
+  if (youtubeUrlRaw) {
+    if (!extraerYoutubeId(youtubeUrlRaw)) return { error: 'Link de YouTube inválido.' }
+    youtube_url = youtubeUrlRaw
+  } else {
+    const file = formData.get('gif') as File | null
+    if (!file || file.size === 0) return { error: 'Generá el GIF antes de guardar.' }
+    if (file.type !== 'image/gif') return { error: 'El archivo generado no es un GIF.' }
+    if (file.size > MAX_BYTES) return { error: 'El GIF supera el límite de 8 MB — recortá un rango más corto.' }
 
-  const gif_url = ctx.supabase.storage.from('ejercicios-media').getPublicUrl(storagePath).data.publicUrl
+    const buf = Buffer.from(await file.arrayBuffer())
+    if (!pareceUnGif(buf)) return { error: 'El archivo generado no es un GIF.' }
+    storagePath = `custom/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.gif`
+
+    const { error: upErr } = await ctx.supabase.storage
+      .from('ejercicios-media')
+      .upload(storagePath, buf, { contentType: 'image/gif', upsert: false })
+    if (upErr) return { error: 'No se pudo subir el GIF.' }
+
+    gif_url = ctx.supabase.storage.from('ejercicios-media').getPublicUrl(storagePath).data.publicUrl
+  }
 
   const { error } = await ctx.supabase.from('ejercicios').insert({
     nombre: d.nombre.trim(),
@@ -78,11 +93,12 @@ export async function crearEjercicioCustomAction(
     parte_cuerpo: d.parte_cuerpo?.trim() || null,
     instrucciones: d.instrucciones?.trim() || null,
     gif_url,
+    youtube_url,
     origen: 'staff',
     creado_por: ctx.user.id,
   })
   if (error) {
-    await ctx.supabase.storage.from('ejercicios-media').remove([storagePath])
+    if (storagePath) await ctx.supabase.storage.from('ejercicios-media').remove([storagePath])
     return { error: 'No se pudo guardar el ejercicio.' }
   }
 

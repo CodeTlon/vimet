@@ -3,6 +3,8 @@
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 
+import { EjercicioYoutubeThumbnail } from '@/components/seguimiento/ejercicio-youtube-thumbnail'
+
 export type EjercicioResultado = {
   id: number
   nombre: string
@@ -10,6 +12,7 @@ export type EjercicioResultado = {
   equipo: string | null
   imagen_url: string | null
   gif_url: string | null
+  youtube_url: string | null
   instrucciones: string | null
 }
 
@@ -93,7 +96,9 @@ export function EjercicioPicker({
               onClick={() => onAgregar(e)}
               className="group w-full flex items-center gap-3 p-2 text-left hover:bg-gray-50"
             >
-              {e.imagen_url ? (
+              {e.youtube_url ? (
+                <EjercicioYoutubeThumbnail url={e.youtube_url} alt="" className="size-16 lg:size-24 rounded-md shrink-0" />
+              ) : e.imagen_url ? (
                 <span className="relative size-16 lg:size-24 rounded-md overflow-hidden shrink-0 bg-gray-100">
                   <Image
                     src={e.imagen_url}
