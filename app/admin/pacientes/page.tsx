@@ -2,6 +2,7 @@ import { ArrowRight, Mail, Phone, UsersRound } from 'lucide-react'
 import Link from 'next/link'
 
 import { toggleActivoAction } from '@/actions/staff'
+import { CrearPacienteButton } from '@/components/crear-paciente-button'
 import { Pagination } from '@/components/pagination'
 import { PacienteDeleteButton } from '@/components/paciente-delete-button'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
@@ -17,6 +18,7 @@ type Paciente = {
   telefono: string | null
   activo: boolean
   activado_en: string | null
+  gestionado_por_staff: boolean
   created_at: string
 }
 
@@ -33,7 +35,7 @@ export default async function PacientesPage(
   const [{ data, count }, { count: activosCount }, { count: pendientesCount }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, nombre, apellido, email, telefono, activo, activado_en, created_at', { count: 'exact' })
+      .select('id, nombre, apellido, email, telefono, activo, activado_en, gestionado_por_staff, created_at', { count: 'exact' })
       .eq('rol', 'paciente')
       .order('activo', { ascending: true })   // pendientes primero
       .order('created_at', { ascending: false })
@@ -65,6 +67,7 @@ export default async function PacientesPage(
               {pendientes} pendiente{pendientes > 1 ? 's' : ''}
             </span>
           )}
+          <CrearPacienteButton />
         </div>
       </header>
 
@@ -86,6 +89,11 @@ export default async function PacientesPage(
                       </Link>
                     ) : (
                       <span>{p.nombre} {p.apellido}</span>
+                    )}
+                    {p.gestionado_por_staff && (
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full border text-blue-700 bg-blue-50 border-blue-200 shrink-0">
+                        Gestionado
+                      </span>
                     )}
                   </div>
                   {!p.activo && (
@@ -171,6 +179,11 @@ export default async function PacientesPage(
                           </Link>
                         ) : (
                           <span>{p.nombre} {p.apellido}</span>
+                        )}
+                        {p.gestionado_por_staff && (
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full border text-blue-700 bg-blue-50 border-blue-200 shrink-0">
+                            Gestionado
+                          </span>
                         )}
                         {!p.activo && (
                           <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${p.activado_en ? 'text-gray-500 bg-gray-100 border-gray-200' : 'text-amber-700 bg-amber-100 border-amber-200'}`}>

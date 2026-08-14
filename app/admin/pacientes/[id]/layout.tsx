@@ -22,7 +22,7 @@ export default async function PacienteLayout(
   const supabase = await createClient()
   const { data: paciente } = await supabase
     .from('profiles')
-    .select('id, nombre, apellido, email, telefono, rol, created_at')
+    .select('id, nombre, apellido, email, telefono, rol, created_at, gestionado_por_staff')
     .eq('id', params.id)
     .maybeSingle()
 
@@ -52,8 +52,13 @@ export default async function PacienteLayout(
       <header className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900">
+            <h1 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
               {paciente.nombre} {paciente.apellido}
+              {paciente.gestionado_por_staff && (
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full border text-blue-700 bg-blue-50 border-blue-200">
+                  Cuenta gestionada
+                </span>
+              )}
             </h1>
             <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-700">
               {paciente.email ? (
