@@ -157,9 +157,11 @@ export function EjercicioUploader() {
     if (!nombre.trim() || !listoParaFormulario) return
     const fd = new FormData()
     fd.set('nombre', nombre.trim())
-    fd.set('categoria', categoria)
     fd.set('modo', tipoEjercicio)
-    fd.set('parte_cuerpo', parteCuerpo)
+    if (tipoEjercicio === 'fuerza') {
+      fd.set('categoria', categoria)
+      fd.set('parte_cuerpo', parteCuerpo)
+    }
     fd.set('instrucciones', instrucciones)
     if (modo === 'youtube') {
       fd.set('youtube_url', youtubeUrl.trim())
@@ -324,24 +326,28 @@ export function EjercicioUploader() {
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Nombre del ejercicio"
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+              className={`rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange ${tipoEjercicio === 'cardio' ? 'sm:col-span-2' : ''}`}
             />
-            <select
-              value={categoria}
-              onChange={(e) => setCategoria(e.target.value as typeof categoria)}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
-            >
-              {CATEGORIAS.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
-            {categoria === 'grupo_muscular' ? (
-              <input
-                value={parteCuerpo}
-                onChange={(e) => setParteCuerpo(e.target.value)}
-                placeholder="Grupo muscular (ej: piernas, espalda)"
-                className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange sm:col-span-2"
-              />
+            {tipoEjercicio === 'fuerza' ? (
+              <>
+                <select
+                  value={categoria}
+                  onChange={(e) => setCategoria(e.target.value as typeof categoria)}
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+                >
+                  {CATEGORIAS.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+                {categoria === 'grupo_muscular' ? (
+                  <input
+                    value={parteCuerpo}
+                    onChange={(e) => setParteCuerpo(e.target.value)}
+                    placeholder="Grupo muscular (ej: piernas, espalda)"
+                    className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange sm:col-span-2"
+                  />
+                ) : null}
+              </>
             ) : null}
             <textarea
               value={instrucciones}

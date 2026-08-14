@@ -31,13 +31,21 @@ async function requireStaff() {
   return { user, supabase }
 }
 
-const crearSchema = z.object({
-  nombre: z.string().min(1, 'El nombre es requerido').max(200),
-  categoria: z.enum(CATEGORIAS),
-  modo: z.enum(MODOS).default('fuerza'),
-  parte_cuerpo: z.string().max(60).optional().or(z.literal('')),
-  instrucciones: z.string().max(1000).optional().or(z.literal('')),
-})
+// La categoría (calentamiento/entrenamiento/enfriamiento/grupo_muscular) solo
+// aplica a ejercicios de fuerza — uno de cardio ya trae sus propias 3 fases
+// adentro, no tiene sentido clasificarlo también por fase de sesión.
+const crearSchema = z
+  .object({
+    nombre: z.string().min(1, 'El nombre es requerido').max(200),
+    categoria: z.enum(CATEGORIAS).optional(),
+    modo: z.enum(MODOS).default('fuerza'),
+    parte_cuerpo: z.string().max(60).optional().or(z.literal('')),
+    instrucciones: z.string().max(1000).optional().or(z.literal('')),
+  })
+  .refine((d) => d.modo === 'cardio' || d.categoria != null, {
+    message: 'La categoría es requerida',
+    path: ['categoria'],
+  })
 
 export async function crearEjercicioCustomAction(
   _prev: unknown,
@@ -91,7 +99,7 @@ export async function crearEjercicioCustomAction(
 
   const { error } = await ctx.supabase.from('ejercicios').insert({
     nombre: d.nombre.trim(),
-    categoria: d.categoria,
+    categoria: d.modo === 'cardio' ? null : d.categoria,
     modo: d.modo,
     parte_cuerpo: d.parte_cuerpo?.trim() || null,
     instrucciones: d.instrucciones?.trim() || null,
