@@ -39,8 +39,10 @@ export async function requireMobileStaff(request: Request) {
   return ctx
 }
 
-// Para rutas que tocan cuentas de otro staff (passwords, roles, alta/baja):
+// Para rutas que tocan cuentas de otro staff (passwords, roles):
 // requireMobileStaff() sólo exige "no ser paciente", no alcanza para eso.
+// Activar/desactivar paciente sí queda abierto a cualquier staff (ver
+// app/api/mobile/staff/toggle-activo).
 export async function requireMobileAdmin(request: Request) {
   const ctx = await requireMobileUser(request)
   if ('error' in ctx) return ctx
