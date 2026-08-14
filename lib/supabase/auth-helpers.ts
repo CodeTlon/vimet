@@ -43,8 +43,10 @@ export async function requireStaff() {
   return { user, profile }
 }
 
-// Para acciones que tocan cuentas de otro staff (passwords, roles, alta/baja):
-// requireStaff() sólo exige "no ser paciente", no alcanza para eso.
+// Para acciones que tocan cuentas de otro staff (passwords, roles):
+// requireStaff() sólo exige "no ser paciente", no alcanza para eso. Activar/
+// desactivar y eliminar pacientes sí quedan abiertos a cualquier staff (ver
+// actions/staff.ts) — ahí alcanza con requireStaff().
 export async function requireAdmin() {
   const { user, profile } = await getUserAndProfile()
   if (!user || !profile) redirect('/login')

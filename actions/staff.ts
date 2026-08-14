@@ -184,7 +184,7 @@ export async function crearPacienteGestionadoAction(
 }
 
 export async function toggleActivoAction(formData: FormData): Promise<void> {
-  await requireAdmin()
+  await requireStaff()
 
   const id = String(formData.get('id') ?? '')
   const activo = formData.get('activo') === 'true'
