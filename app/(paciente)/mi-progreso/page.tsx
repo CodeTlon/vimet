@@ -138,6 +138,7 @@ export default async function MiProgresoPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h2 className="font-heading font-semibold text-gray-900 mb-3">Peso (kg)</h2>
             <ExpandableChart
+              title="Peso (kg)"
               series={[
                 {
                   label: 'Peso',
@@ -154,6 +155,7 @@ export default async function MiProgresoPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h2 className="font-heading font-semibold text-gray-900 mb-3">Composición corporal</h2>
             <ExpandableChart
+              title="Composición corporal"
               series={[
                 {
                   label: '% grasa',
@@ -182,6 +184,7 @@ export default async function MiProgresoPage() {
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
           <h2 className="font-heading font-semibold text-gray-900 mb-3">Condición física</h2>
           <ExpandableChart
+            title="Condición física"
             series={[
               {
                 label: 'Puntaje total',

@@ -67,7 +67,7 @@ export function turnoVencidoDesde(fecha: string, horaFin: string, graciaMin = 15
 
 // Antelación mínima para reservar un turno, y misma ventana usada para
 // auto-cancelar un turno "pendiente" que el paciente nunca confirmó.
-export const HORAS_CORTE_RESERVA = 3
+export const HORAS_CORTE_RESERVA = 12
 
 // Instante (Date real) en que empieza la ventana de corte de un turno: desde
 // ese momento ya no se puede reservar, y un turno pendiente sin confirmar se

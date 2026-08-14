@@ -61,6 +61,7 @@ export default async function EvalFuncionalPage(
               Evolución del puntaje total <span className="text-gray-500 font-normal">/ {PUNTAJE_MAX_FUNCIONAL}</span>
             </h3>
             <ExpandableChart
+              title="Evolución del puntaje total"
               series={[
                 {
                   label: 'Puntaje',

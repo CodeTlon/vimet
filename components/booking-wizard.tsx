@@ -7,7 +7,7 @@ import { useActionState } from 'react';
 import { useRouter } from 'next/navigation'
 
 import { crearTurnoAction, type TurnoState } from '@/actions/turnos'
-import { hoyArgentina } from '@/lib/datetime'
+import { HORAS_CORTE_RESERVA, hoyArgentina } from '@/lib/datetime'
 
 type Profesional = { id: string; nombre: string; apellido: string; rol: string }
 type Servicio = {
@@ -223,6 +223,11 @@ export function BookingWizard({
         </div>
       </div>
 
+      <p className="text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2">
+        Los turnos se reservan con al menos {HORAS_CORTE_RESERVA} horas de anticipación — es el
+        mismo plazo que vas a tener para confirmarlo una vez reservado.
+      </p>
+
       {profId && servId && fecha ? (
         <div>
           <label className="block text-sm font-medium text-gray-800 mb-2">
@@ -236,7 +241,9 @@ export function BookingWizard({
             <p className="text-sm text-vimet-red">{slotError}</p>
           ) : slots.length === 0 ? (
             <p className="text-sm text-gray-700 bg-gray-50 rounded-lg px-4 py-3">
-              No hay horarios disponibles para esta fecha. Probá con otro día.
+              {fecha === todayISO()
+                ? `No quedan horarios para hoy dentro de las ${HORAS_CORTE_RESERVA} horas de anticipación mínima. Probá con otro día.`
+                : 'No hay horarios disponibles para esta fecha. Probá con otro día.'}
             </p>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">

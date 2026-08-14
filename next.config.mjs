@@ -1,3 +1,5 @@
+const isDev = process.env.NODE_ENV === 'development'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -45,7 +47,13 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline'",
+              // 'unsafe-eval' SOLO en dev: el dev server de webpack compila cada
+              // módulo con `eval()` (devtool eval-source-map). Sin esto la CSP lo
+              // bloquea, main-app.js tira EvalError y **muere la hidratación** —
+              // se cae todo `useEffect` del sitio (navbar sin botones de sesión,
+              // hero sin video, wizard de turnos sin slots) sin más síntoma que
+              // un error en consola. En prod el build no usa eval: no va nunca.
+              `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https://*.supabase.co",
               "font-src 'self' data:",

@@ -1,12 +1,13 @@
 'use client'
 
 import { Pencil, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useActionState } from 'react';
 
 import { eliminarMedicionAction, type MedicionState } from '@/actions/mediciones'
 import { MedicionForm } from '@/components/seguimiento/medicion-form'
 import { useAutoHideMessage } from '@/components/seguimiento/use-reset-on-success'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { formatearFechaCorta } from '@/lib/seguimiento'
 
 const initial: MedicionState = {}
@@ -35,6 +36,8 @@ export function MedicionesPanel({
   const [editing, setEditing] = useState<Medicion | null>(null)
   const [deleteState, deleteAction, deletePending] = useActionState(eliminarMedicionAction, initial)
   const deleteVisible = useAutoHideMessage(deleteState)
+  const deleteFormRef = useRef<HTMLFormElement>(null)
+  const [confirmTarget, setConfirmTarget] = useState<Medicion | null>(null)
 
   return (
     <div className="space-y-6">
@@ -98,18 +101,15 @@ export function MedicionesPanel({
                         >
                           <Pencil className="size-4" />
                         </button>
-                        <form action={deleteAction}>
-                          <input type="hidden" name="id" value={m.id} />
-                          <input type="hidden" name="paciente_id" value={pacienteId} />
-                          <button
-                            type="submit"
-                            disabled={deletePending}
-                            className="text-vimet-red hover:text-vimet-red/80 disabled:opacity-50"
-                            aria-label="Eliminar"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        </form>
+                        <button
+                          type="button"
+                          disabled={deletePending}
+                          onClick={() => setConfirmTarget(m)}
+                          className="text-vimet-red hover:text-vimet-red/80 disabled:opacity-50"
+                          aria-label="Eliminar"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -119,6 +119,28 @@ export function MedicionesPanel({
           </div>
         )}
       </section>
+
+      <form ref={deleteFormRef} action={deleteAction} className="hidden">
+        <input type="hidden" name="id" value={confirmTarget?.id ?? ''} readOnly />
+        <input type="hidden" name="paciente_id" value={pacienteId} readOnly />
+      </form>
+
+      <ConfirmDialog
+        open={confirmTarget !== null}
+        onClose={() => setConfirmTarget(null)}
+        onConfirm={() => {
+          deleteFormRef.current?.requestSubmit()
+          setConfirmTarget(null)
+        }}
+        pending={deletePending}
+        title="Eliminar medición"
+        description={
+          confirmTarget
+            ? `¿Eliminar la medición del ${formatearFechaCorta(confirmTarget.fecha_medicion)}? Esta acción no se puede deshacer.`
+            : ''
+        }
+        confirmLabel="Eliminar"
+      />
     </div>
   )
 }
