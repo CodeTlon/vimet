@@ -152,7 +152,9 @@ export default async function PacientesPage(
                       </form>
                     </>
                   )}
-                  <PacienteDeleteButton id={p.id} nombre={`${p.nombre} ${p.apellido}`} />
+                  {!p.activo && (
+                    <PacienteDeleteButton id={p.id} nombre={`${p.nombre} ${p.apellido}`} />
+                  )}
                 </div>
               </li>
             ))}
@@ -251,7 +253,9 @@ export default async function PacientesPage(
                             </Link>
                           </>
                         )}
-                        <PacienteDeleteButton id={p.id} nombre={`${p.nombre} ${p.apellido}`} />
+                        {!p.activo && (
+                          <PacienteDeleteButton id={p.id} nombre={`${p.nombre} ${p.apellido}`} />
+                        )}
                       </div>
                     </td>
                   </tr>

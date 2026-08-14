@@ -241,8 +241,7 @@ export async function eliminarPacienteAction(
   _prev: unknown,
   formData: FormData,
 ): Promise<StaffState> {
-  const { profile } = await requireStaff()
-  if (profile.rol !== 'admin') return { error: 'Solo un admin puede eliminar pacientes.' }
+  await requireStaff()
 
   const id = String(formData.get('id') ?? '')
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
@@ -250,6 +249,19 @@ export async function eliminarPacienteAction(
   }
 
   const admin = createAdminClient()
+
+  // Cualquier staff puede eliminar, pero solo un paciente desactivado — de
+  // paso valida `rol` acá para que este endpoint no sirva para borrar la
+  // cuenta de otro miembro del staff pasándole su id.
+  const { data: objetivo } = await admin
+    .from('profiles')
+    .select('rol, activo')
+    .eq('id', id)
+    .maybeSingle()
+  if (!objetivo || objetivo.rol !== 'paciente' || objetivo.activo) {
+    return { error: 'Solo se puede eliminar un paciente desactivado.' }
+  }
+
   await removeAllUnderPrefix(admin, 'planes', id)
   await removeAllUnderPrefix(admin, 'recursos', id)
 
