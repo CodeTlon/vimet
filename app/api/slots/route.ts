@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
   const servicioId = url.searchParams.get('servicio_id') ?? ''
   const modalidadParam = url.searchParams.get('modalidad')
   const modalidad = modalidadParam === 'presencial' || modalidadParam === 'virtual' ? modalidadParam : undefined
+  const excludeTurnoId = Number(url.searchParams.get('excluir_turno_id')) || undefined
 
   if (!fecha || (!profesionalId && !servicioId)) {
     return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 })
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (esCombo) {
-    const slots = await getSlotsDisponiblesCombo(supabase, { fecha, duracion, modalidad })
+    const slots = await getSlotsDisponiblesCombo(supabase, { fecha, duracion, modalidad, excludeTurnoId })
     return NextResponse.json({ slots })
   }
 
@@ -54,6 +55,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 })
   }
 
-  const slots = await getSlotsDisponibles(supabase, { profesionalId, fecha, duracion, modalidad })
+  const slots = await getSlotsDisponibles(supabase, { profesionalId, fecha, duracion, modalidad, excludeTurnoId })
   return NextResponse.json({ slots })
 }

@@ -19,7 +19,6 @@ const ESTADO_DOT: Record<string, string> = {
   cancelado: 'bg-red-500',
   completado: 'bg-blue-500',
   no_asistio: 'bg-gray-500',
-  pendiente_reprogramacion: 'bg-purple-500',
 }
 
 type TurnoRow = {

@@ -1,11 +1,11 @@
 'use client'
 
-import { CalendarClock, Loader2, MessageCircle } from 'lucide-react'
+import { CalendarClock, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { useActionState } from 'react'
 
-import { elegirNuevoHorarioTurnoAction, type TurnoState } from '@/actions/turnos'
+import { reprogramarTurnoAction, type TurnoState } from '@/actions/turnos'
 import { HORAS_CORTE_RESERVA, hoyArgentina } from '@/lib/datetime'
 import { Modal } from '@/components/ui/modal'
 
@@ -27,30 +27,29 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
         </>
       ) : (
         <>
-          <CalendarClock className="size-4" /> Confirmar nuevo horario
+          <CalendarClock className="size-4" /> Reprogramar
         </>
       )}
     </button>
   )
 }
 
-export function ReprogramarTurnoModal({
+// El profesional carga acá el horario nuevo después de coordinarlo con el
+// paciente por fuera del sistema (llamada/WhatsApp al teléfono que ya se ve
+// en el detalle del turno) — el paciente no interviene en este paso.
+export function ReprogramarTurnoForm({
   turnoId,
   profesionalId,
   servicioId,
   modalidad,
-  profesionalNombre,
-  profesionalTelefono,
 }: {
   turnoId: number
   profesionalId: string
   servicioId: number
   modalidad: 'presencial' | 'virtual'
-  profesionalNombre: string
-  profesionalTelefono: string | null
 }) {
   const [open, setOpen] = useState(false)
-  const [state, formAction] = useActionState(elegirNuevoHorarioTurnoAction, initialState)
+  const [state, formAction] = useActionState(reprogramarTurnoAction, initialState)
   const [fecha, setFecha] = useState(hoyArgentina())
   const [slot, setSlot] = useState<Slot | null>(null)
   const [slots, setSlots] = useState<Slot[]>([])
@@ -71,7 +70,7 @@ export function ReprogramarTurnoModal({
     setLoadingSlots(true)
     setSlotError(null)
     fetch(
-      `/api/slots?profesional_id=${profesionalId}&fecha=${fecha}&servicio_id=${servicioId}&modalidad=${modalidad}`,
+      `/api/slots?profesional_id=${profesionalId}&fecha=${fecha}&servicio_id=${servicioId}&modalidad=${modalidad}&excluir_turno_id=${turnoId}`,
     )
       .then((r) => r.json())
       .then((data) => {
@@ -95,7 +94,7 @@ export function ReprogramarTurnoModal({
     return () => {
       cancelled = true
     }
-  }, [open, fecha, profesionalId, servicioId, modalidad])
+  }, [open, fecha, profesionalId, servicioId, modalidad, turnoId])
 
   return (
     <>
@@ -104,16 +103,21 @@ export function ReprogramarTurnoModal({
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-1.5 text-sm font-semibold text-vimet-orange hover:underline"
       >
-        <CalendarClock className="size-4" /> Elegir nuevo horario
+        <CalendarClock className="size-4" /> Reprogramar horario
       </button>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Elegir nuevo horario" size="md">
+      <Modal open={open} onClose={() => setOpen(false)} title="Reprogramar turno" size="md">
         <form action={formAction} className="space-y-5">
           {state?.error ? (
             <div role="alert" className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
               {state.error}
             </div>
           ) : null}
+
+          <p className="text-xs text-gray-500">
+            Cargá el horario nuevo después de coordinarlo con el paciente. Si el turno estaba
+            pendiente, al reprogramarlo queda confirmado.
+          </p>
 
           <input type="hidden" name="id" value={turnoId} />
           <input type="hidden" name="hora_inicio" value={slot?.hora_inicio ?? ''} />
@@ -169,19 +173,6 @@ export function ReprogramarTurnoModal({
               </div>
             )}
           </div>
-
-          {profesionalTelefono ? (
-            <a
-              href={`https://wa.me/54${profesionalTelefono.replace(/\D/g, '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 rounded-lg px-4 py-3 hover:bg-gray-100 transition-colors"
-            >
-              <MessageCircle className="size-4 text-vimet-orange shrink-0" />
-              ¿Dudas con el nuevo horario? Escribile a {profesionalNombre} por WhatsApp ·{' '}
-              {profesionalTelefono}
-            </a>
-          ) : null}
 
           <SubmitButton disabled={!slot} />
         </form>

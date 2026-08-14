@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { cancelarPendientesSinConfirmar, marcarNoAsistioVencidos } from '@/actions/turnos'
+import { ReprogramarTurnoForm } from '@/components/reprogramar-turno-form'
 import { TurnoDetalleForm } from '@/components/turno-detalle-form'
 import { ESTADO_TURNO_BADGE, ESTADO_TURNO_LABEL } from '@/lib/seguimiento'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -19,6 +20,8 @@ type TurnoDetail = {
   estado: string
   notas_paciente: string | null
   notas_profesional: string | null
+  servicio_id: number
+  profesional_id: string
   turno_par_id: number | null
   servicios: { nombre: string } | null
   paciente: {
@@ -42,7 +45,7 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
   const { data, error } = await supabase
     .from('turnos')
     .select(
-      'id, fecha, hora_inicio, hora_fin, modalidad, estado, notas_paciente, notas_profesional, turno_par_id, servicios(nombre), paciente:profiles!turnos_paciente_id_fkey(nombre, apellido, email, telefono), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
+      'id, fecha, hora_inicio, hora_fin, modalidad, estado, notas_paciente, notas_profesional, servicio_id, profesional_id, turno_par_id, servicios(nombre), paciente:profiles!turnos_paciente_id_fkey(nombre, apellido, email, telefono), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
     )
     .eq('id', id)
     .maybeSingle()
@@ -144,9 +147,19 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h3 className="font-heading text-base font-semibold text-gray-900 mb-4">
-              Gestionar turno
-            </h3>
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h3 className="font-heading text-base font-semibold text-gray-900">
+                Gestionar turno
+              </h3>
+              {['pendiente', 'confirmado'].includes(turno.estado) ? (
+                <ReprogramarTurnoForm
+                  turnoId={turno.id}
+                  profesionalId={turno.profesional_id}
+                  servicioId={turno.servicio_id}
+                  modalidad={turno.modalidad}
+                />
+              ) : null}
+            </div>
             <TurnoDetalleForm
               id={turno.id}
               estadoActual={turno.estado}

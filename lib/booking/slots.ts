@@ -31,11 +31,13 @@ export async function getSlotsDisponibles(
     fecha,
     duracion,
     modalidad,
+    excludeTurnoId,
   }: {
     profesionalId: string
     fecha: string
     duracion: number
     modalidad?: 'presencial' | 'virtual'
+    excludeTurnoId?: number
   },
 ): Promise<Slot[]> {
   if (!profesionalId || !fecha || !duracion) return []
@@ -52,14 +54,19 @@ export async function getSlotsDisponibles(
     horariosQuery = horariosQuery.in('modalidad', [modalidad, 'ambas'])
   }
 
+  let turnosQuery = supabase
+    .from('turnos')
+    .select('hora_inicio, hora_fin')
+    .eq('profesional_id', profesionalId)
+    .eq('fecha', fecha)
+    .in('estado', ['pendiente', 'confirmado'])
+  if (excludeTurnoId) {
+    turnosQuery = turnosQuery.neq('id', excludeTurnoId)
+  }
+
   const [{ data: horarios }, { data: turnos }, { data: bloqueos }] = await Promise.all([
     horariosQuery,
-    supabase
-      .from('turnos')
-      .select('hora_inicio, hora_fin')
-      .eq('profesional_id', profesionalId)
-      .eq('fecha', fecha)
-      .in('estado', ['pendiente', 'confirmado']),
+    turnosQuery,
     supabase
       .from('bloqueos_horario')
       .select('fecha_inicio, fecha_fin')
@@ -126,10 +133,12 @@ export async function getSlotsDisponiblesCombo(
     fecha,
     duracion,
     modalidad,
+    excludeTurnoId,
   }: {
     fecha: string
     duracion: number
     modalidad?: 'presencial' | 'virtual'
+    excludeTurnoId?: number
   },
 ): Promise<Slot[]> {
   const { data: profesionales } = await supabase
@@ -142,7 +151,7 @@ export async function getSlotsDisponiblesCombo(
 
   const listas = await Promise.all(
     profesionales.map((p) =>
-      getSlotsDisponibles(supabase, { profesionalId: p.id, fecha, duracion, modalidad }),
+      getSlotsDisponibles(supabase, { profesionalId: p.id, fecha, duracion, modalidad, excludeTurnoId }),
     ),
   )
 

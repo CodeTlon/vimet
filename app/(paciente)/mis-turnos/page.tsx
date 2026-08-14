@@ -8,7 +8,6 @@ import {
   marcarNoAsistioVencidos,
 } from '@/actions/turnos'
 import { Pagination } from '@/components/pagination'
-import { ReprogramarTurnoModal } from '@/components/reprogramar-turno-modal'
 import { hoyArgentina, horaArgentina, turnoCorteDesde } from '@/lib/datetime'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { ESTADO_TURNO_BADGE as ESTADO_BADGE, ESTADO_TURNO_LABEL as ESTADO_LABEL } from '@/lib/seguimiento'
@@ -61,7 +60,7 @@ export default async function MisTurnosPage(
     supabase
       .from('turnos')
       .select(
-        'id, fecha, hora_inicio, hora_fin, modalidad, estado, servicio_id, profesional_id, servicios(nombre), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido, telefono)',
+        'id, fecha, hora_inicio, hora_fin, modalidad, estado, servicios(nombre), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
         { count: 'exact' },
       )
       .eq('paciente_id', user.id)
@@ -77,10 +76,8 @@ export default async function MisTurnosPage(
     hora_fin: string
     modalidad: 'presencial' | 'virtual'
     estado: string
-    servicio_id: number
-    profesional_id: string
     servicios: { nombre: string } | null
-    profesional: { nombre: string; apellido: string; telefono: string | null } | null
+    profesional: { nombre: string; apellido: string } | null
   }
   const rows = (turnos ?? []) as unknown as Row[]
   const hoy = hoyArgentina()
@@ -137,8 +134,7 @@ export default async function MisTurnosPage(
             {rows.map((t) => {
               const fecha = new Date(`${t.fecha}T00:00:00`)
               const cancelable =
-                ['pendiente', 'confirmado', 'pendiente_reprogramacion'].includes(t.estado) &&
-                t.fecha >= hoy
+                ['pendiente', 'confirmado'].includes(t.estado) && t.fecha >= hoy
               const ModalidadIcon = t.modalidad === 'virtual' ? Video : Building2
               return (
                 <li
@@ -190,14 +186,8 @@ export default async function MisTurnosPage(
                       </p>
                     ) : null}
 
-                    {t.estado === 'pendiente_reprogramacion' ? (
-                      <p className="mt-3 text-xs text-purple-800">
-                        Este turno fue puesto a reprogramar. Elegí un nuevo horario.
-                      </p>
-                    ) : null}
-
                     {cancelable ? (
-                      <div className="mt-4 flex items-center gap-4 flex-wrap">
+                      <div className="mt-4 flex items-center gap-4">
                         {t.estado === 'pendiente' ? (
                           <form action={confirmarTurnoAction}>
                             <input type="hidden" name="id" value={t.id} />
@@ -208,18 +198,6 @@ export default async function MisTurnosPage(
                               Confirmar turno
                             </button>
                           </form>
-                        ) : null}
-                        {t.estado === 'pendiente_reprogramacion' ? (
-                          <ReprogramarTurnoModal
-                            turnoId={t.id}
-                            profesionalId={t.profesional_id}
-                            servicioId={t.servicio_id}
-                            modalidad={t.modalidad}
-                            profesionalNombre={
-                              t.profesional ? `${t.profesional.nombre} ${t.profesional.apellido}` : 'tu profesional'
-                            }
-                            profesionalTelefono={t.profesional?.telefono ?? null}
-                          />
                         ) : null}
                         <form action={cancelarTurnoAction}>
                           <input type="hidden" name="id" value={t.id} />
