@@ -55,8 +55,12 @@ const nextConfig = {
               // un error en consola. En prod el build no usa eval: no va nunca.
               `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: https://*.supabase.co",
+              // blob: hace falta para los preview de "Subir ejercicio propio"
+              // (video elegido y GIF generado se muestran vía
+              // URL.createObjectURL, nunca se suben a ningún lado hasta guardar).
+              "img-src 'self' data: blob: https://*.supabase.co",
               "font-src 'self' data:",
+              "media-src 'self' blob:",
               "connect-src 'self' https://*.supabase.co",
               "frame-ancestors 'none'",
               "base-uri 'self'",
