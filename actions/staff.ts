@@ -1,5 +1,6 @@
 'use server'
 
+import { randomUUID } from 'crypto'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
@@ -7,6 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, requireStaff } from '@/lib/supabase/auth-helpers'
 
 export type StaffState = { ok?: boolean; error?: string }
+export type CrearPacienteState = StaffState & { id?: string }
 
 // Los buckets `planes`/`recursos` no cascadean solos al borrar el usuario de
 // auth.users — hay que limpiarlos a mano antes de que quede el registro
@@ -117,8 +119,72 @@ export async function configurarProfesionalAction(
   return { ok: true }
 }
 
+const crearPacienteSchema = z.object({
+  nombre: z.string().trim().min(1, 'El nombre es obligatorio'),
+  apellido: z.string().trim().min(1, 'El apellido es obligatorio'),
+  telefono: z.string().trim().min(6, 'Teléfono inválido'),
+  email: z.union([z.string().trim().email('Email inválido'), z.literal('')]).optional(),
+})
+
+// Alta de pacientes que nunca van a iniciar sesión (adultos mayores o con
+// dificultad para usar la web): el staff carga los datos y gestiona todo
+// desde acá. La contraseña queda aleatoria y no se comunica a nadie; si no
+// hay email real se genera uno sintético solo para satisfacer auth.users
+// (profiles.email se guarda en null en ese caso, así el listado no muestra
+// una dirección inexistente).
+export async function crearPacienteGestionadoAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<CrearPacienteState> {
+  await requireStaff()
+
+  const parsed = crearPacienteSchema.safeParse({
+    nombre: formData.get('nombre'),
+    apellido: formData.get('apellido'),
+    telefono: formData.get('telefono'),
+    email: formData.get('email'),
+  })
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+
+  const { nombre, apellido, telefono, email } = parsed.data
+  const admin = createAdminClient()
+
+  const emailReal = email ? email : null
+  const emailParaAuth = emailReal ?? `paciente.${randomUUID()}@sinacceso.vimet.local`
+
+  const { data, error } = await admin.auth.admin.createUser({
+    email: emailParaAuth,
+    password: randomUUID(),
+    email_confirm: true,
+    user_metadata: { nombre, apellido, telefono },
+  })
+
+  if (error || !data.user) {
+    if (error?.message?.toLowerCase().includes('already been registered')) {
+      return { error: 'Ya existe una cuenta con ese email.' }
+    }
+    return { error: 'No se pudo crear el paciente.' }
+  }
+
+  // handle_new_user ya insertó la fila en profiles (rol paciente, activo por
+  // default). La completamos: activada de una (el staff la creó en persona,
+  // no pasa por el flujo de activación manual) y marcada como gestionada.
+  await admin
+    .from('profiles')
+    .update({
+      activo: true,
+      activado_en: new Date().toISOString(),
+      gestionado_por_staff: true,
+      email: emailReal,
+    })
+    .eq('id', data.user.id)
+
+  revalidatePath('/admin/pacientes')
+  return { ok: true, id: data.user.id }
+}
+
 export async function toggleActivoAction(formData: FormData): Promise<void> {
-  await requireAdmin()
+  await requireStaff()
 
   const id = String(formData.get('id') ?? '')
   const activo = formData.get('activo') === 'true'
@@ -175,8 +241,7 @@ export async function eliminarPacienteAction(
   _prev: unknown,
   formData: FormData,
 ): Promise<StaffState> {
-  const { profile } = await requireStaff()
-  if (profile.rol !== 'admin') return { error: 'Solo un admin puede eliminar pacientes.' }
+  await requireStaff()
 
   const id = String(formData.get('id') ?? '')
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
@@ -184,6 +249,19 @@ export async function eliminarPacienteAction(
   }
 
   const admin = createAdminClient()
+
+  // Cualquier staff puede eliminar, pero solo un paciente desactivado — de
+  // paso valida `rol` acá para que este endpoint no sirva para borrar la
+  // cuenta de otro miembro del staff pasándole su id.
+  const { data: objetivo } = await admin
+    .from('profiles')
+    .select('rol, activo')
+    .eq('id', id)
+    .maybeSingle()
+  if (!objetivo || objetivo.rol !== 'paciente' || objetivo.activo) {
+    return { error: 'Solo se puede eliminar un paciente desactivado.' }
+  }
+
   await removeAllUnderPrefix(admin, 'planes', id)
   await removeAllUnderPrefix(admin, 'recursos', id)
 

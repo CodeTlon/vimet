@@ -31,6 +31,7 @@ Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio 
 | Catálogo de servicios / equipo (estático) | `lib/config/servicios.ts` / `lib/config/team.ts` |
 | Schema / columna / tabla / RLS | **nueva** migración numerada en `supabase/migrations/` (última: `0019_paciente_estado.sql`) |
 | Gestión de pacientes (activar/desactivar/eliminar) | `actions/staff.ts` (`toggleActivoAction`, `eliminarPacienteAction` — solo admin) + `app/admin/pacientes/page.tsx` |
+| Alta de paciente por staff (sin login propio, para adultos mayores / dificultad de acceso) | `actions/staff.ts` (`crearPacienteGestionadoAction` — cualquier staff) + `components/crear-paciente-button.tsx` |
 
 ## Dónde NO meterse sin pensar
 - **`lib/datetime.ts`** — el server (Vercel) es UTC; representar "hoy" con UTC corre un día. Usar siempre los helpers AR (server y client).

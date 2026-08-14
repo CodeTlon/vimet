@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireMobileAdmin } from '@/lib/supabase/bearer'
+import { requireMobileStaff } from '@/lib/supabase/bearer'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
-  const ctx = await requireMobileAdmin(request)
+  const ctx = await requireMobileStaff(request)
   if ('error' in ctx) return NextResponse.json({ error: ctx.error }, { status: ctx.status })
 
   const body = await request.json().catch(() => null)
