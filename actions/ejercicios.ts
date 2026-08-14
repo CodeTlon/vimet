@@ -12,6 +12,7 @@ export type EjercicioCustomState = { ok?: boolean; error?: string }
 const MAX_BYTES = 8 * 1024 * 1024
 
 const CATEGORIAS = ['calentamiento', 'entrenamiento', 'enfriamiento', 'grupo_muscular'] as const
+const MODOS = ['fuerza', 'cardio'] as const
 
 async function requireStaff() {
   const supabase = await createClient()
@@ -33,6 +34,7 @@ async function requireStaff() {
 const crearSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido').max(200),
   categoria: z.enum(CATEGORIAS),
+  modo: z.enum(MODOS).default('fuerza'),
   parte_cuerpo: z.string().max(60).optional().or(z.literal('')),
   instrucciones: z.string().max(1000).optional().or(z.literal('')),
 })
@@ -90,6 +92,7 @@ export async function crearEjercicioCustomAction(
   const { error } = await ctx.supabase.from('ejercicios').insert({
     nombre: d.nombre.trim(),
     categoria: d.categoria,
+    modo: d.modo,
     parte_cuerpo: d.parte_cuerpo?.trim() || null,
     instrucciones: d.instrucciones?.trim() || null,
     gif_url,

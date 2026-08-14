@@ -52,7 +52,13 @@ export default async function EditarPlanPage(
         supabase.from('ejercicios').select('parte_cuerpo, equipo'),
         supabase
           .from('plan_ejercicios')
-          .select('id, ejercicio_id, dia_semana, orden, series, repeticiones, descanso_seg, notas, ejercicio:ejercicios(id, nombre, imagen_url, gif_url, youtube_url, instrucciones)')
+          .select(
+            'id, ejercicio_id, dia_semana, orden, series, repeticiones, descanso_seg, notas, ' +
+              'cardio_entrada_calor_valor, cardio_entrada_calor_unidad, ' +
+              'cardio_trabajo_principal_valor, cardio_trabajo_principal_unidad, ' +
+              'cardio_vuelta_calma_valor, cardio_vuelta_calma_unidad, ' +
+              'ejercicio:ejercicios(id, nombre, imagen_url, gif_url, youtube_url, instrucciones, modo)',
+          )
           .eq('plan_id', planId),
         supabase
           .from('sesiones_entrenamiento')

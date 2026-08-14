@@ -29,10 +29,11 @@ Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio 
 | Imágenes subidas por usuarios (foto perfil, recursos, adjuntos) | `lib/storage/optimize-image.ts` (resize + webp vía `sharp`) antes de subir |
 | Formulario de contacto | `components/contacto-form.tsx` + `actions/contacto.ts` (Resend, sin DB) |
 | Catálogo de servicios / equipo (estático) | `lib/config/servicios.ts` / `lib/config/team.ts` |
-| Schema / columna / tabla / RLS | **nueva** migración numerada en `supabase/migrations/` (última: `0030_ejercicios_youtube.sql`) |
+| Schema / columna / tabla / RLS | **nueva** migración numerada en `supabase/migrations/` (última: `0031_ejercicios_modo_cardio.sql`) |
 | Gestión de pacientes (activar/desactivar/eliminar) | `actions/staff.ts` (`toggleActivoAction`, `eliminarPacienteAction` — cualquier staff; eliminar exige que el paciente esté desactivado) + `app/admin/pacientes/page.tsx` |
 | Alta de paciente por staff (sin login propio, para adultos mayores / dificultad de acceso) | `actions/staff.ts` (`crearPacienteGestionadoAction` — cualquier staff) + `components/crear-paciente-button.tsx` |
 | Biblioteca de ejercicios propios (GIF o link de YouTube) | `actions/ejercicios.ts` + `components/seguimiento/ejercicio-uploader.tsx` + `lib/youtube.ts` + `app/admin/ejercicios/page.tsx` |
+| Rutina de un plan: fuerza (series/reps/descanso) vs cardio (entrada en calor/trabajo principal/vuelta a la calma) | `actions/plan-ejercicios.ts` + `components/seguimiento/rutina-panel.tsx` (staff) + `components/seguimiento/rutina-viewer.tsx` (paciente) — el modo (`ejercicios.modo`) es del ejercicio del catálogo, no del plan |
 
 ## Dónde NO meterse sin pensar
 - **`lib/datetime.ts`** — el server (Vercel) es UTC; representar "hoy" con UTC corre un día. Usar siempre los helpers AR (server y client).

@@ -20,6 +20,7 @@ type EjercicioCustom = {
   parte_cuerpo: string | null
   gif_url: string | null
   youtube_url: string | null
+  modo: 'fuerza' | 'cardio'
   instrucciones: string | null
 }
 
@@ -29,7 +30,7 @@ export default async function EjerciciosPage() {
 
   const { data } = await supabase
     .from('ejercicios')
-    .select('id, nombre, categoria, parte_cuerpo, gif_url, youtube_url, instrucciones')
+    .select('id, nombre, categoria, parte_cuerpo, gif_url, youtube_url, modo, instrucciones')
     .eq('origen', 'staff')
     .order('created_at', { ascending: false })
 
@@ -62,7 +63,14 @@ export default async function EjerciciosPage() {
               )}
               <div className="p-3 space-y-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium text-gray-900">{e.nombre}</p>
+                  <p className="text-sm font-medium text-gray-900 flex items-center gap-1.5">
+                    {e.nombre}
+                    {e.modo === 'cardio' && (
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full border text-blue-700 bg-blue-50 border-blue-200 shrink-0">
+                        Cardio
+                      </span>
+                    )}
+                  </p>
                   <EjercicioDeleteButton id={e.id} />
                 </div>
                 <p className="text-xs text-gray-500">

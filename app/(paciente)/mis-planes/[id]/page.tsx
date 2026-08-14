@@ -40,7 +40,11 @@ export default async function MiPlanDetallePage(
       ? await supabase
           .from('plan_ejercicios')
           .select(
-            'id, dia_semana, series, repeticiones, descanso_seg, notas, ejercicio:ejercicios(nombre, gif_url, imagen_url, youtube_url, atribucion, instrucciones)',
+            'id, dia_semana, series, repeticiones, descanso_seg, notas, ' +
+              'cardio_entrada_calor_valor, cardio_entrada_calor_unidad, ' +
+              'cardio_trabajo_principal_valor, cardio_trabajo_principal_unidad, ' +
+              'cardio_vuelta_calma_valor, cardio_vuelta_calma_unidad, ' +
+              'ejercicio:ejercicios(nombre, gif_url, imagen_url, youtube_url, atribucion, instrucciones, modo)',
           )
           .eq('plan_id', Number(params.id))
           .order('orden')

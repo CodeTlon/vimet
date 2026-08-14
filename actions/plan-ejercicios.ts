@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server'
 export type PlanEjercicioState = { ok?: boolean; error?: string; id?: number }
 
 const diaEnum = z.enum(['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'])
+const unidadCardioEnum = z.enum(['minutos', 'horas', 'km'])
 
 const camposEditables = {
   dia_semana: diaEnum.optional().or(z.literal('')),
@@ -16,6 +17,12 @@ const camposEditables = {
   repeticiones: z.string().max(50).optional().or(z.literal('')),
   descanso_seg: z.coerce.number().int().nonnegative().optional().or(z.literal('')),
   notas: z.string().max(500).optional().or(z.literal('')),
+  cardio_entrada_calor_valor: z.coerce.number().positive().optional().or(z.literal('')),
+  cardio_entrada_calor_unidad: unidadCardioEnum.optional().or(z.literal('')),
+  cardio_trabajo_principal_valor: z.coerce.number().positive().optional().or(z.literal('')),
+  cardio_trabajo_principal_unidad: unidadCardioEnum.optional().or(z.literal('')),
+  cardio_vuelta_calma_valor: z.coerce.number().positive().optional().or(z.literal('')),
+  cardio_vuelta_calma_unidad: unidadCardioEnum.optional().or(z.literal('')),
 }
 
 const agregarSchema = z.object({
@@ -79,6 +86,12 @@ export async function agregarEjercicioAction(
       repeticiones: toStr(d.repeticiones),
       descanso_seg: toNum(d.descanso_seg),
       notas: toStr(d.notas),
+      cardio_entrada_calor_valor: toNum(d.cardio_entrada_calor_valor),
+      cardio_entrada_calor_unidad: toStr(d.cardio_entrada_calor_unidad),
+      cardio_trabajo_principal_valor: toNum(d.cardio_trabajo_principal_valor),
+      cardio_trabajo_principal_unidad: toStr(d.cardio_trabajo_principal_unidad),
+      cardio_vuelta_calma_valor: toNum(d.cardio_vuelta_calma_valor),
+      cardio_vuelta_calma_unidad: toStr(d.cardio_vuelta_calma_unidad),
     })
     .select('id')
     .single()
@@ -108,6 +121,12 @@ export async function actualizarEjercicioPlanAction(
       repeticiones: toStr(d.repeticiones),
       descanso_seg: toNum(d.descanso_seg),
       notas: toStr(d.notas),
+      cardio_entrada_calor_valor: toNum(d.cardio_entrada_calor_valor),
+      cardio_entrada_calor_unidad: toStr(d.cardio_entrada_calor_unidad),
+      cardio_trabajo_principal_valor: toNum(d.cardio_trabajo_principal_valor),
+      cardio_trabajo_principal_unidad: toStr(d.cardio_trabajo_principal_unidad),
+      cardio_vuelta_calma_valor: toNum(d.cardio_vuelta_calma_valor),
+      cardio_vuelta_calma_unidad: toStr(d.cardio_vuelta_calma_unidad),
     })
     .eq('id', d.id)
   if (error) return { error: 'No se pudo actualizar el ejercicio.' }

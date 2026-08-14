@@ -13,6 +13,7 @@ export type EjercicioResultado = {
   imagen_url: string | null
   gif_url: string | null
   youtube_url: string | null
+  modo: 'fuerza' | 'cardio'
   instrucciones: string | null
 }
 

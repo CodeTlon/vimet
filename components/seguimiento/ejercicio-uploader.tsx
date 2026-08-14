@@ -19,6 +19,11 @@ const CATEGORIAS = [
   { value: 'grupo_muscular', label: 'Grupo muscular' },
 ] as const
 
+const TIPOS_EJERCICIO = [
+  { value: 'fuerza', label: 'Fuerza' },
+  { value: 'cardio', label: 'Cardio' },
+] as const
+
 function seekTo(video: HTMLVideoElement, t: number) {
   return new Promise<void>((resolve) => {
     const onSeeked = () => {
@@ -49,6 +54,7 @@ export function EjercicioUploader() {
 
   const [nombre, setNombre] = useState('')
   const [categoria, setCategoria] = useState<(typeof CATEGORIAS)[number]['value']>('entrenamiento')
+  const [tipoEjercicio, setTipoEjercicio] = useState<(typeof TIPOS_EJERCICIO)[number]['value']>('fuerza')
   const [parteCuerpo, setParteCuerpo] = useState('')
   const [instrucciones, setInstrucciones] = useState('')
   const [message, setMessage] = useState<{ ok?: boolean; error?: string } | null>(null)
@@ -67,6 +73,7 @@ export function EjercicioUploader() {
     setGifPreviewUrl(null)
     setYoutubeUrl('')
     setNombre('')
+    setTipoEjercicio('fuerza')
     setParteCuerpo('')
     setInstrucciones('')
   }
@@ -151,6 +158,7 @@ export function EjercicioUploader() {
     const fd = new FormData()
     fd.set('nombre', nombre.trim())
     fd.set('categoria', categoria)
+    fd.set('modo', tipoEjercicio)
     fd.set('parte_cuerpo', parteCuerpo)
     fd.set('instrucciones', instrucciones)
     if (modo === 'youtube') {
@@ -294,6 +302,22 @@ export function EjercicioUploader() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={gifPreviewUrl} alt="Vista previa del GIF generado" className="max-w-[240px] rounded-lg border border-gray-100" />
           ) : null}
+
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Tipo de ejercicio</p>
+            <div className="inline-flex rounded-lg border border-gray-200 p-1 text-sm">
+              {TIPOS_EJERCICIO.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => setTipoEjercicio(t.value)}
+                  className={`px-3 py-1.5 rounded-md font-medium transition-colors ${tipoEjercicio === t.value ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input

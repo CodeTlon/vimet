@@ -105,3 +105,31 @@ export function formatearFechaCorta(iso: string | null | undefined) {
     year: 'numeric',
   })
 }
+
+export const UNIDAD_CARDIO_LABEL: Record<string, string> = {
+  minutos: 'min',
+  horas: 'hs',
+  km: 'km',
+}
+
+export function formatearFaseCardio(valor: number | null, unidad: string | null) {
+  if (valor == null || !unidad) return null
+  return `${valor} ${UNIDAD_CARDIO_LABEL[unidad] ?? unidad}`
+}
+
+export function resumenCardio(item: {
+  cardio_entrada_calor_valor: number | null
+  cardio_entrada_calor_unidad: string | null
+  cardio_trabajo_principal_valor: number | null
+  cardio_trabajo_principal_unidad: string | null
+  cardio_vuelta_calma_valor: number | null
+  cardio_vuelta_calma_unidad: string | null
+}) {
+  const fases: [string, string | null][] = [
+    ['Entrada en calor', formatearFaseCardio(item.cardio_entrada_calor_valor, item.cardio_entrada_calor_unidad)],
+    ['Trabajo principal', formatearFaseCardio(item.cardio_trabajo_principal_valor, item.cardio_trabajo_principal_unidad)],
+    ['Vuelta a la calma', formatearFaseCardio(item.cardio_vuelta_calma_valor, item.cardio_vuelta_calma_unidad)],
+  ]
+  const partes = fases.filter(([, v]) => v).map(([label, v]) => `${label}: ${v}`)
+  return partes.length ? partes.join(' · ') : null
+}
