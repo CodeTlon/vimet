@@ -38,6 +38,7 @@ export const ESTADO_TURNO_LABEL: Record<string, string> = {
   cancelado: 'Cancelado',
   completado: 'Completado',
   no_asistio: 'No asistió',
+  pendiente_reprogramacion: 'A reprogramar',
 }
 
 export const ESTADO_TURNO_BADGE: Record<string, string> = {
@@ -46,6 +47,7 @@ export const ESTADO_TURNO_BADGE: Record<string, string> = {
   cancelado: 'bg-red-100 text-red-800',
   completado: 'bg-blue-100 text-blue-800',
   no_asistio: 'bg-gray-200 text-gray-700',
+  pendiente_reprogramacion: 'bg-purple-100 text-purple-800',
 }
 
 export const ESTADO_OBJETIVO_LABEL: Record<string, string> = {

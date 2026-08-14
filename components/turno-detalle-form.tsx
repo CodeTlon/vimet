@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, CheckCheck, UserX, X } from 'lucide-react'
+import { Calendar, Check, CheckCheck, UserX, X } from 'lucide-react'
 import { useRef } from 'react'
 import { useFormStatus } from 'react-dom';
 import { useActionState } from 'react';
@@ -15,6 +15,7 @@ const ACTIONS = [
   { value: 'confirmado', label: 'Confirmar', icon: Check, className: 'bg-green-600 hover:bg-green-700 text-white' },
   { value: 'completado', label: 'Completado', icon: CheckCheck, className: 'bg-vimet-gradient text-white' },
   { value: 'no_asistio', label: 'No asistió', icon: UserX, className: 'bg-yellow-500 hover:bg-yellow-600 text-white' },
+  { value: 'pendiente_reprogramacion', label: 'Reprogramar', icon: Calendar, className: 'bg-purple-600 hover:bg-purple-700 text-white' },
   { value: 'cancelado', label: 'Cancelar', icon: X, className: 'bg-red-600 hover:bg-red-700 text-white' },
 ] as const
 
@@ -24,9 +25,11 @@ const ACTIONS = [
 // (síncrono, antes del submit) — más simple que migrar a formAction por botón.
 function StateButtons({
   disableConfirm,
+  disableReprogramar,
   estadoRef,
 }: {
   disableConfirm: boolean
+  disableReprogramar: boolean
   estadoRef: React.RefObject<HTMLInputElement | null>
 }) {
   const { pending } = useFormStatus()
@@ -34,6 +37,7 @@ function StateButtons({
     <div className="flex flex-wrap gap-2">
       {ACTIONS.map((a) => {
         if (a.value === 'confirmado' && disableConfirm) return null
+        if (a.value === 'pendiente_reprogramacion' && disableReprogramar) return null
         return (
           <button
             key={a.value}
@@ -65,7 +69,8 @@ export function TurnoDetalleForm({
   const msgRef = useScrollToMessage(state)
   const visible = useAutoHideMessage(state)
   const estadoRef = useRef<HTMLInputElement>(null)
-  const editable = ['pendiente', 'confirmado'].includes(estadoActual)
+  const editable = ['pendiente', 'confirmado', 'pendiente_reprogramacion'].includes(estadoActual)
+  const esperandoReprogramacion = estadoActual === 'pendiente_reprogramacion'
 
   if (!editable) {
     return (
@@ -93,6 +98,12 @@ export function TurnoDetalleForm({
         ) : null}
       </div>
 
+      {esperandoReprogramacion ? (
+        <p className="text-sm text-purple-800 bg-purple-50 rounded-lg px-4 py-3">
+          Esperando que el paciente elija un nuevo horario desde su cuenta.
+        </p>
+      ) : null}
+
       <div>
         <label className="block text-sm font-medium text-gray-800 mb-1.5">
           Notas profesionales
@@ -106,7 +117,11 @@ export function TurnoDetalleForm({
         />
       </div>
 
-      <StateButtons disableConfirm={estadoActual === 'confirmado'} estadoRef={estadoRef} />
+      <StateButtons
+        disableConfirm={estadoActual === 'confirmado' || esperandoReprogramacion}
+        disableReprogramar={esperandoReprogramacion}
+        estadoRef={estadoRef}
+      />
     </form>
   )
 }

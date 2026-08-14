@@ -331,7 +331,14 @@ export async function confirmarTurnoAction(formData: FormData) {
 
 const adminEstadoSchema = z.object({
   id: z.coerce.number().int().positive(),
-  estado: z.enum(['pendiente', 'confirmado', 'cancelado', 'completado', 'no_asistio']),
+  estado: z.enum([
+    'pendiente',
+    'confirmado',
+    'cancelado',
+    'completado',
+    'no_asistio',
+    'pendiente_reprogramacion',
+  ]),
   notas_profesional: z.string().max(2000).optional().default(''),
 })
 
@@ -416,4 +423,95 @@ export async function actualizarTurnoStaffAction(
   if (!user) return { error: 'No autenticado' }
 
   return actualizarTurnoStaff(supabase, user.id, parsed.data)
+}
+
+const reprogramarSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida'),
+  hora_inicio: z.string().regex(/^\d{2}:\d{2}$/, 'Hora inválida'),
+  hora_fin: z.string().regex(/^\d{2}:\d{2}$/, 'Hora inválida'),
+})
+
+// El paciente elige el horario nuevo de un turno que el staff puso en
+// 'pendiente_reprogramacion'. Se hace con el cliente de sesión del paciente
+// (no admin): la migración 0025 relaja el trigger justo para esta
+// transición, y la propagación al turno_par_id funciona porque el paciente
+// es dueño de ambas filas (mismo patrón que cancelarTurno/confirmarTurno).
+export async function elegirNuevoHorarioTurno(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  d: z.infer<typeof reprogramarSchema>,
+): Promise<TurnoState> {
+  if (d.fecha < hoyArgentina()) {
+    return { error: 'No podés elegir una fecha pasada.' }
+  }
+  if (d.hora_fin <= d.hora_inicio) {
+    return { error: 'El horario elegido es inválido.' }
+  }
+  if (turnoCorteDesde(d.fecha, d.hora_inicio) < new Date()) {
+    return {
+      error: `Los turnos se reservan con al menos ${HORAS_CORTE_RESERVA} horas de anticipación.`,
+    }
+  }
+
+  const { data: turno } = await supabase
+    .from('turnos')
+    .select('turno_par_id, profesional_id, modalidad')
+    .eq('id', d.id)
+    .eq('paciente_id', userId)
+    .eq('estado', 'pendiente_reprogramacion')
+    .maybeSingle()
+  if (!turno) {
+    return { error: 'Este turno no está pendiente de reprogramación.' }
+  }
+
+  const franja: Franja = {
+    fecha: d.fecha,
+    hora_inicio: d.hora_inicio,
+    hora_fin: d.hora_fin,
+    modalidad: turno.modalidad,
+  }
+  if (!(await profesionalDisponible(supabase, turno.profesional_id, franja))) {
+    return { error: 'Ese horario ya no está disponible.' }
+  }
+
+  const ids = turno.turno_par_id ? [d.id, turno.turno_par_id] : [d.id]
+
+  const { data: actualizados } = await supabase
+    .from('turnos')
+    .update({
+      fecha: d.fecha,
+      hora_inicio: d.hora_inicio,
+      hora_fin: d.hora_fin,
+      estado: 'pendiente',
+    })
+    .in('id', ids)
+    .eq('paciente_id', userId)
+    .eq('estado', 'pendiente_reprogramacion')
+    .select('id')
+
+  revalidatePath('/mis-turnos')
+  if (!actualizados?.length) return { error: 'No se pudo reprogramar el turno.' }
+  return { ok: true }
+}
+
+export async function elegirNuevoHorarioTurnoAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<TurnoState> {
+  const parsed = reprogramarSchema.safeParse({
+    id: formData.get('id'),
+    fecha: formData.get('fecha'),
+    hora_inicio: formData.get('hora_inicio'),
+    hora_fin: formData.get('hora_fin'),
+  })
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Tenés que iniciar sesión.' }
+
+  return elegirNuevoHorarioTurno(supabase, user.id, parsed.data)
 }
