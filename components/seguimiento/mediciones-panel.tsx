@@ -7,6 +7,7 @@ import { useActionState } from 'react';
 import { eliminarMedicionAction, type MedicionState } from '@/actions/mediciones'
 import { MedicionForm } from '@/components/seguimiento/medicion-form'
 import { useAutoHideMessage } from '@/components/seguimiento/use-reset-on-success'
+import { IsakDetalleModal } from '@/components/seguimiento/isak-detalle-modal'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { formatearFechaCorta } from '@/lib/seguimiento'
 
@@ -89,6 +90,7 @@ export function MedicionesPanel({
                   <th className="px-3 py-2.5 font-semibold">% grasa</th>
                   <th className="px-3 py-2.5 font-semibold">% músc</th>
                   <th className="px-3 py-2.5 font-semibold">DX</th>
+                  <th className="px-3 py-2.5 font-semibold">ISAK</th>
                   <th className="px-3 py-2.5" />
                 </tr>
               </thead>
@@ -104,6 +106,9 @@ export function MedicionesPanel({
                     <td className="px-3 py-2.5">{m.porc_grasa ?? '—'}</td>
                     <td className="px-3 py-2.5">{m.porc_masa_muscular ?? '—'}</td>
                     <td className="px-3 py-2.5 text-gray-700">{m.dx_antropometrico ?? '—'}</td>
+                    <td className="px-3 py-2.5">
+                      <IsakDetalleModal medicion={m} />
+                    </td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center justify-end gap-3">
                         <button

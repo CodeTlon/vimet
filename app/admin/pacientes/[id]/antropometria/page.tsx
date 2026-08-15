@@ -1,4 +1,5 @@
 import { BarChart } from '@/components/bar-chart'
+import { CategoryLineChart } from '@/components/category-line-chart'
 import { ExpandableChart } from '@/components/expandable-chart'
 import { Pagination } from '@/components/pagination'
 import { MedicionesPanel } from '@/components/seguimiento/mediciones-panel'
@@ -10,7 +11,7 @@ import {
   perimetrosCorregidos,
   sumaPliegues6,
   sumaPliegues8,
-  tieneDatosIsak,
+  isakCompleto,
   type MedicionIsakRaw,
 } from '@/lib/seguimiento'
 import { createClient } from '@/lib/supabase/server'
@@ -66,7 +67,8 @@ export default async function AntropometriaPage(
       .from('mediciones_antropometricas')
       .select(`fecha_medicion, peso_kg, porc_grasa, porc_masa_muscular, ${ISAK_FIELDS}`)
       .eq('paciente_id', params.id)
-      .order('fecha_medicion', { ascending: true }),
+      .order('fecha_medicion', { ascending: true })
+      .order('id', { ascending: true }),
     supabase
       .from('mediciones_antropometricas')
       .select(
@@ -75,6 +77,7 @@ export default async function AntropometriaPage(
       )
       .eq('paciente_id', params.id)
       .order('fecha_medicion', { ascending: false })
+      .order('id', { ascending: false })
       .range(from, to),
   ])
 
@@ -82,8 +85,8 @@ export default async function AntropometriaPage(
   const mediciones = (pagina ?? []) as Medicion[]
   const pages = calcTotalPages(count)
 
-  const hayDatosIsak = serieCompleta.some(tieneDatosIsak)
-  const ultimaIsak = [...serieCompleta].reverse().find(tieneDatosIsak) ?? null
+  const hayDatosIsak = serieCompleta.some(isakCompleto)
+  const ultimaIsak = [...serieCompleta].reverse().find(isakCompleto) ?? null
   const imoSerie = serieCompleta.map((m) => ({ x: m.fecha_medicion, y: imo(m.kg_tejido_muscular, m.kg_tejido_oseo) }))
   const imoActual = [...imoSerie].reverse().find((p) => p.y != null)?.y ?? null
   const clasifImo = clasificarImo(imoActual)
@@ -136,27 +139,49 @@ export default async function AntropometriaPage(
             ) : null}
           </ChartCard>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <BarChartCard
-              title="Adiposidad"
-              subtitle={ultimaIsak ? formatearFechaCorta(ultimaIsak.fecha_medicion) : undefined}
-              bars={[
-                { label: 'Σ 6 pliegues', value: ultimaIsak ? sumaPliegues6(ultimaIsak) : null },
-                { label: 'Σ 8 pliegues', value: ultimaIsak ? sumaPliegues8(ultimaIsak) : null },
-              ]}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <h3 className="font-heading font-semibold text-gray-900">Adiposidad</h3>
+            {ultimaIsak ? (
+              <p className="text-xs text-gray-500 mb-3">
+                Última evaluación ISAK: {formatearFechaCorta(ultimaIsak.fecha_medicion)}
+              </p>
+            ) : null}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <StatMm label="Σ 6 pliegues" value={ultimaIsak ? sumaPliegues6(ultimaIsak) : null} />
+              <StatMm label="Σ 8 pliegues" value={ultimaIsak ? sumaPliegues8(ultimaIsak) : null} />
+            </div>
+            <CategoryLineChart
+              points={
+                ultimaIsak
+                  ? [
+                      { label: 'Tríceps', value: ultimaIsak.pliegue_triceps_mm },
+                      { label: 'Subescapular', value: ultimaIsak.pliegue_subescapular_mm },
+                      { label: 'Bíceps', value: ultimaIsak.pliegue_biceps_mm },
+                      { label: 'Cresta ilíaca', value: ultimaIsak.pliegue_cresta_iliaca_mm },
+                      { label: 'Supraespinal', value: ultimaIsak.pliegue_supraespinal_mm },
+                      { label: 'Abdominal', value: ultimaIsak.pliegue_abdominal_mm },
+                      { label: 'Muslo', value: ultimaIsak.pliegue_muslo_mm },
+                      { label: 'Pierna', value: ultimaIsak.pliegue_pierna_mm },
+                    ]
+                  : []
+              }
               unit=" mm"
             />
-            <BarChartCard
-              title="Muscularidad"
-              subtitle={ultimaIsak ? formatearFechaCorta(ultimaIsak.fecha_medicion) : undefined}
-              bars={[
-                { label: 'Brazo', value: corregidos.brazo },
-                { label: 'Muslo', value: corregidos.muslo },
-                { label: 'Pierna', value: corregidos.pierna },
-              ]}
-              unit=" cm"
-            />
+            <div className="mt-4">
+              <BarChart bars={[{ label: 'Σ 8 pliegues', value: ultimaIsak ? sumaPliegues8(ultimaIsak) : null }]} unit=" mm" />
+            </div>
           </div>
+
+          <BarChartCard
+            title="Muscularidad"
+            subtitle={ultimaIsak ? formatearFechaCorta(ultimaIsak.fecha_medicion) : undefined}
+            bars={[
+              { label: 'Brazo', value: corregidos.brazo },
+              { label: 'Muslo', value: corregidos.muslo },
+              { label: 'Pierna', value: corregidos.pierna },
+            ]}
+            unit=" cm"
+          />
         </>
       ) : null}
 
@@ -186,6 +211,17 @@ function ChartCard({
       <h3 className="font-heading font-semibold text-gray-900 mb-3">{title}</h3>
       <ExpandableChart title={title} series={series} unit={unit} />
       {children}
+    </div>
+  )
+}
+
+function StatMm({ label, value }: { label: string; value: number | null }) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-wide text-gray-500">{label}</p>
+      <p className="font-heading font-semibold text-gray-900 mt-0.5">
+        {value != null ? `${value.toFixed(1)} mm` : '—'}
+      </p>
     </div>
   )
 }

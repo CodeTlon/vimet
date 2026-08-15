@@ -161,8 +161,32 @@ const round = (n: number, decimales: number) => {
   return Math.round(n * f) / f
 }
 
-export function tieneDatosIsak(m: MedicionIsakRaw): boolean {
-  return Object.values(m).some((v) => v !== null && v !== undefined)
+const ISAK_KEYS = [
+  'pliegue_triceps_mm',
+  'pliegue_subescapular_mm',
+  'pliegue_supraespinal_mm',
+  'pliegue_abdominal_mm',
+  'pliegue_muslo_mm',
+  'pliegue_pierna_mm',
+  'pliegue_biceps_mm',
+  'pliegue_cresta_iliaca_mm',
+  'perimetro_brazo_cm',
+  'perimetro_muslo_cm',
+  'perimetro_pierna_cm',
+  'kg_tejido_muscular',
+  'kg_tejido_oseo',
+] as const satisfies readonly (keyof MedicionIsakRaw)[]
+
+// true solo si están los 13 campos — un ISAK a medias no sirve para calcular
+// nada (Σ6/Σ8/IMO exigen su propio subconjunto completo cada uno). Ojo:
+// quienes llaman a esto suelen pasar el objeto medición COMPLETO (con
+// peso_kg/dx_antropometrico/observaciones/etc., no solo los 13 de ISAK) —
+// por eso se chequean las 13 claves explícitas y no Object.values(m), que
+// daría false ante cualquier otro campo ajeno a ISAK que esté vacío (bug
+// real: rompía el badge del histórico con evaluaciones ISAK 100% completas
+// solo porque, por ejemplo, "observaciones" había quedado sin cargar).
+export function isakCompleto(m: MedicionIsakRaw): boolean {
+  return ISAK_KEYS.every((k) => m[k] !== null && m[k] !== undefined)
 }
 
 // Σ6: no incluye bíceps ni cresta ilíaca (a diferencia de Σ8). Da null si
