@@ -507,7 +507,7 @@ export function RutinaPanel({
                               const { valor: campoValor, unidad: campoUnidad } = FASE_CAMPOS[fase]
                               return (
                                 <td key={fase} className={tdBase}>
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="flex min-w-0 items-center gap-1.5">
                                     <input
                                       className={`${inputBase} w-16 shrink-0`}
                                       inputMode="decimal"

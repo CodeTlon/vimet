@@ -120,7 +120,7 @@ export function Select({
   }
 
   return (
-    <div ref={ref} className={`relative ${className}`}>
+    <div ref={ref} className={`relative min-w-0 ${className}`}>
       {name ? <input type="hidden" name={name} value={value} /> : null}
       <button
         type="button"
@@ -132,7 +132,7 @@ export function Select({
         aria-controls={listId}
         className={
           triggerClassName ??
-          `flex w-full items-center justify-between gap-2 rounded-lg border bg-white px-2.5 py-2 text-left text-sm transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${
+          `flex w-full min-w-0 items-center justify-between gap-2 rounded-lg border bg-white px-2.5 py-2 text-left text-sm transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${
             open ? 'border-vimet-orange ring-2 ring-vimet-orange/40' : 'border-gray-200 hover:border-gray-300'
           }`
         }
