@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronDown, Plus, Save } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useFormStatus } from 'react-dom';
 import { useActionState } from 'react';
 
@@ -81,10 +81,17 @@ export function MedicionForm({
   const visible = useAutoHideMessage(state)
   const today = hoyArgentina()
   const hace7Dias = haceDiasArgentina(7)
+  const isakDetailsRef = useRef<HTMLDetailsElement>(null)
 
   useEffect(() => {
     if (editing && state.ok) onCancel?.()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state])
+
+  useEffect(() => {
+    if (state.error?.includes('ISAK') && isakDetailsRef.current) {
+      isakDetailsRef.current.open = true
+    }
   }, [state])
 
   return (
@@ -192,7 +199,7 @@ export function MedicionForm({
         </Lab>
       </div>
 
-      <details className="group border-t border-gray-100 pt-4">
+      <details ref={isakDetailsRef} className="group border-t border-gray-100 pt-4">
         <summary className="cursor-pointer list-none flex items-center justify-between text-sm font-medium text-gray-800">
           <span>Datos ISAK (opcional)</span>
           <ChevronDown className="size-4 text-gray-400 transition-transform group-open:rotate-180" />

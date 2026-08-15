@@ -22,59 +22,92 @@ const numStr = (min: number, max: number, label: string) =>
       return Number.isFinite(n) && n >= min && n <= max
     }, `${label} debe estar entre ${min} y ${max}`)
 
-const schema = z.object({
-  id: z.coerce.number().int().positive().optional(),
-  paciente_id: z.string().uuid(),
-  fecha_medicion: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .refine((v) => v >= haceDiasArgentina(7) && v <= hoyArgentina(), 'La fecha debe estar dentro de los últimos 7 días'),
-  peso_kg: numStr(1, 400, 'El peso'),
-  talla_cm: numStr(30, 250, 'La talla'),
-  porc_grasa: numStr(0, 100, 'El % de grasa'),
-  porc_masa_muscular: numStr(0, 100, 'El % de masa muscular'),
-  kg_grasa: numStr(0, 200, 'Los kg de grasa'),
-  kg_musculo: numStr(0, 200, 'Los kg de músculo'),
-  pliegue_triceps_mm: numStr(1, 80, 'El pliegue tricipital'),
-  pliegue_subescapular_mm: numStr(1, 80, 'El pliegue subescapular'),
-  pliegue_supraespinal_mm: numStr(1, 80, 'El pliegue supraespinal'),
-  pliegue_abdominal_mm: numStr(1, 80, 'El pliegue abdominal'),
-  pliegue_muslo_mm: numStr(1, 80, 'El pliegue del muslo'),
-  pliegue_pierna_mm: numStr(1, 80, 'El pliegue de la pierna'),
-  pliegue_biceps_mm: numStr(1, 80, 'El pliegue bicipital'),
-  pliegue_cresta_iliaca_mm: numStr(1, 80, 'El pliegue de cresta ilíaca'),
-  perimetro_brazo_cm: numStr(10, 100, 'El perímetro de brazo'),
-  perimetro_muslo_cm: numStr(10, 120, 'El perímetro de muslo'),
-  perimetro_pierna_cm: numStr(10, 100, 'El perímetro de pierna'),
-  kg_tejido_muscular: numStr(0, 100, 'Los kg de tejido muscular'),
-  kg_tejido_oseo: numStr(0, 30, 'Los kg de tejido óseo'),
-  dx_antropometrico: z.string().max(500).optional().or(z.literal('')),
-  observaciones: z.string().max(2000).optional().or(z.literal('')),
-}).refine(
-  (d) =>
-    [
-      d.peso_kg,
-      d.talla_cm,
-      d.porc_grasa,
-      d.porc_masa_muscular,
-      d.kg_grasa,
-      d.kg_musculo,
-      d.pliegue_triceps_mm,
-      d.pliegue_subescapular_mm,
-      d.pliegue_supraespinal_mm,
-      d.pliegue_abdominal_mm,
-      d.pliegue_muslo_mm,
-      d.pliegue_pierna_mm,
-      d.pliegue_biceps_mm,
-      d.pliegue_cresta_iliaca_mm,
-      d.perimetro_brazo_cm,
-      d.perimetro_muslo_cm,
-      d.perimetro_pierna_cm,
-      d.kg_tejido_muscular,
-      d.kg_tejido_oseo,
-    ].some((v) => (v ?? '').trim() !== ''),
-  { message: 'Cargá al menos un dato de la medición.', path: ['peso_kg'] },
-)
+// Cada grupo se completa entero o se deja entero vacío — un subconjunto
+// parcial (ej. un solo pliegue de los 13 de ISAK) no sirve para calcular
+// nada y queda como basura en el histórico. dx_antropometrico/observaciones
+// quedan afuera de esta regla: son anotaciones de texto libre, nunca
+// alcanzaron por sí solas para guardar una medición.
+const CAMPOS_BASICOS = ['peso_kg', 'talla_cm', 'porc_grasa', 'porc_masa_muscular', 'kg_grasa', 'kg_musculo'] as const
+const CAMPOS_ISAK = [
+  'pliegue_triceps_mm',
+  'pliegue_subescapular_mm',
+  'pliegue_supraespinal_mm',
+  'pliegue_abdominal_mm',
+  'pliegue_muslo_mm',
+  'pliegue_pierna_mm',
+  'pliegue_biceps_mm',
+  'pliegue_cresta_iliaca_mm',
+  'perimetro_brazo_cm',
+  'perimetro_muslo_cm',
+  'perimetro_pierna_cm',
+  'kg_tejido_muscular',
+  'kg_tejido_oseo',
+] as const
+
+function estadoGrupo(d: Record<string, unknown>, campos: readonly string[]) {
+  const llenos = campos.filter((c) => String(d[c] ?? '').trim() !== '').length
+  if (llenos === 0) return 'vacio' as const
+  if (llenos === campos.length) return 'completo' as const
+  return 'parcial' as const
+}
+
+const schema = z
+  .object({
+    id: z.coerce.number().int().positive().optional(),
+    paciente_id: z.string().uuid(),
+    fecha_medicion: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .refine((v) => v >= haceDiasArgentina(7) && v <= hoyArgentina(), 'La fecha debe estar dentro de los últimos 7 días'),
+    peso_kg: numStr(1, 400, 'El peso'),
+    talla_cm: numStr(30, 250, 'La talla'),
+    porc_grasa: numStr(0, 100, 'El % de grasa'),
+    porc_masa_muscular: numStr(0, 100, 'El % de masa muscular'),
+    kg_grasa: numStr(0, 200, 'Los kg de grasa'),
+    kg_musculo: numStr(0, 200, 'Los kg de músculo'),
+    pliegue_triceps_mm: numStr(1, 80, 'El pliegue tricipital'),
+    pliegue_subescapular_mm: numStr(1, 80, 'El pliegue subescapular'),
+    pliegue_supraespinal_mm: numStr(1, 80, 'El pliegue supraespinal'),
+    pliegue_abdominal_mm: numStr(1, 80, 'El pliegue abdominal'),
+    pliegue_muslo_mm: numStr(1, 80, 'El pliegue del muslo'),
+    pliegue_pierna_mm: numStr(1, 80, 'El pliegue de la pierna'),
+    pliegue_biceps_mm: numStr(1, 80, 'El pliegue bicipital'),
+    pliegue_cresta_iliaca_mm: numStr(1, 80, 'El pliegue de cresta ilíaca'),
+    perimetro_brazo_cm: numStr(10, 100, 'El perímetro de brazo'),
+    perimetro_muslo_cm: numStr(10, 120, 'El perímetro de muslo'),
+    perimetro_pierna_cm: numStr(10, 100, 'El perímetro de pierna'),
+    kg_tejido_muscular: numStr(0, 100, 'Los kg de tejido muscular'),
+    kg_tejido_oseo: numStr(0, 30, 'Los kg de tejido óseo'),
+    dx_antropometrico: z.string().max(500).optional().or(z.literal('')),
+    observaciones: z.string().max(2000).optional().or(z.literal('')),
+  })
+  .superRefine((d, ctx) => {
+    const basicos = estadoGrupo(d, CAMPOS_BASICOS)
+    const isak = estadoGrupo(d, CAMPOS_ISAK)
+
+    if (basicos === 'parcial') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'Completá todos los campos de Medidas básicas (peso, talla, % grasa, % músculo, kg grasa, kg músculo) o dejalos todos vacíos.',
+        path: ['peso_kg'],
+      })
+    }
+    if (isak === 'parcial') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Completá los 13 campos de Datos ISAK o dejalos todos vacíos.',
+        path: ['pliegue_triceps_mm'],
+      })
+    }
+    if (basicos === 'vacio' && isak === 'vacio') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Cargá al menos un dato de la medición.',
+        path: ['peso_kg'],
+      })
+    }
+  })
 
 const toNum = (v: string | undefined) => {
   if (!v || v.trim() === '') return null
