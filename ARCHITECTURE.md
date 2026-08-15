@@ -34,6 +34,7 @@ Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio 
 | Alta de paciente por staff (sin login propio, para adultos mayores / dificultad de acceso) | `actions/staff.ts` (`crearPacienteGestionadoAction` — cualquier staff) + `components/crear-paciente-button.tsx` |
 | Biblioteca de ejercicios propios (GIF o link de YouTube) | `actions/ejercicios.ts` + `components/seguimiento/ejercicio-uploader.tsx` + `lib/youtube.ts` + `app/admin/ejercicios/page.tsx` |
 | Rutina de un plan: fuerza (series/reps/descanso) vs cardio (entrada en calor/trabajo principal/vuelta a la calma) | `actions/plan-ejercicios.ts` + `components/seguimiento/rutina-panel.tsx` (staff) + `components/seguimiento/rutina-viewer.tsx` (paciente) — el modo (`ejercicios.modo`) es del ejercicio del catálogo, no del plan |
+| Cualquier dropdown/`<select>` del sitio | `components/ui/select.tsx` — nunca un `<select>` nativo nuevo, usar este componente (controlado con `value`+`onChange`, o no controlado con `defaultValue`+`name` dentro de un `<form action={serverAction}>`) |
 
 ## Dónde NO meterse sin pensar
 - **`lib/datetime.ts`** — el server (Vercel) es UTC; representar "hoy" con UTC corre un día. Usar siempre los helpers AR (server y client).
