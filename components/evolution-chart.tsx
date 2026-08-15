@@ -145,8 +145,8 @@ export function EvolutionChart({
               x2={width - padding.right}
               y1={sy(t)}
               y2={sy(t)}
-              stroke="#F3F4F6"
-              strokeDasharray="3 3"
+              stroke="#E5E5E5"
+              strokeWidth="1"
             />
             <text
               x={padding.left - 6}

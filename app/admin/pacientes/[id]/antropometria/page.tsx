@@ -166,6 +166,7 @@ export default async function AntropometriaPage(
                   : []
               }
               unit=" mm"
+              axisLabel="Pliegues (mm)"
             />
             <div className="mt-4">
               <BarChart bars={[{ label: 'Σ 8 pliegues', value: ultimaIsak ? sumaPliegues8(ultimaIsak) : null }]} unit=" mm" />
@@ -175,12 +176,18 @@ export default async function AntropometriaPage(
           <BarChartCard
             title="Muscularidad"
             subtitle={ultimaIsak ? formatearFechaCorta(ultimaIsak.fecha_medicion) : undefined}
+            stats={[
+              { label: 'Brazo corregido', value: corregidos.brazo },
+              { label: 'Muslo corregido', value: corregidos.muslo },
+              { label: 'Pierna corregida', value: corregidos.pierna },
+            ]}
             bars={[
               { label: 'Brazo', value: corregidos.brazo },
               { label: 'Muslo', value: corregidos.muslo },
               { label: 'Pierna', value: corregidos.pierna },
             ]}
             unit=" cm"
+            axisLabel="Perímetros (cm)"
           />
         </>
       ) : null}
@@ -215,12 +222,22 @@ function ChartCard({
   )
 }
 
-function StatMm({ label, value }: { label: string; value: number | null }) {
+function StatMm({
+  label,
+  value,
+  unit = ' mm',
+  decimals = 1,
+}: {
+  label: string
+  value: number | null
+  unit?: string
+  decimals?: number
+}) {
   return (
     <div>
       <p className="text-xs uppercase tracking-wide text-gray-500">{label}</p>
       <p className="font-heading font-semibold text-gray-900 mt-0.5">
-        {value != null ? `${value.toFixed(1)} mm` : '—'}
+        {value != null ? `${value.toFixed(decimals)}${unit}` : '—'}
       </p>
     </div>
   )
@@ -229,19 +246,30 @@ function StatMm({ label, value }: { label: string; value: number | null }) {
 function BarChartCard({
   title,
   subtitle,
+  stats,
   bars,
   unit,
+  axisLabel,
 }: {
   title: string
   subtitle?: string
+  stats?: { label: string; value: number | null }[]
   bars: { label: string; value: number | null }[]
   unit?: string
+  axisLabel?: string
 }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
       <h3 className="font-heading font-semibold text-gray-900">{title}</h3>
       {subtitle ? <p className="text-xs text-gray-500 mb-3">Última evaluación ISAK: {subtitle}</p> : null}
-      <BarChart bars={bars} unit={unit} />
+      {stats ? (
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {stats.map((s) => (
+            <StatMm key={s.label} label={s.label} value={s.value} unit={unit} decimals={2} />
+          ))}
+        </div>
+      ) : null}
+      <BarChart bars={bars} unit={unit} axisLabel={axisLabel} />
     </div>
   )
 }
