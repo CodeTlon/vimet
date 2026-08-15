@@ -77,7 +77,7 @@ export type RutinaItem = {
 
 const inputBase =
   'w-full rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
-const thBase = 'py-2.5 px-3 font-semibold text-xs uppercase tracking-wide whitespace-nowrap'
+const thBase = 'py-2.5 px-3 font-semibold text-xs uppercase tracking-wide align-bottom'
 const tdBase = 'py-3 px-3 align-middle'
 
 function ordenar(a: RutinaItem, b: RutinaItem) {
@@ -371,7 +371,16 @@ export function RutinaPanel({
                 <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 space-y-3">
                   <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Fuerza</h4>
                   <div className="overflow-x-auto rounded-lg bg-white border border-gray-100">
-                    <table className="w-full text-sm border-collapse">
+                    <table className="w-full min-w-[49rem] text-sm border-collapse table-fixed">
+                      <colgroup>
+                        <col className="w-10" />
+                        <col className="w-60" />
+                        <col className="w-24" />
+                        <col className="w-24" />
+                        <col className="w-28" />
+                        <col className="w-40" />
+                        <col className="w-10" />
+                      </colgroup>
                       <thead>
                         <tr className="text-left text-gray-500 border-b border-gray-100">
                           <th className={thBase}>#</th>
@@ -428,7 +437,7 @@ export function RutinaPanel({
                                 }}
                               />
                             </td>
-                            <td className={`${tdBase} min-w-[10rem]`}>
+                            <td className={tdBase}>
                               <NotaTextarea
                                 rows={1}
                                 className={inputBase}
@@ -463,7 +472,16 @@ export function RutinaPanel({
                 <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 space-y-3">
                   <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Cardio</h4>
                   <div className="overflow-x-auto rounded-lg bg-white border border-gray-100">
-                    <table className="w-full text-sm border-collapse">
+                    <table className="w-full min-w-[66rem] text-sm border-collapse table-fixed">
+                      <colgroup>
+                        <col className="w-10" />
+                        <col className="w-60" />
+                        <col className="w-48" />
+                        <col className="w-48" />
+                        <col className="w-48" />
+                        <col className="w-40" />
+                        <col className="w-10" />
+                      </colgroup>
                       <thead>
                         <tr className="text-left text-gray-500 border-b border-gray-100">
                           <th className={thBase}>#</th>
@@ -507,7 +525,7 @@ export function RutinaPanel({
                                 </td>
                               )
                             })}
-                            <td className={`${tdBase} min-w-[10rem]`}>
+                            <td className={tdBase}>
                               <NotaTextarea
                                 rows={1}
                                 className={inputBase}
