@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Save } from 'lucide-react'
+import { ChevronDown, Plus, Save } from 'lucide-react'
 import { useEffect } from 'react'
 import { useFormStatus } from 'react-dom';
 import { useActionState } from 'react';
@@ -31,6 +31,19 @@ type Medicion = {
   porc_masa_muscular: number | null
   kg_grasa: number | null
   kg_musculo: number | null
+  pliegue_triceps_mm: number | null
+  pliegue_subescapular_mm: number | null
+  pliegue_supraespinal_mm: number | null
+  pliegue_abdominal_mm: number | null
+  pliegue_muslo_mm: number | null
+  pliegue_pierna_mm: number | null
+  pliegue_biceps_mm: number | null
+  pliegue_cresta_iliaca_mm: number | null
+  perimetro_brazo_cm: number | null
+  perimetro_muslo_cm: number | null
+  perimetro_pierna_cm: number | null
+  kg_tejido_muscular: number | null
+  kg_tejido_oseo: number | null
   dx_antropometrico: string | null
   observaciones: string | null
 }
@@ -178,6 +191,64 @@ export function MedicionForm({
           />
         </Lab>
       </div>
+
+      <details className="group border-t border-gray-100 pt-4">
+        <summary className="cursor-pointer list-none flex items-center justify-between text-sm font-medium text-gray-800">
+          <span>Datos ISAK (opcional)</span>
+          <ChevronDown className="size-4 text-gray-400 transition-transform group-open:rotate-180" />
+        </summary>
+
+        <div className="mt-4 space-y-4">
+          <IsakGrupo titulo="Pliegues cutáneos (mm)">
+            <Lab label="Tríceps">
+              <input type="number" step="0.1" name="pliegue_triceps_mm" defaultValue={medicion?.pliegue_triceps_mm ?? ''} className={inputBase} />
+            </Lab>
+            <Lab label="Subescapular">
+              <input type="number" step="0.1" name="pliegue_subescapular_mm" defaultValue={medicion?.pliegue_subescapular_mm ?? ''} className={inputBase} />
+            </Lab>
+            <Lab label="Bíceps">
+              <input type="number" step="0.1" name="pliegue_biceps_mm" defaultValue={medicion?.pliegue_biceps_mm ?? ''} className={inputBase} />
+            </Lab>
+            <Lab label="Cresta ilíaca">
+              <input type="number" step="0.1" name="pliegue_cresta_iliaca_mm" defaultValue={medicion?.pliegue_cresta_iliaca_mm ?? ''} className={inputBase} />
+            </Lab>
+            <Lab label="Supraespinal">
+              <input type="number" step="0.1" name="pliegue_supraespinal_mm" defaultValue={medicion?.pliegue_supraespinal_mm ?? ''} className={inputBase} />
+            </Lab>
+            <Lab label="Abdominal">
+              <input type="number" step="0.1" name="pliegue_abdominal_mm" defaultValue={medicion?.pliegue_abdominal_mm ?? ''} className={inputBase} />
+            </Lab>
+            <Lab label="Muslo">
+              <input type="number" step="0.1" name="pliegue_muslo_mm" defaultValue={medicion?.pliegue_muslo_mm ?? ''} className={inputBase} />
+            </Lab>
+            <Lab label="Pierna">
+              <input type="number" step="0.1" name="pliegue_pierna_mm" defaultValue={medicion?.pliegue_pierna_mm ?? ''} className={inputBase} />
+            </Lab>
+          </IsakGrupo>
+
+          <IsakGrupo titulo="Perímetros (cm)">
+            <Lab label="Brazo relajado">
+              <input type="number" step="0.1" name="perimetro_brazo_cm" defaultValue={medicion?.perimetro_brazo_cm ?? ''} className={inputBase} />
+            </Lab>
+            <Lab label="Muslo medio">
+              <input type="number" step="0.1" name="perimetro_muslo_cm" defaultValue={medicion?.perimetro_muslo_cm ?? ''} className={inputBase} />
+            </Lab>
+            <Lab label="Pierna">
+              <input type="number" step="0.1" name="perimetro_pierna_cm" defaultValue={medicion?.perimetro_pierna_cm ?? ''} className={inputBase} />
+            </Lab>
+          </IsakGrupo>
+
+          <IsakGrupo titulo="Composición tisular (kg)">
+            <Lab label="Tejido muscular">
+              <input type="number" step="0.01" name="kg_tejido_muscular" defaultValue={medicion?.kg_tejido_muscular ?? ''} className={inputBase} />
+            </Lab>
+            <Lab label="Tejido óseo">
+              <input type="number" step="0.01" name="kg_tejido_oseo" defaultValue={medicion?.kg_tejido_oseo ?? ''} className={inputBase} />
+            </Lab>
+          </IsakGrupo>
+        </div>
+      </details>
+
       <Lab label="Observaciones">
         <NotaTextarea
           name="observaciones"
@@ -210,5 +281,14 @@ function Lab({ label, children }: { label: string; children: React.ReactNode }) 
       <span className="block font-medium text-gray-800 mb-1">{label}</span>
       {children}
     </label>
+  )
+}
+
+function IsakGrupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{titulo}</span>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">{children}</div>
+    </div>
   )
 }
