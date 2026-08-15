@@ -48,19 +48,18 @@ export async function getContenidoSitio(): Promise<ContenidoSitio> {
 
 export async function getProfesionales(): Promise<Record<'avril' | 'gero', Profesional>> {
   const supabase = await createClient()
-  const emails = [TEAM_FALLBACK.avril.dbEmail, TEAM_FALLBACK.gero.dbEmail]
   const { data } = await supabase
     .from('profiles')
     .select(
-      'email, nombre, titulo, matricula, foto_url, instagram_handle, instagram_url, whatsapp_url, bio_corta, bio, especialidades, areas_trabajo',
+      'slot_publico, nombre, titulo, matricula, foto_url, instagram_handle, instagram_url, whatsapp_url, bio_corta, bio, especialidades, areas_trabajo',
     )
-    .in('email', emails)
+    .in('slot_publico', ['avril', 'gero'])
 
-  const byEmail = new Map(data?.map((p) => [p.email, p]))
+  const bySlot = new Map(data?.map((p) => [p.slot_publico, p]))
 
   function build(key: 'avril' | 'gero'): Profesional {
     const fallback = TEAM_FALLBACK[key]
-    const row = byEmail.get(fallback.dbEmail)
+    const row = bySlot.get(key)
     return {
       key,
       dbEmail: fallback.dbEmail,

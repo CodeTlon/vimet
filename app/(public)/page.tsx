@@ -17,7 +17,8 @@ import Link from 'next/link'
 
 import { HeroVideo } from '@/components/hero-video'
 import { LazyMap } from '@/components/lazy-map'
-import { location, social, team } from '@/lib/config/team'
+import { getProfesionales } from '@/lib/config/contenido'
+import { location, social } from '@/lib/config/team'
 const pilares = [
   {
     icon: Users,
@@ -65,7 +66,8 @@ const serviciosDestacados = [
   },
 ] as const
 
-export default function HomePage() {
+export default async function HomePage() {
+  const profesionales = await getProfesionales()
   return (
     <>
       <section className="relative h-dvh overflow-hidden">
@@ -229,7 +231,7 @@ export default function HomePage() {
             <p className="mt-3 text-gray-700">Profesionales comprometidos con tu salud</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {Object.values(team).map((prof) => (
+            {Object.values(profesionales).map((prof) => (
               <article
                 key={prof.key}
                 className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"

@@ -25,11 +25,11 @@ Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio 
 | Planes PDF (subida / signed URL) | `actions/planes.ts` (borra PDF previo al reemplazar) + bucket `planes` |
 | Recursos multimedia del paciente | `actions/recursos.ts` + bucket `recursos` |
 | Horarios de atención del profesional (agregar/editar/eliminar franjas) | `actions/horarios.ts` (`turnosSinCobertura` decide qué turnos se cancelan) + `components/horarios-editor.tsx` |
-| Contenido del sitio (servicios, ubicación, metodología, perfil público) — cualquier staff puede editarlo, no solo admin | `actions/contenido.ts` (`requireStaffAction`) |
+| Contenido del sitio (servicios, ubicación, metodología, perfil público de **cualquier** profesional — foto/teléfono/bio) — cualquier staff puede editarlo, no solo admin ni solo el dueño del perfil | `actions/contenido.ts` (`requireStaffAction`/`actualizarPerfilPublicoAction`) + RLS `is_staff()` en `profiles` (migración `0032`) |
 | Imágenes subidas por usuarios (foto perfil, recursos, adjuntos) | `lib/storage/optimize-image.ts` (resize + webp vía `sharp`) antes de subir |
 | Formulario de contacto | `components/contacto-form.tsx` + `actions/contacto.ts` (Resend, sin DB) |
 | Catálogo de servicios / equipo (estático) | `lib/config/servicios.ts` / `lib/config/team.ts` |
-| Schema / columna / tabla / RLS | **nueva** migración numerada en `supabase/migrations/` (última: `0031_ejercicios_modo_cardio.sql`) |
+| Schema / columna / tabla / RLS | **nueva** migración numerada en `supabase/migrations/` (última: `0033_profiles_slot_publico.sql`) |
 | Gestión de pacientes (activar/desactivar/eliminar) | `actions/staff.ts` (`toggleActivoAction`, `eliminarPacienteAction` — cualquier staff; eliminar exige que el paciente esté desactivado) + `app/admin/pacientes/page.tsx` |
 | Alta de paciente por staff (sin login propio, para adultos mayores / dificultad de acceso) | `actions/staff.ts` (`crearPacienteGestionadoAction` — cualquier staff) + `components/crear-paciente-button.tsx` |
 | Biblioteca de ejercicios propios (GIF o link de YouTube) | `actions/ejercicios.ts` + `components/seguimiento/ejercicio-uploader.tsx` + `lib/youtube.ts` + `app/admin/ejercicios/page.tsx` |

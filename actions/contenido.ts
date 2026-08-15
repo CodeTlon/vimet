@@ -219,7 +219,7 @@ const perfilSchema = z.object({
   bio: z.string().max(2000).optional().or(z.literal('')),
   instagram_handle: z.string().max(60).optional().or(z.literal('')),
   instagram_url: z.string().url().optional().or(z.literal('')),
-  whatsapp_url: z.string().url().optional().or(z.literal('')),
+  telefono: z.string().max(30).optional().or(z.literal('')),
   especialidades: z.string().optional().or(z.literal('')),
 })
 
@@ -236,6 +236,12 @@ export async function actualizarPerfilPublicoAction(
   const parsed = perfilSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
   const d = parsed.data
+
+  const telefonoDigitos = (d.telefono ?? '').replace(/\D/g, '')
+  if (telefonoDigitos && (telefonoDigitos.length < 8 || telefonoDigitos.length > 15)) {
+    return { error: 'Teléfono inválido.' }
+  }
+  const whatsappUrl = telefonoDigitos ? `https://wa.me/54${telefonoDigitos}` : null
 
   const areasTrabajo = extractRows(formData, 'area', 4, ['icon', 'title', 'desc']).filter(
     (a) => a.title || a.desc,
@@ -279,7 +285,7 @@ export async function actualizarPerfilPublicoAction(
       bio: d.bio || null,
       instagram_handle: d.instagram_handle || null,
       instagram_url: d.instagram_url || null,
-      whatsapp_url: d.whatsapp_url || null,
+      whatsapp_url: whatsappUrl,
       especialidades: d.especialidades
         ? d.especialidades
             .split(',')

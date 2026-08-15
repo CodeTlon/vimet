@@ -11,9 +11,9 @@ export default async function ConfiguracionPage() {
   const supabase = await createClient()
   const [profesionales, { data: profiles }] = await Promise.all([
     getProfesionales(),
-    supabase.from('profiles').select('id, email').in('email', ['avril@vimet.com', 'gero@vimet.com']),
+    supabase.from('profiles').select('id, slot_publico').in('slot_publico', ['avril', 'gero']),
   ])
-  const idByEmail = new Map(profiles?.map((p) => [p.email, p.id] as const))
+  const idBySlot = new Map(profiles?.map((p) => [p.slot_publico, p.id] as const))
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
@@ -23,7 +23,7 @@ export default async function ConfiguracionPage() {
 
       {(['avril', 'gero'] as const).map((key) => {
         const p = profesionales[key]
-        const profileId = idByEmail.get(p.dbEmail)
+        const profileId = idBySlot.get(key)
         if (!profileId) return null
         return (
           <PerfilPublicoForm
