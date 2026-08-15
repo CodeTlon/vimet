@@ -14,6 +14,10 @@ const AREA_ICONOS = ['Activity', 'Scale', 'Pill', 'HeartPulse', 'Dumbbell', 'Ste
 
 type AreaTrabajo = { readonly icon: string; readonly title: string; readonly desc: string }
 
+function telefonoFromWhatsappUrl(url: string) {
+  return url.match(/wa\.me\/54(\d+)/)?.[1] ?? ''
+}
+
 function Btn() {
   const { pending } = useFormStatus()
   return (
@@ -122,8 +126,17 @@ export function PerfilPublicoForm({
         </div>
 
         <label className="block text-sm">
-          <span className="block font-medium text-gray-800 mb-1">URL de WhatsApp (wa.me)</span>
-          <input name="whatsapp_url" type="url" defaultValue={whatsappUrl} className={inputBase} />
+          <span className="block font-medium text-gray-800 mb-1">Teléfono (WhatsApp)</span>
+          <input
+            name="telefono"
+            type="tel"
+            defaultValue={telefonoFromWhatsappUrl(whatsappUrl)}
+            placeholder="3513752818"
+            className={inputBase}
+          />
+          <span className="block text-xs text-gray-500 mt-1">
+            Solo el número, sin 0 ni 15. Se arma el link de WhatsApp automáticamente.
+          </span>
         </label>
 
         <label className="block text-sm">
