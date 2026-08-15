@@ -161,8 +161,10 @@ const round = (n: number, decimales: number) => {
   return Math.round(n * f) / f
 }
 
-export function tieneDatosIsak(m: MedicionIsakRaw): boolean {
-  return Object.values(m).some((v) => v !== null && v !== undefined)
+// true solo si están los 13 campos — un ISAK a medias no sirve para calcular
+// nada (Σ6/Σ8/IMO exigen su propio subconjunto completo cada uno).
+export function isakCompleto(m: MedicionIsakRaw): boolean {
+  return Object.values(m).every((v) => v !== null && v !== undefined)
 }
 
 // Σ6: no incluye bíceps ni cresta ilíaca (a diferencia de Σ8). Da null si

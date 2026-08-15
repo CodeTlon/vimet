@@ -11,7 +11,7 @@ import {
   perimetrosCorregidos,
   sumaPliegues6,
   sumaPliegues8,
-  tieneDatosIsak,
+  isakCompleto,
   type MedicionIsakRaw,
 } from '@/lib/seguimiento'
 import { createClient } from '@/lib/supabase/server'
@@ -83,8 +83,8 @@ export default async function AntropometriaPage(
   const mediciones = (pagina ?? []) as Medicion[]
   const pages = calcTotalPages(count)
 
-  const hayDatosIsak = serieCompleta.some(tieneDatosIsak)
-  const ultimaIsak = [...serieCompleta].reverse().find(tieneDatosIsak) ?? null
+  const hayDatosIsak = serieCompleta.some(isakCompleto)
+  const ultimaIsak = [...serieCompleta].reverse().find(isakCompleto) ?? null
   const imoSerie = serieCompleta.map((m) => ({ x: m.fecha_medicion, y: imo(m.kg_tejido_muscular, m.kg_tejido_oseo) }))
   const imoActual = [...imoSerie].reverse().find((p) => p.y != null)?.y ?? null
   const clasifImo = clasificarImo(imoActual)
