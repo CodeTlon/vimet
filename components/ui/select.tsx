@@ -2,6 +2,7 @@
 
 import { Check, ChevronDown } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 export type SelectOption = { value: string; label: string }
 
@@ -25,6 +26,13 @@ type SelectProps = {
  * dibuja el sistema operativo — no hay CSS que lo alcance, así que quedaba
  * inconsistente con el resto del diseño (ver conversación). El trigger y el
  * listbox sí son nuestro markup, totalmente estilables.
+ *
+ * El listbox se porta a document.body con position:fixed (en vez de vivir
+ * como hijo absolute del trigger): así no lo recorta ningún ancestro con
+ * overflow (ej. la tabla de rutina, con overflow-x-auto para el scroll
+ * horizontal — ese overflow-x, aunque no se toque overflow-y, hace que el
+ * navegador clippee igual en vertical, dejando el listbox cortado a la
+ * altura de una sola opción).
  *
  * Dos modos, igual que un <select> nativo:
  * - Controlado: pasá `value` + `onChange` (estado de React).
@@ -55,14 +63,47 @@ export function Select({
 
   const [open, setOpen] = useState(false)
   const [highlighted, setHighlighted] = useState(0)
-  const ref = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, openUp: false })
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
   const listId = useId()
 
   const selected = options.find((o) => o.value === value)
 
+  function updatePos() {
+    const rect = triggerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const spaceBelow = window.innerHeight - rect.bottom
+    const openUp = spaceBelow < 240 && rect.top > spaceBelow
+    setPos({
+      top: openUp ? rect.top - 4 : rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+      openUp,
+    })
+  }
+
+  useEffect(() => {
+    if (!open) return
+    updatePos()
+    // capture:true agarra el scroll de cualquier contenedor ancestro
+    // (no solo window), como el wrapper con overflow-x-auto de la tabla.
+    window.addEventListener('scroll', updatePos, true)
+    window.addEventListener('resize', updatePos)
+    return () => {
+      window.removeEventListener('scroll', updatePos, true)
+      window.removeEventListener('resize', updatePos)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (wrapRef.current?.contains(target)) return
+      if (listRef.current?.contains(target)) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
@@ -74,7 +115,7 @@ export function Select({
   // última opción elegida aunque el resto del form ya se hubiera limpiado.
   useEffect(() => {
     if (isControlled) return
-    const form = ref.current?.closest('form')
+    const form = wrapRef.current?.closest('form')
     if (!form) return
     const onReset = () => setInternal(initialValue)
     form.addEventListener('reset', onReset)
@@ -120,9 +161,10 @@ export function Select({
   }
 
   return (
-    <div ref={ref} className={`relative min-w-0 ${className}`}>
+    <div ref={wrapRef} className={`relative min-w-0 ${className}`}>
       {name ? <input type="hidden" name={name} value={value} /> : null}
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
@@ -142,29 +184,39 @@ export function Select({
         </span>
         <ChevronDown className={`size-3.5 shrink-0 transition-transform ${open ? 'rotate-180' : ''} ${valueClassName ? '' : 'text-gray-400'}`} />
       </button>
-      {open ? (
-        <ul
-          role="listbox"
-          id={listId}
-          className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-lg"
-        >
-          {options.map((o, idx) => (
-            <li
-              key={o.value}
-              role="option"
-              aria-selected={o.value === value}
-              onMouseEnter={() => setHighlighted(idx)}
-              onClick={() => commit(idx)}
-              className={`flex cursor-pointer items-center justify-between gap-2 px-3 py-2 ${
-                idx === highlighted ? 'bg-vimet-orange/10 text-vimet-orange' : 'text-gray-700'
-              }`}
+      {open && typeof document !== 'undefined'
+        ? createPortal(
+            <ul
+              ref={listRef}
+              role="listbox"
+              id={listId}
+              style={{
+                position: 'fixed',
+                left: pos.left,
+                width: pos.width,
+                ...(pos.openUp ? { bottom: window.innerHeight - pos.top } : { top: pos.top }),
+              }}
+              className="z-50 max-h-60 overflow-auto rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-lg"
             >
-              <span className="truncate">{o.label}</span>
-              {o.value === value ? <Check className="size-4 shrink-0" /> : null}
-            </li>
-          ))}
-        </ul>
-      ) : null}
+              {options.map((o, idx) => (
+                <li
+                  key={o.value}
+                  role="option"
+                  aria-selected={o.value === value}
+                  onMouseEnter={() => setHighlighted(idx)}
+                  onClick={() => commit(idx)}
+                  className={`flex cursor-pointer items-center justify-between gap-2 px-3 py-2 ${
+                    idx === highlighted ? 'bg-vimet-orange/10 text-vimet-orange' : 'text-gray-700'
+                  }`}
+                >
+                  <span className="truncate">{o.label}</span>
+                  {o.value === value ? <Check className="size-4 shrink-0" /> : null}
+                </li>
+              ))}
+            </ul>,
+            document.body,
+          )
+        : null}
     </div>
   )
 }
