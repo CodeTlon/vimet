@@ -22,7 +22,8 @@ export default async function MiProgresoPage() {
       .from('mediciones_antropometricas')
       .select('fecha_medicion, peso_kg, imc, porc_grasa, porc_masa_muscular, dx_antropometrico')
       .eq('paciente_id', user.id)
-      .order('fecha_medicion', { ascending: true }),
+      .order('fecha_medicion', { ascending: true })
+      .order('id', { ascending: true }),
     supabase
       .from('evaluaciones_funcionales')
       .select('fecha, puntaje_total')

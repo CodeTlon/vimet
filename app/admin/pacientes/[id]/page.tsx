@@ -37,6 +37,7 @@ export default async function PacienteResumen(
       .select('peso_kg, talla_cm, imc, porc_grasa, fecha_medicion')
       .eq('paciente_id', id)
       .order('fecha_medicion', { ascending: false })
+      .order('id', { ascending: false })
       .limit(1)
       .maybeSingle(),
     supabase

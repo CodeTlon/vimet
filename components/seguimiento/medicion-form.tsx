@@ -131,18 +131,18 @@ export function MedicionForm({
         </Lab>
         <Lab label="Peso (kg)">
           <input
-            type="number"
-            step="0.1"
+            type="text"
+            inputMode="decimal"
             name="peso_kg"
             defaultValue={medicion?.peso_kg ?? ''}
-            placeholder="Ej: 72.5"
+            placeholder="Ej: 72,5"
             className={inputBase}
           />
         </Lab>
         <Lab label="Talla (cm)">
           <input
-            type="number"
-            step="0.1"
+            type="text"
+            inputMode="decimal"
             name="talla_cm"
             defaultValue={medicion?.talla_cm ?? ''}
             placeholder="Ej: 170"
@@ -159,41 +159,41 @@ export function MedicionForm({
         </Lab>
         <Lab label="% grasa">
           <input
-            type="number"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
             name="porc_grasa"
             defaultValue={medicion?.porc_grasa ?? ''}
-            placeholder="Ej: 22.05"
+            placeholder="Ej: 22,05"
             className={inputBase}
           />
         </Lab>
         <Lab label="% masa muscular">
           <input
-            type="number"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
             name="porc_masa_muscular"
             defaultValue={medicion?.porc_masa_muscular ?? ''}
-            placeholder="Ej: 38.05"
+            placeholder="Ej: 38,05"
             className={inputBase}
           />
         </Lab>
         <Lab label="Kg grasa">
           <input
-            type="number"
-            step="0.1"
+            type="text"
+            inputMode="decimal"
             name="kg_grasa"
             defaultValue={medicion?.kg_grasa ?? ''}
-            placeholder="Ej: 16.0"
+            placeholder="Ej: 16,0"
             className={inputBase}
           />
         </Lab>
         <Lab label="Kg músculo">
           <input
-            type="number"
-            step="0.1"
+            type="text"
+            inputMode="decimal"
             name="kg_musculo"
             defaultValue={medicion?.kg_musculo ?? ''}
-            placeholder="Ej: 27.5"
+            placeholder="Ej: 27,5"
             className={inputBase}
           />
         </Lab>
@@ -208,49 +208,49 @@ export function MedicionForm({
         <div className="mt-4 space-y-4">
           <IsakGrupo titulo="Pliegues cutáneos (mm)">
             <Lab label="Tríceps">
-              <input type="number" step="0.1" name="pliegue_triceps_mm" defaultValue={medicion?.pliegue_triceps_mm ?? ''} className={inputBase} />
+              <input type="text" inputMode="decimal" name="pliegue_triceps_mm" defaultValue={medicion?.pliegue_triceps_mm ?? ''} className={inputBase} />
             </Lab>
             <Lab label="Subescapular">
-              <input type="number" step="0.1" name="pliegue_subescapular_mm" defaultValue={medicion?.pliegue_subescapular_mm ?? ''} className={inputBase} />
+              <input type="text" inputMode="decimal" name="pliegue_subescapular_mm" defaultValue={medicion?.pliegue_subescapular_mm ?? ''} className={inputBase} />
             </Lab>
             <Lab label="Bíceps">
-              <input type="number" step="0.1" name="pliegue_biceps_mm" defaultValue={medicion?.pliegue_biceps_mm ?? ''} className={inputBase} />
+              <input type="text" inputMode="decimal" name="pliegue_biceps_mm" defaultValue={medicion?.pliegue_biceps_mm ?? ''} className={inputBase} />
             </Lab>
             <Lab label="Cresta ilíaca">
-              <input type="number" step="0.1" name="pliegue_cresta_iliaca_mm" defaultValue={medicion?.pliegue_cresta_iliaca_mm ?? ''} className={inputBase} />
+              <input type="text" inputMode="decimal" name="pliegue_cresta_iliaca_mm" defaultValue={medicion?.pliegue_cresta_iliaca_mm ?? ''} className={inputBase} />
             </Lab>
             <Lab label="Supraespinal">
-              <input type="number" step="0.1" name="pliegue_supraespinal_mm" defaultValue={medicion?.pliegue_supraespinal_mm ?? ''} className={inputBase} />
+              <input type="text" inputMode="decimal" name="pliegue_supraespinal_mm" defaultValue={medicion?.pliegue_supraespinal_mm ?? ''} className={inputBase} />
             </Lab>
             <Lab label="Abdominal">
-              <input type="number" step="0.1" name="pliegue_abdominal_mm" defaultValue={medicion?.pliegue_abdominal_mm ?? ''} className={inputBase} />
+              <input type="text" inputMode="decimal" name="pliegue_abdominal_mm" defaultValue={medicion?.pliegue_abdominal_mm ?? ''} className={inputBase} />
             </Lab>
             <Lab label="Muslo">
-              <input type="number" step="0.1" name="pliegue_muslo_mm" defaultValue={medicion?.pliegue_muslo_mm ?? ''} className={inputBase} />
+              <input type="text" inputMode="decimal" name="pliegue_muslo_mm" defaultValue={medicion?.pliegue_muslo_mm ?? ''} className={inputBase} />
             </Lab>
             <Lab label="Pierna">
-              <input type="number" step="0.1" name="pliegue_pierna_mm" defaultValue={medicion?.pliegue_pierna_mm ?? ''} className={inputBase} />
+              <input type="text" inputMode="decimal" name="pliegue_pierna_mm" defaultValue={medicion?.pliegue_pierna_mm ?? ''} className={inputBase} />
             </Lab>
           </IsakGrupo>
 
           <IsakGrupo titulo="Perímetros (cm)">
             <Lab label="Brazo relajado">
-              <input type="number" step="0.1" name="perimetro_brazo_cm" defaultValue={medicion?.perimetro_brazo_cm ?? ''} className={inputBase} />
+              <input type="text" inputMode="decimal" name="perimetro_brazo_cm" defaultValue={medicion?.perimetro_brazo_cm ?? ''} className={inputBase} />
             </Lab>
             <Lab label="Muslo medio">
-              <input type="number" step="0.1" name="perimetro_muslo_cm" defaultValue={medicion?.perimetro_muslo_cm ?? ''} className={inputBase} />
+              <input type="text" inputMode="decimal" name="perimetro_muslo_cm" defaultValue={medicion?.perimetro_muslo_cm ?? ''} className={inputBase} />
             </Lab>
             <Lab label="Pierna">
-              <input type="number" step="0.1" name="perimetro_pierna_cm" defaultValue={medicion?.perimetro_pierna_cm ?? ''} className={inputBase} />
+              <input type="text" inputMode="decimal" name="perimetro_pierna_cm" defaultValue={medicion?.perimetro_pierna_cm ?? ''} className={inputBase} />
             </Lab>
           </IsakGrupo>
 
           <IsakGrupo titulo="Composición tisular (kg)">
             <Lab label="Tejido muscular">
-              <input type="number" step="0.01" name="kg_tejido_muscular" defaultValue={medicion?.kg_tejido_muscular ?? ''} className={inputBase} />
+              <input type="text" inputMode="decimal" name="kg_tejido_muscular" defaultValue={medicion?.kg_tejido_muscular ?? ''} className={inputBase} />
             </Lab>
             <Lab label="Tejido óseo">
-              <input type="number" step="0.01" name="kg_tejido_oseo" defaultValue={medicion?.kg_tejido_oseo ?? ''} className={inputBase} />
+              <input type="text" inputMode="decimal" name="kg_tejido_oseo" defaultValue={medicion?.kg_tejido_oseo ?? ''} className={inputBase} />
             </Lab>
           </IsakGrupo>
         </div>

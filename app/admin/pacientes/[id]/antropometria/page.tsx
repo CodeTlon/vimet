@@ -67,7 +67,8 @@ export default async function AntropometriaPage(
       .from('mediciones_antropometricas')
       .select(`fecha_medicion, peso_kg, porc_grasa, porc_masa_muscular, ${ISAK_FIELDS}`)
       .eq('paciente_id', params.id)
-      .order('fecha_medicion', { ascending: true }),
+      .order('fecha_medicion', { ascending: true })
+      .order('id', { ascending: true }),
     supabase
       .from('mediciones_antropometricas')
       .select(
@@ -76,6 +77,7 @@ export default async function AntropometriaPage(
       )
       .eq('paciente_id', params.id)
       .order('fecha_medicion', { ascending: false })
+      .order('id', { ascending: false })
       .range(from, to),
   ])
 

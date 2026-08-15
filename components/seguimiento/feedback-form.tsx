@@ -68,12 +68,10 @@ export function FeedbackForm() {
         <label className="block text-sm">
           <span className="block font-medium text-gray-800 mb-1">Peso autoreporte (kg)</span>
           <input
-            type="number"
-            step="0.1"
-            min="20"
-            max="400"
+            type="text"
+            inputMode="decimal"
             name="peso_autoreporte_kg"
-            placeholder="Ej: 72.5"
+            placeholder="Ej: 72,5"
             className={inputBase}
           />
         </label>

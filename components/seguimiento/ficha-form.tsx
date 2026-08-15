@@ -148,10 +148,8 @@ export function FichaForm({
         </Field>
         <Field label="Horas de sueño">
           <input
-            type="number"
-            step="0.5"
-            min="0"
-            max="24"
+            type="text"
+            inputMode="decimal"
             name="horas_sueno"
             defaultValue={f?.horas_sueno ?? ''}
             placeholder="Ej: 7"
