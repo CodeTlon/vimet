@@ -7,6 +7,7 @@ import { useActionState } from 'react';
 import { useRouter } from 'next/navigation'
 
 import { crearTurnoAction, type TurnoState } from '@/actions/turnos'
+import { Select } from '@/components/ui/select'
 import { HORAS_CORTE_RESERVA, hoyArgentina } from '@/lib/datetime'
 
 type Profesional = { id: string; nombre: string; apellido: string; rol: string }
@@ -150,37 +151,29 @@ export function BookingWizard({
         <label className="block text-sm font-medium text-gray-800 mb-1.5">
           ¿Con quién querés consultar?
         </label>
-        <select
+        <Select
           value={profId}
-          onChange={(e) => setProfId(e.target.value)}
-          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
-        >
-          <option value="">Seleccioná un profesional</option>
-          {profesionales.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nombre} {p.apellido} — {capitalize(p.rol)}
-            </option>
-          ))}
-        </select>
+          onChange={setProfId}
+          placeholder="Seleccioná un profesional"
+          options={profesionales.map((p) => ({
+            value: p.id,
+            label: `${p.nombre} ${p.apellido} — ${capitalize(p.rol)}`,
+          }))}
+        />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-800 mb-1.5">Tipo de consulta</label>
-        <select
+        <Select
           value={servId}
-          onChange={(e) => setServId(e.target.value)}
+          onChange={setServId}
           disabled={!profId}
-          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange disabled:bg-gray-50 disabled:cursor-not-allowed"
-        >
-          <option value="">
-            {profId ? 'Seleccioná un servicio' : 'Seleccioná primero un profesional'}
-          </option>
-          {serviciosFiltrados.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.nombre} ({s.duracion_minutos} min)
-            </option>
-          ))}
-        </select>
+          placeholder={profId ? 'Seleccioná un servicio' : 'Seleccioná primero un profesional'}
+          options={serviciosFiltrados.map((s) => ({
+            value: String(s.id),
+            label: `${s.nombre} (${s.duracion_minutos} min)`,
+          }))}
+        />
         {esCombo ? (
           <p className="mt-1.5 text-xs text-gray-600">
             Este servicio combina nutrición y entrenamiento — el turno queda coordinado con

@@ -1,5 +1,6 @@
 import { EjercicioDeleteButton } from '@/components/seguimiento/ejercicio-delete-button'
 import { EjercicioUploader } from '@/components/seguimiento/ejercicio-uploader'
+import { EjercicioYoutubeThumbnail } from '@/components/seguimiento/ejercicio-youtube-thumbnail'
 import { requireStaff } from '@/lib/supabase/auth-helpers'
 import { createClient } from '@/lib/supabase/server'
 
@@ -18,6 +19,8 @@ type EjercicioCustom = {
   categoria: string | null
   parte_cuerpo: string | null
   gif_url: string | null
+  youtube_url: string | null
+  modo: 'fuerza' | 'cardio'
   instrucciones: string | null
 }
 
@@ -27,7 +30,7 @@ export default async function EjerciciosPage() {
 
   const { data } = await supabase
     .from('ejercicios')
-    .select('id, nombre, categoria, parte_cuerpo, gif_url, instrucciones')
+    .select('id, nombre, categoria, parte_cuerpo, gif_url, youtube_url, modo, instrucciones')
     .eq('origen', 'staff')
     .order('created_at', { ascending: false })
 
@@ -50,7 +53,9 @@ export default async function EjerciciosPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {ejercicios.map((e) => (
             <div key={e.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              {e.gif_url ? (
+              {e.youtube_url ? (
+                <EjercicioYoutubeThumbnail url={e.youtube_url} alt={e.nombre} className="w-full aspect-video" />
+              ) : e.gif_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={e.gif_url} alt={e.nombre} className="w-full aspect-video object-cover bg-gray-100" />
               ) : (
@@ -58,7 +63,14 @@ export default async function EjerciciosPage() {
               )}
               <div className="p-3 space-y-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium text-gray-900">{e.nombre}</p>
+                  <p className="text-sm font-medium text-gray-900 flex items-center gap-1.5">
+                    {e.nombre}
+                    {e.modo === 'cardio' && (
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full border text-blue-700 bg-blue-50 border-blue-200 shrink-0">
+                        Cardio
+                      </span>
+                    )}
+                  </p>
                   <EjercicioDeleteButton id={e.id} />
                 </div>
                 <p className="text-xs text-gray-500">

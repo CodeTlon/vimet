@@ -5,6 +5,7 @@ import { useActionState } from 'react';
 
 import type { ContenidoState } from '@/actions/contenido'
 import { useResetOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
+import { Select } from '@/components/ui/select'
 
 const inputBase =
   'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none'
@@ -89,32 +90,34 @@ export function ServicioForm({
         </label>
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Tipo</span>
-          <select name="tipo" defaultValue={servicio?.tipo ?? 'nutricion'} className={inputBase}>
-            <option value="nutricion">Nutrición</option>
-            <option value="entrenamiento">Entrenamiento</option>
-            <option value="combo">Plan Integral</option>
-          </select>
+          <Select
+            name="tipo"
+            defaultValue={servicio?.tipo ?? 'nutricion'}
+            options={[
+              { value: 'nutricion', label: 'Nutrición' },
+              { value: 'entrenamiento', label: 'Entrenamiento' },
+              { value: 'combo', label: 'Plan Integral' },
+            ]}
+          />
         </label>
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Ícono</span>
-          <select name="icono" defaultValue={servicio?.icono ?? ICONOS[0]} className={inputBase}>
-            {ICONOS.map((i) => (
-              <option key={i} value={i}>
-                {i}
-              </option>
-            ))}
-          </select>
+          <Select
+            name="icono"
+            defaultValue={servicio?.icono ?? ICONOS[0]}
+            options={ICONOS.map((i) => ({ value: i, label: i }))}
+          />
         </label>
         <label className="block sm:col-span-2">
           <span className="block font-medium text-gray-800 mb-1">Profesional a cargo</span>
-          <select name="profesional_id" defaultValue={servicio?.profesional_id ?? ''} className={inputBase}>
-            <option value="">Sin asignar</option>
-            {profesionales.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre}
-              </option>
-            ))}
-          </select>
+          <Select
+            name="profesional_id"
+            defaultValue={servicio?.profesional_id ?? ''}
+            options={[
+              { value: '', label: 'Sin asignar' },
+              ...profesionales.map((p) => ({ value: p.id, label: p.nombre })),
+            ]}
+          />
         </label>
       </div>
 

@@ -13,6 +13,7 @@ import {
   type HorarioState,
 } from '@/actions/horarios'
 import { useResetOnSuccess } from '@/components/seguimiento/use-reset-on-success'
+import { Select } from '@/components/ui/select'
 import { formatearFechaCorta } from '@/lib/seguimiento'
 
 export type Horario = {
@@ -238,13 +239,11 @@ export function HorariosEditor({ horarios }: { horarios: Horario[] }) {
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <label className="block text-sm">
               <span className="block font-medium text-gray-700 mb-1">Día</span>
-              <select name="dia_semana" defaultValue={String(editing?.dia_semana ?? 1)} className={`${inputBase} w-full`}>
-                {DIAS.map((d) => (
-                  <option key={d.value} value={d.value}>
-                    {d.label}
-                  </option>
-                ))}
-              </select>
+              <Select
+                name="dia_semana"
+                defaultValue={String(editing?.dia_semana ?? 1)}
+                options={DIAS.map((d) => ({ value: String(d.value), label: d.label }))}
+              />
             </label>
             <label className="block text-sm">
               <span className="block font-medium text-gray-700 mb-1">Desde</span>
@@ -268,11 +267,15 @@ export function HorariosEditor({ horarios }: { horarios: Horario[] }) {
             </label>
             <label className="block text-sm">
               <span className="block font-medium text-gray-700 mb-1">Modalidad</span>
-              <select name="modalidad" defaultValue={editing?.modalidad ?? 'ambas'} className={`${inputBase} w-full`}>
-                <option value="ambas">Ambas</option>
-                <option value="presencial">Presencial</option>
-                <option value="virtual">Virtual</option>
-              </select>
+              <Select
+                name="modalidad"
+                defaultValue={editing?.modalidad ?? 'ambas'}
+                options={[
+                  { value: 'ambas', label: 'Ambas' },
+                  { value: 'presencial', label: 'Presencial' },
+                  { value: 'virtual', label: 'Virtual' },
+                ]}
+              />
             </label>
           </div>
 

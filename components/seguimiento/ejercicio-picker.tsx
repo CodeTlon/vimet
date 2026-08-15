@@ -3,6 +3,9 @@
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 
+import { EjercicioYoutubeThumbnail } from '@/components/seguimiento/ejercicio-youtube-thumbnail'
+import { Select } from '@/components/ui/select'
+
 export type EjercicioResultado = {
   id: number
   nombre: string
@@ -10,6 +13,8 @@ export type EjercicioResultado = {
   equipo: string | null
   imagen_url: string | null
   gif_url: string | null
+  youtube_url: string | null
+  modo: 'fuerza' | 'cardio'
   instrucciones: string | null
 }
 
@@ -64,18 +69,18 @@ export function EjercicioPicker({
           placeholder="Buscar ejercicio..."
           className={inputBase}
         />
-        <select value={parte} onChange={(e) => setParte(e.target.value)} className={inputBase}>
-          <option value="">Toda parte del cuerpo</option>
-          {partes.map((p) => (
-            <option key={p} value={p}>{p}</option>
-          ))}
-        </select>
-        <select value={equipo} onChange={(e) => setEquipo(e.target.value)} className={inputBase}>
-          <option value="">Todo equipo</option>
-          {equipos.map((eq) => (
-            <option key={eq} value={eq}>{eq}</option>
-          ))}
-        </select>
+        <Select
+          value={parte}
+          onChange={setParte}
+          placeholder="Toda parte del cuerpo"
+          options={[{ value: '', label: 'Toda parte del cuerpo' }, ...partes.map((p) => ({ value: p, label: p }))]}
+        />
+        <Select
+          value={equipo}
+          onChange={setEquipo}
+          placeholder="Todo equipo"
+          options={[{ value: '', label: 'Todo equipo' }, ...equipos.map((eq) => ({ value: eq, label: eq }))]}
+        />
       </div>
 
       <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-100 divide-y divide-gray-100">
@@ -93,7 +98,9 @@ export function EjercicioPicker({
               onClick={() => onAgregar(e)}
               className="group w-full flex items-center gap-3 p-2 text-left hover:bg-gray-50"
             >
-              {e.imagen_url ? (
+              {e.youtube_url ? (
+                <EjercicioYoutubeThumbnail url={e.youtube_url} alt="" className="size-16 lg:size-24 rounded-md shrink-0" />
+              ) : e.imagen_url ? (
                 <span className="relative size-16 lg:size-24 rounded-md overflow-hidden shrink-0 bg-gray-100">
                   <Image
                     src={e.imagen_url}

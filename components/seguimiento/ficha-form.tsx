@@ -11,6 +11,7 @@ import {
   useScrollToMessage,
 } from '@/components/seguimiento/use-reset-on-success'
 import { NotaTextarea } from '@/components/ui/nota-textarea'
+import { Select } from '@/components/ui/select'
 import { hoyArgentina } from '@/lib/datetime'
 
 const initial: FichaState = {}
@@ -103,12 +104,16 @@ export function FichaForm({
           />
         </Field>
         <Field label="Sexo">
-          <select name="sexo" defaultValue={f?.sexo ?? ''} className={inputBase}>
-            <option value="">—</option>
-            <option value="femenino">Femenino</option>
-            <option value="masculino">Masculino</option>
-            <option value="otro">Otro</option>
-          </select>
+          <Select
+            name="sexo"
+            defaultValue={f?.sexo ?? ''}
+            options={[
+              { value: '', label: '—' },
+              { value: 'femenino', label: 'Femenino' },
+              { value: 'masculino', label: 'Masculino' },
+              { value: 'otro', label: 'Otro' },
+            ]}
+          />
         </Field>
         <Field label="Ocupación">
           <input name="ocupacion" defaultValue={f?.ocupacion ?? ''} placeholder="Ej: Docente" className={inputBase} />
@@ -130,16 +135,16 @@ export function FichaForm({
         <BoolField label="¿Consume otras drogas?" name="drogas" value={bv(f?.drogas)} />
         <BoolField label="¿Entrena actualmente?" name="entrena" value={bv(f?.entrena)} />
         <Field label="Actividad diaria">
-          <select
+          <Select
             name="actividad_diaria"
             defaultValue={f?.actividad_diaria ?? ''}
-            className={inputBase}
-          >
-            <option value="">—</option>
-            <option value="poca">Poca</option>
-            <option value="normal">Normal</option>
-            <option value="mucha">Mucha</option>
-          </select>
+            options={[
+              { value: '', label: '—' },
+              { value: 'poca', label: 'Poca' },
+              { value: 'normal', label: 'Normal' },
+              { value: 'mucha', label: 'Mucha' },
+            ]}
+          />
         </Field>
         <Field label="Horas de sueño">
           <input
@@ -274,11 +279,15 @@ function FullField({ label, children }: { label: string; children: React.ReactNo
 function BoolField({ label, name, value }: { label: string; name: string; value: string }) {
   return (
     <Field label={label}>
-      <select name={name} defaultValue={value} className={inputBase}>
-        <option value="">—</option>
-        <option value="true">Sí</option>
-        <option value="false">No</option>
-      </select>
+      <Select
+        name={name}
+        defaultValue={value}
+        options={[
+          { value: '', label: '—' },
+          { value: 'true', label: 'Sí' },
+          { value: 'false', label: 'No' },
+        ]}
+      />
     </Field>
   )
 }
