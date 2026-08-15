@@ -14,6 +14,7 @@ import { EjercicioModal, type EjercicioDetalle } from '@/components/seguimiento/
 import { EjercicioPicker, type EjercicioResultado } from '@/components/seguimiento/ejercicio-picker'
 import { EjercicioYoutubeThumbnail } from '@/components/seguimiento/ejercicio-youtube-thumbnail'
 import { NotaTextarea } from '@/components/ui/nota-textarea'
+import { Select } from '@/components/ui/select'
 
 const DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'] as const
 // ponytail: "general" (sin día) es el bucket legacy de ejercicios cargados antes de que existieran las tabs.
@@ -75,7 +76,9 @@ export type RutinaItem = {
 }
 
 const inputBase =
-  'w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
+  'w-full rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
+const thBase = 'py-2.5 px-3 font-semibold text-xs uppercase tracking-wide whitespace-nowrap'
+const tdBase = 'py-3 px-3 align-middle'
 
 function ordenar(a: RutinaItem, b: RutinaItem) {
   return a.orden - b.orden
@@ -91,7 +94,7 @@ function EjercicioCelda({ item, onAbrir }: { item: RutinaItem; onAbrir: (detalle
         href={item.ejercicio.youtube_url}
         target="_blank"
         rel="noopener noreferrer"
-        className="group flex items-center gap-2 text-left hover:text-vimet-orange"
+        className="group flex items-center gap-3 text-left hover:text-vimet-orange"
       >
         <EjercicioYoutubeThumbnail url={item.ejercicio.youtube_url} alt="" className="size-16 lg:size-28 rounded-md shrink-0" />
         <span>{item.ejercicio.nombre}</span>
@@ -110,7 +113,7 @@ function EjercicioCelda({ item, onAbrir }: { item: RutinaItem; onAbrir: (detalle
           instrucciones: item.ejercicio.instrucciones,
         })
       }
-      className="group flex items-center gap-2 text-left hover:text-vimet-orange"
+      className="group flex items-center gap-3 text-left hover:text-vimet-orange"
     >
       {item.ejercicio?.imagen_url ? (
         <span className="relative size-16 lg:size-28 rounded-md overflow-hidden shrink-0 bg-gray-100">
@@ -363,37 +366,36 @@ export function RutinaPanel({
           {itemsFuerza.length === 0 && itemsCardio.length === 0 ? (
             <p className="text-sm text-gray-500">Todavía no se agregaron ejercicios a {DIA_LABEL[diaActivo].toLowerCase()}.</p>
           ) : (
-            <>
+            <div className="space-y-5">
               {itemsFuerza.length > 0 ? (
-                <div className="space-y-2">
+                <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 space-y-3">
                   <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Fuerza</h4>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                  <div className="overflow-x-auto rounded-lg bg-white border border-gray-100">
+                    <table className="w-full text-sm border-collapse">
                       <thead>
-                        <tr className="text-left text-gray-500">
-                          <th className="py-1 pr-2 font-medium">#</th>
-                          <th className="py-1 pr-2 font-medium">Ejercicio</th>
-                          <th className="py-1 pr-2 font-medium">Series</th>
-                          <th className="py-1 pr-2 font-medium">Reps</th>
-                          <th className="py-1 pr-2 font-medium">Descanso (seg)</th>
-                          <th className="py-1 pr-2 font-medium">Notas</th>
+                        <tr className="text-left text-gray-500 border-b border-gray-100">
+                          <th className={thBase}>#</th>
+                          <th className={thBase}>Ejercicio</th>
+                          <th className={thBase}>Series</th>
+                          <th className={thBase}>Reps</th>
+                          <th className={thBase}>Descanso (seg)</th>
+                          <th className={thBase}>Notas</th>
                           <th />
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-gray-100">
                         {itemsFuerza.map((item, idx) => (
                           <tr
                             key={item.id}
                             ref={item.id === ultimoAgregadoId ? ultimoAgregadoRef : undefined}
-                            className="border-t border-gray-100"
                           >
-                            <td className="py-2 pr-2 text-gray-500">{idx + 1}</td>
-                            <td className="py-2 pr-2 font-medium text-gray-900">
+                            <td className={`${tdBase} text-gray-400`}>{idx + 1}</td>
+                            <td className={`${tdBase} font-medium text-gray-900`}>
                               <EjercicioCelda item={item} onAbrir={setEjercicioAbierto} />
                             </td>
-                            <td className="py-2 pr-2">
+                            <td className={tdBase}>
                               <input
-                                className={inputBase}
+                                className={`${inputBase} w-20`}
                                 inputMode="numeric"
                                 placeholder="4"
                                 defaultValue={item.series ?? ''}
@@ -403,9 +405,9 @@ export function RutinaPanel({
                                 }}
                               />
                             </td>
-                            <td className="py-2 pr-2">
+                            <td className={tdBase}>
                               <input
-                                className={inputBase}
+                                className={`${inputBase} w-24`}
                                 placeholder="8-12"
                                 defaultValue={item.repeticiones ?? ''}
                                 onBlur={(e) => {
@@ -414,9 +416,9 @@ export function RutinaPanel({
                                 }}
                               />
                             </td>
-                            <td className="py-2 pr-2">
+                            <td className={tdBase}>
                               <input
-                                className={inputBase}
+                                className={`${inputBase} w-20`}
                                 inputMode="numeric"
                                 placeholder="60"
                                 defaultValue={item.descanso_seg ?? ''}
@@ -426,7 +428,7 @@ export function RutinaPanel({
                                 }}
                               />
                             </td>
-                            <td className="py-2 pr-2">
+                            <td className={`${tdBase} min-w-[10rem]`}>
                               <NotaTextarea
                                 rows={1}
                                 className={inputBase}
@@ -438,7 +440,7 @@ export function RutinaPanel({
                                 }}
                               />
                             </td>
-                            <td className="py-2">
+                            <td className={tdBase}>
                               <button
                                 type="button"
                                 disabled={pending}
@@ -458,58 +460,54 @@ export function RutinaPanel({
               ) : null}
 
               {itemsCardio.length > 0 ? (
-                <div className="space-y-2">
+                <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 space-y-3">
                   <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Cardio</h4>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                  <div className="overflow-x-auto rounded-lg bg-white border border-gray-100">
+                    <table className="w-full text-sm border-collapse">
                       <thead>
-                        <tr className="text-left text-gray-500">
-                          <th className="py-1 pr-2 font-medium">#</th>
-                          <th className="py-1 pr-2 font-medium">Ejercicio</th>
+                        <tr className="text-left text-gray-500 border-b border-gray-100">
+                          <th className={thBase}>#</th>
+                          <th className={thBase}>Ejercicio</th>
                           {FASES_CARDIO.map((fase) => (
-                            <th key={fase} className="py-1 pr-2 font-medium">{FASE_HEADER[fase]}</th>
+                            <th key={fase} className={thBase}>{FASE_HEADER[fase]}</th>
                           ))}
-                          <th className="py-1 pr-2 font-medium">Notas</th>
+                          <th className={thBase}>Notas</th>
                           <th />
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-gray-100">
                         {itemsCardio.map((item, idx) => (
                           <tr
                             key={item.id}
                             ref={item.id === ultimoAgregadoId ? ultimoAgregadoRef : undefined}
-                            className="border-t border-gray-100"
                           >
-                            <td className="py-2 pr-2 text-gray-500">{idx + 1}</td>
-                            <td className="py-2 pr-2 font-medium text-gray-900">
+                            <td className={`${tdBase} text-gray-400`}>{idx + 1}</td>
+                            <td className={`${tdBase} font-medium text-gray-900`}>
                               <EjercicioCelda item={item} onAbrir={setEjercicioAbierto} />
                             </td>
                             {FASES_CARDIO.map((fase) => {
                               const { valor: campoValor, unidad: campoUnidad } = FASE_CAMPOS[fase]
                               return (
-                                <td key={fase} className="py-2 pr-2">
-                                  <div className="flex gap-1">
+                                <td key={fase} className={tdBase}>
+                                  <div className="flex items-center gap-1.5">
                                     <input
-                                      className={`${inputBase} w-16`}
+                                      className={`${inputBase} w-16 shrink-0`}
                                       inputMode="decimal"
                                       placeholder="30"
                                       defaultValue={item[campoValor] ?? ''}
                                       onBlur={(e) => guardarFaseCardio(item, fase, { valor: e.target.value })}
                                     />
-                                    <select
-                                      className={inputBase}
-                                      defaultValue={item[campoUnidad] ?? 'minutos'}
-                                      onChange={(e) => guardarFaseCardio(item, fase, { unidad: e.target.value })}
-                                    >
-                                      {UNIDADES_CARDIO.map((u) => (
-                                        <option key={u.value} value={u.value}>{u.label}</option>
-                                      ))}
-                                    </select>
+                                    <Select
+                                      value={item[campoUnidad] ?? 'minutos'}
+                                      onChange={(v) => guardarFaseCardio(item, fase, { unidad: v })}
+                                      options={UNIDADES_CARDIO}
+                                      className="w-20 shrink-0"
+                                    />
                                   </div>
                                 </td>
                               )
                             })}
-                            <td className="py-2 pr-2">
+                            <td className={`${tdBase} min-w-[10rem]`}>
                               <NotaTextarea
                                 rows={1}
                                 className={inputBase}
@@ -521,7 +519,7 @@ export function RutinaPanel({
                                 }}
                               />
                             </td>
-                            <td className="py-2">
+                            <td className={tdBase}>
                               <button
                                 type="button"
                                 disabled={pending}
@@ -539,7 +537,7 @@ export function RutinaPanel({
                   </div>
                 </div>
               ) : null}
-            </>
+            </div>
           )}
         </>
       )}

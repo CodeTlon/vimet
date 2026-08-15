@@ -11,6 +11,7 @@ import {
   useScrollToMessage,
 } from '@/components/seguimiento/use-reset-on-success'
 import { NotaTextarea } from '@/components/ui/nota-textarea'
+import { Select } from '@/components/ui/select'
 import { CATEGORIA_OBJETIVO_LABEL } from '@/lib/seguimiento'
 import { hoyArgentina } from '@/lib/datetime'
 
@@ -63,22 +64,24 @@ export function ObjetivoForm({ pacienteId }: { pacienteId: string }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Categoría</span>
-          <select name="categoria" defaultValue="nutricional" className={inputBase}>
-            {Object.entries(CATEGORIA_OBJETIVO_LABEL).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
+          <Select
+            name="categoria"
+            defaultValue="nutricional"
+            options={Object.entries(CATEGORIA_OBJETIVO_LABEL).map(([k, v]) => ({ value: k, label: v }))}
+          />
         </label>
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Estado</span>
-          <select name="estado" defaultValue="pendiente" className={inputBase}>
-            <option value="pendiente">Pendiente</option>
-            <option value="en_progreso">En progreso</option>
-            <option value="cumplido">Cumplido</option>
-            <option value="descartado">Descartado</option>
-          </select>
+          <Select
+            name="estado"
+            defaultValue="pendiente"
+            options={[
+              { value: 'pendiente', label: 'Pendiente' },
+              { value: 'en_progreso', label: 'En progreso' },
+              { value: 'cumplido', label: 'Cumplido' },
+              { value: 'descartado', label: 'Descartado' },
+            ]}
+          />
         </label>
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Fecha objetivo</span>

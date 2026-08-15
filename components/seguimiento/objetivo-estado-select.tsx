@@ -1,13 +1,15 @@
 'use client'
 
-import { ChevronDown } from 'lucide-react'
 import { useTransition } from 'react'
 
 import { cambiarEstadoObjetivoAction } from '@/actions/objetivos'
+import { Select } from '@/components/ui/select'
 import {
   ESTADO_OBJETIVO_BADGE,
   ESTADO_OBJETIVO_LABEL,
 } from '@/lib/seguimiento'
+
+const OPCIONES = Object.entries(ESTADO_OBJETIVO_LABEL).map(([k, v]) => ({ value: k, label: v }))
 
 export function ObjetivoEstadoSelect({
   id,
@@ -20,28 +22,23 @@ export function ObjetivoEstadoSelect({
 }) {
   const [pending, start] = useTransition()
   return (
-    <div className={`relative inline-flex rounded-full ${ESTADO_OBJETIVO_BADGE[estado]}`}>
-      <select
-        defaultValue={estado}
+    <div className={`inline-flex rounded-full ${ESTADO_OBJETIVO_BADGE[estado]}`}>
+      <Select
+        value={estado}
         disabled={pending}
-        onChange={(e) => {
+        options={OPCIONES}
+        onChange={(nuevoEstado) => {
           const fd = new FormData()
           fd.set('id', String(id))
           fd.set('paciente_id', pacienteId)
-          fd.set('estado', e.currentTarget.value)
+          fd.set('estado', nuevoEstado)
           start(async () => {
             await cambiarEstadoObjetivoAction(fd)
           })
         }}
-        className="appearance-none bg-transparent rounded-full text-xs font-semibold pl-3 pr-7 py-1.5 border-0 cursor-pointer focus:outline-none disabled:opacity-60"
-      >
-        {Object.entries(ESTADO_OBJETIVO_LABEL).map(([k, v]) => (
-          <option key={k} value={k}>
-            {v}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 size-3.5" />
+        triggerClassName="flex items-center gap-1 bg-transparent rounded-full text-xs font-semibold pl-3 pr-2.5 py-1.5 border-0 cursor-pointer focus:outline-none disabled:opacity-60"
+        valueClassName="text-current"
+      />
     </div>
   )
 }

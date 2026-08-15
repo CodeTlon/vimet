@@ -12,6 +12,7 @@ import {
 } from '@/actions/evolucion'
 import { useResetOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
 import { NotaTextarea } from '@/components/ui/nota-textarea'
+import { Select } from '@/components/ui/select'
 
 const initial: EvolucionState = {}
 const inputBase =
@@ -88,28 +89,36 @@ export function EvolucionForm({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Origen</span>
-          <select name="origen" defaultValue={entry?.origen ?? defaultOrigen} className={inputBase}>
-            <option value="nutricion">Nutrición</option>
-            <option value="entrenamiento">Entrenamiento</option>
-          </select>
+          <Select
+            name="origen"
+            defaultValue={entry?.origen ?? defaultOrigen}
+            options={[
+              { value: 'nutricion', label: 'Nutrición' },
+              { value: 'entrenamiento', label: 'Entrenamiento' },
+            ]}
+          />
         </label>
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Tipo</span>
-          <select name="tipo" defaultValue={entry?.tipo ?? 'evolucion'} className={inputBase}>
-            <option value="evolucion">Evolución</option>
-            <option value="observacion">Observación</option>
-          </select>
+          <Select
+            name="tipo"
+            defaultValue={entry?.tipo ?? 'evolucion'}
+            options={[
+              { value: 'evolucion', label: 'Evolución' },
+              { value: 'observacion', label: 'Observación' },
+            ]}
+          />
         </label>
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Visible al paciente</span>
-          <select
+          <Select
             name="visible_paciente"
             defaultValue={entry ? String(entry.visible_paciente) : 'false'}
-            className={inputBase}
-          >
-            <option value="false">No</option>
-            <option value="true">Sí</option>
-          </select>
+            options={[
+              { value: 'false', label: 'No' },
+              { value: 'true', label: 'Sí' },
+            ]}
+          />
         </label>
       </div>
 

@@ -1,12 +1,13 @@
 'use client'
 
-import { ChevronDown, Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useFormStatus } from 'react-dom';
 import { useActionState } from 'react';
 
 import { actualizarMetodologiaAction, type ContenidoState } from '@/actions/contenido'
 import { useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
+import { Select } from '@/components/ui/select'
 
 const inputBase =
   'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none'
@@ -43,18 +44,7 @@ function Btn() {
 }
 
 function IconSelect({ name, defaultValue }: { name: string; defaultValue: string }) {
-  return (
-    <div className="relative">
-      <select name={name} defaultValue={defaultValue} className={`${inputBase} appearance-none pr-8`}>
-        {ICONOS.map((i) => (
-          <option key={i} value={i}>
-            {i}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-    </div>
-  )
+  return <Select name={name} defaultValue={defaultValue} options={ICONOS.map((i) => ({ value: i, label: i }))} />
 }
 
 function RemoveBtn({ onClick }: { onClick: () => void }) {

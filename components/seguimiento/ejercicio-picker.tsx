@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useEffect, useState } from 'react'
 
 import { EjercicioYoutubeThumbnail } from '@/components/seguimiento/ejercicio-youtube-thumbnail'
+import { Select } from '@/components/ui/select'
 
 export type EjercicioResultado = {
   id: number
@@ -68,18 +69,18 @@ export function EjercicioPicker({
           placeholder="Buscar ejercicio..."
           className={inputBase}
         />
-        <select value={parte} onChange={(e) => setParte(e.target.value)} className={inputBase}>
-          <option value="">Toda parte del cuerpo</option>
-          {partes.map((p) => (
-            <option key={p} value={p}>{p}</option>
-          ))}
-        </select>
-        <select value={equipo} onChange={(e) => setEquipo(e.target.value)} className={inputBase}>
-          <option value="">Todo equipo</option>
-          {equipos.map((eq) => (
-            <option key={eq} value={eq}>{eq}</option>
-          ))}
-        </select>
+        <Select
+          value={parte}
+          onChange={setParte}
+          placeholder="Toda parte del cuerpo"
+          options={[{ value: '', label: 'Toda parte del cuerpo' }, ...partes.map((p) => ({ value: p, label: p }))]}
+        />
+        <Select
+          value={equipo}
+          onChange={setEquipo}
+          placeholder="Todo equipo"
+          options={[{ value: '', label: 'Todo equipo' }, ...equipos.map((eq) => ({ value: eq, label: eq }))]}
+        />
       </div>
 
       <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-100 divide-y divide-gray-100">

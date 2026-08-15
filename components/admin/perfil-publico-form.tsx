@@ -5,6 +5,7 @@ import { useActionState } from 'react';
 
 import { actualizarPerfilPublicoAction, type ContenidoState } from '@/actions/contenido'
 import { useResetOnSuccess, useScrollToMessage } from '@/components/seguimiento/use-reset-on-success'
+import { Select } from '@/components/ui/select'
 
 const inputBase =
   'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none'
@@ -141,13 +142,11 @@ export function PerfilPublicoForm({
               key={i}
               className="grid grid-cols-1 sm:grid-cols-[140px_1fr_1fr] gap-3 border border-gray-100 rounded-lg p-3"
             >
-              <select name={`area_${i + 1}_icon`} defaultValue={a.icon} className={inputBase}>
-                {AREA_ICONOS.map((icon) => (
-                  <option key={icon} value={icon}>
-                    {icon}
-                  </option>
-                ))}
-              </select>
+              <Select
+                name={`area_${i + 1}_icon`}
+                defaultValue={a.icon}
+                options={AREA_ICONOS.map((icon) => ({ value: icon, label: icon }))}
+              />
               <input name={`area_${i + 1}_title`} defaultValue={a.title} placeholder="Título" className={inputBase} />
               <input name={`area_${i + 1}_desc`} defaultValue={a.desc} placeholder="Descripción" className={inputBase} />
             </div>

@@ -12,6 +12,7 @@ import {
   useScrollToMessage,
 } from '@/components/seguimiento/use-reset-on-success'
 import { NotaTextarea } from '@/components/ui/nota-textarea'
+import { Select } from '@/components/ui/select'
 
 const initial: RecursoState = {}
 
@@ -140,13 +141,17 @@ export function RecursoForm({ pacienteId }: { pacienteId: string }) {
         </label>
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Categoría</span>
-          <select name="categoria" defaultValue="otro" className={inputBase}>
-            <option value="ejercicio">Ejercicio</option>
-            <option value="nutricion">Nutrición</option>
-            <option value="progreso">Progreso</option>
-            <option value="educativo">Educativo</option>
-            <option value="otro">Otro</option>
-          </select>
+          <Select
+            name="categoria"
+            defaultValue="otro"
+            options={[
+              { value: 'ejercicio', label: 'Ejercicio' },
+              { value: 'nutricion', label: 'Nutrición' },
+              { value: 'progreso', label: 'Progreso' },
+              { value: 'educativo', label: 'Educativo' },
+              { value: 'otro', label: 'Otro' },
+            ]}
+          />
         </label>
       </div>
 
@@ -158,10 +163,15 @@ export function RecursoForm({ pacienteId }: { pacienteId: string }) {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <label className="block text-sm">
           <span className="block font-medium text-gray-800 mb-1">Visible al paciente</span>
-          <select name="visible_paciente" defaultValue="false" className={`${inputBase} w-auto`}>
-            <option value="false">No — solo el staff</option>
-            <option value="true">Sí — el paciente puede verlo</option>
-          </select>
+          <Select
+            name="visible_paciente"
+            defaultValue="false"
+            className="sm:w-72"
+            options={[
+              { value: 'false', label: 'No — solo el staff' },
+              { value: 'true', label: 'Sí — el paciente puede verlo' },
+            ]}
+          />
         </label>
         <Btn />
       </div>

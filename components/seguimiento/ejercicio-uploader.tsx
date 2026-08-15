@@ -5,6 +5,7 @@ import { Film, Loader2, Upload, Youtube } from 'lucide-react'
 import { useRef, useState, useTransition } from 'react'
 
 import { crearEjercicioCustomAction } from '@/actions/ejercicios'
+import { Select } from '@/components/ui/select'
 import { extraerYoutubeId, miniaturaYoutube } from '@/lib/youtube'
 
 const MAX_DUR = 6
@@ -330,15 +331,11 @@ export function EjercicioUploader() {
             />
             {tipoEjercicio === 'fuerza' ? (
               <>
-                <select
+                <Select
                   value={categoria}
-                  onChange={(e) => setCategoria(e.target.value as typeof categoria)}
-                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
-                >
-                  {CATEGORIAS.map((c) => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setCategoria(v as typeof categoria)}
+                  options={CATEGORIAS}
+                />
                 {categoria === 'grupo_muscular' ? (
                   <input
                     value={parteCuerpo}

@@ -16,6 +16,7 @@ import {
   useScrollToMessage,
 } from '@/components/seguimiento/use-reset-on-success'
 import { NotaTextarea } from '@/components/ui/nota-textarea'
+import { Select } from '@/components/ui/select'
 import { hoyArgentina } from '@/lib/datetime'
 
 const initial: PlanState = {}
@@ -105,24 +106,27 @@ export function PlanForm({
 
       <Section title="Datos del plan">
         <Field label="Tipo">
-          <select
+          <Select
             name="tipo"
             value={tipo}
-            onChange={(e) => setTipo(e.target.value as typeof tipo)}
-            className={inputBase}
-            required
-          >
-            <option value="nutricion">Nutrición</option>
-            <option value="entrenamiento">Entrenamiento</option>
-            <option value="combo">Combo</option>
-          </select>
+            onChange={(v) => setTipo(v as typeof tipo)}
+            options={[
+              { value: 'nutricion', label: 'Nutrición' },
+              { value: 'entrenamiento', label: 'Entrenamiento' },
+              { value: 'combo', label: 'Combo' },
+            ]}
+          />
         </Field>
         <Field label="Estado">
-          <select name="estado" defaultValue={p?.estado ?? 'vigente'} className={inputBase}>
-            <option value="vigente">Vigente</option>
-            <option value="archivado">Archivado</option>
-            <option value="borrador">Borrador</option>
-          </select>
+          <Select
+            name="estado"
+            defaultValue={p?.estado ?? 'vigente'}
+            options={[
+              { value: 'vigente', label: 'Vigente' },
+              { value: 'archivado', label: 'Archivado' },
+              { value: 'borrador', label: 'Borrador' },
+            ]}
+          />
         </Field>
         <FullField label="Título">
           <input
