@@ -29,7 +29,7 @@ Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio 
 | Imágenes subidas por usuarios (foto perfil, recursos, adjuntos) | `lib/storage/optimize-image.ts` (resize + webp vía `sharp`) antes de subir |
 | Formulario de contacto | `components/contacto-form.tsx` + `actions/contacto.ts` (Resend, sin DB) |
 | Catálogo de servicios / equipo (estático) | `lib/config/servicios.ts` / `lib/config/team.ts` |
-| Schema / columna / tabla / RLS | **nueva** migración numerada en `supabase/migrations/` (última: `0033_profiles_slot_publico.sql`) |
+| Schema / columna / tabla / RLS | **nueva** migración numerada en `supabase/migrations/` (última: `0034_antropometria_isak.sql`) |
 | Gestión de pacientes (activar/desactivar/eliminar) | `actions/staff.ts` (`toggleActivoAction`, `eliminarPacienteAction` — cualquier staff; eliminar exige que el paciente esté desactivado) + `app/admin/pacientes/page.tsx` |
 | Alta de paciente por staff (sin login propio, para adultos mayores / dificultad de acceso) | `actions/staff.ts` (`crearPacienteGestionadoAction` — cualquier staff) + `components/crear-paciente-button.tsx` |
 | Biblioteca de ejercicios propios (GIF o link de YouTube) | `actions/ejercicios.ts` + `components/seguimiento/ejercicio-uploader.tsx` + `lib/youtube.ts` + `app/admin/ejercicios/page.tsx` |

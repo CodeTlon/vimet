@@ -133,3 +133,86 @@ export function resumenCardio(item: {
   const partes = fases.filter(([, v]) => v).map(([label, v]) => `${label}: ${v}`)
   return partes.length ? partes.join(' · ') : null
 }
+
+// ─────────────────────────────────────────────────────────
+// Antropometría ISAK: IMO, Adiposidad (Σ pliegues), Muscularidad
+// (perímetros corregidos) — fórmulas verificadas contra un reporte real de
+// ISAKmetry. Ninguno de estos valores se persiste: se calculan on-the-fly a
+// partir de los campos crudos (mismo criterio que categoriaCondicionFisica).
+// ─────────────────────────────────────────────────────────
+export type MedicionIsakRaw = {
+  pliegue_triceps_mm: number | null
+  pliegue_subescapular_mm: number | null
+  pliegue_supraespinal_mm: number | null
+  pliegue_abdominal_mm: number | null
+  pliegue_muslo_mm: number | null
+  pliegue_pierna_mm: number | null
+  pliegue_biceps_mm: number | null
+  pliegue_cresta_iliaca_mm: number | null
+  perimetro_brazo_cm: number | null
+  perimetro_muslo_cm: number | null
+  perimetro_pierna_cm: number | null
+  kg_tejido_muscular: number | null
+  kg_tejido_oseo: number | null
+}
+
+const round = (n: number, decimales: number) => {
+  const f = 10 ** decimales
+  return Math.round(n * f) / f
+}
+
+export function tieneDatosIsak(m: MedicionIsakRaw): boolean {
+  return Object.values(m).some((v) => v !== null && v !== undefined)
+}
+
+// Σ6: no incluye bíceps ni cresta ilíaca (a diferencia de Σ8). Da null si
+// falta cualquiera de los 6 sitios — un sumatorio parcial no es comparable
+// contra las tablas de referencia ISAK, sería un dato engañoso.
+export function sumaPliegues6(m: MedicionIsakRaw): number | null {
+  const sitios = [
+    m.pliegue_triceps_mm,
+    m.pliegue_subescapular_mm,
+    m.pliegue_supraespinal_mm,
+    m.pliegue_abdominal_mm,
+    m.pliegue_muslo_mm,
+    m.pliegue_pierna_mm,
+  ]
+  if (sitios.some((v) => v == null)) return null
+  return round(
+    sitios.reduce<number>((a, v) => a + (v as number), 0),
+    1,
+  )
+}
+
+export function sumaPliegues8(m: MedicionIsakRaw): number | null {
+  const s6 = sumaPliegues6(m)
+  if (s6 == null || m.pliegue_biceps_mm == null || m.pliegue_cresta_iliaca_mm == null) return null
+  return round(s6 + m.pliegue_biceps_mm + m.pliegue_cresta_iliaca_mm, 1)
+}
+
+function perimetroCorregido(perimetroCm: number | null, pliegueMm: number | null): number | null {
+  if (perimetroCm == null || pliegueMm == null) return null
+  return round(perimetroCm - Math.PI * (pliegueMm / 10), 2)
+}
+
+export function perimetrosCorregidos(m: MedicionIsakRaw) {
+  return {
+    brazo: perimetroCorregido(m.perimetro_brazo_cm, m.pliegue_triceps_mm),
+    muslo: perimetroCorregido(m.perimetro_muslo_cm, m.pliegue_muslo_mm),
+    pierna: perimetroCorregido(m.perimetro_pierna_cm, m.pliegue_pierna_mm),
+  }
+}
+
+export function imo(kgTejidoMuscular: number | null, kgTejidoOseo: number | null): number | null {
+  if (kgTejidoMuscular == null || kgTejidoOseo == null || kgTejidoOseo <= 0) return null
+  return round(kgTejidoMuscular / kgTejidoOseo, 2)
+}
+
+export function clasificarImo(valor: number | null): { label: string; color: string } | null {
+  if (valor == null) return null
+  if (valor < 2.01) return { label: 'Muy bajo', color: 'bg-red-100 text-red-800' }
+  if (valor < 2.11) return { label: 'Bajo', color: 'bg-yellow-100 text-yellow-800' }
+  if (valor < 2.78) return { label: 'Medio', color: 'bg-blue-100 text-blue-800' }
+  if (valor < 2.96) return { label: 'Alto', color: 'bg-emerald-100 text-emerald-800' }
+  return { label: 'Muy alto', color: 'bg-green-100 text-green-800' }
+}

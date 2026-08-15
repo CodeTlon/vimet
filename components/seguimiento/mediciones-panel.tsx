@@ -22,6 +22,19 @@ type Medicion = {
   porc_masa_muscular: number | null
   kg_grasa: number | null
   kg_musculo: number | null
+  pliegue_triceps_mm: number | null
+  pliegue_subescapular_mm: number | null
+  pliegue_supraespinal_mm: number | null
+  pliegue_abdominal_mm: number | null
+  pliegue_muslo_mm: number | null
+  pliegue_pierna_mm: number | null
+  pliegue_biceps_mm: number | null
+  pliegue_cresta_iliaca_mm: number | null
+  perimetro_brazo_cm: number | null
+  perimetro_muslo_cm: number | null
+  perimetro_pierna_cm: number | null
+  kg_tejido_muscular: number | null
+  kg_tejido_oseo: number | null
   dx_antropometrico: string | null
   observaciones: string | null
 }
