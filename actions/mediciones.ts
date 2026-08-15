@@ -103,7 +103,7 @@ const schema = z
     if (basicos === 'vacio' && isak === 'vacio') {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Cargá al menos un dato de la medición.',
+        message: 'Cargá al menos una ficha completa (Medidas básicas o Datos ISAK).',
         path: ['peso_kg'],
       })
     }
