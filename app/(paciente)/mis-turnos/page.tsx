@@ -60,7 +60,7 @@ export default async function MisTurnosPage(
     supabase
       .from('turnos')
       .select(
-        'id, fecha, hora_inicio, hora_fin, modalidad, estado, servicios(nombre), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
+        'id, fecha, hora_inicio, hora_fin, modalidad, estado, motivo_cancelacion, motivo_reprogramacion, servicios(nombre), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
         { count: 'exact' },
       )
       .eq('paciente_id', user.id)
@@ -76,6 +76,8 @@ export default async function MisTurnosPage(
     hora_fin: string
     modalidad: 'presencial' | 'virtual'
     estado: string
+    motivo_cancelacion: string | null
+    motivo_reprogramacion: string | null
     servicios: { nombre: string } | null
     profesional: { nombre: string; apellido: string } | null
   }
@@ -183,6 +185,20 @@ export default async function MisTurnosPage(
                       <p className="mt-3 text-xs text-vimet-red">
                         Confirmá antes de las {corteLabel(t.fecha, t.hora_inicio)} o el turno se cancela
                         automáticamente.
+                      </p>
+                    ) : null}
+
+                    {t.estado === 'pendiente' && t.motivo_reprogramacion ? (
+                      <p className="mt-3 text-xs text-gray-700 bg-gray-50 rounded-lg px-3 py-2">
+                        <span className="font-semibold">El equipo reprogramó este turno:</span>{' '}
+                        {t.motivo_reprogramacion}
+                      </p>
+                    ) : null}
+
+                    {t.estado === 'cancelado' && t.motivo_cancelacion ? (
+                      <p className="mt-3 text-xs text-gray-700 bg-gray-50 rounded-lg px-3 py-2">
+                        <span className="font-semibold">El equipo canceló este turno:</span>{' '}
+                        {t.motivo_cancelacion}
                       </p>
                     ) : null}
 

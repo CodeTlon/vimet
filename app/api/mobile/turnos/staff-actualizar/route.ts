@@ -20,6 +20,7 @@ export async function POST(request: Request) {
     id,
     estado,
     notas_profesional: String(body?.notas_profesional ?? ''),
+    motivo_cancelacion: String(body?.motivo_cancelacion ?? ''),
   })
   if ('error' in result) return NextResponse.json(result, { status: 400 })
   return NextResponse.json(result)

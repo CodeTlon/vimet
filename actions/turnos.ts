@@ -5,8 +5,15 @@ import { z } from 'zod'
 
 import { diaSemana, getProfesionalesCombo } from '@/lib/booking/slots'
 import { HORAS_CORTE_RESERVA, hoyArgentina, turnoCorteDesde, turnoVencidoDesde } from '@/lib/datetime'
+import { enviarEmailTurno } from '@/lib/email/resend'
+import { formatearFechaCorta } from '@/lib/seguimiento'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import TurnoCanceladoProfesionalEmail from '@/emails/turno-cancelado-profesional'
+import TurnoCanceladoStaffEmail from '@/emails/turno-cancelado-staff'
+import TurnoConfirmadoProfesionalEmail from '@/emails/turno-confirmado-profesional'
+import TurnoNuevoProfesionalEmail from '@/emails/turno-nuevo-profesional'
+import TurnoReprogramadoPacienteEmail from '@/emails/turno-reprogramado-paciente'
 
 export type TurnoState = { ok?: boolean; error?: string }
 
@@ -114,6 +121,103 @@ async function profesionalDisponible(
   return !choques?.length
 }
 
+type ProfesionalNotifInfo = {
+  pacienteNombre: string
+  fecha: string
+  horaInicio: string
+  horaFin: string
+  servicioNombre: string
+  notas: string | null
+}
+
+// Notifica al profesional por email (best-effort, nunca bloquea el flujo que
+// la dispara — ver lib/email/resend.ts). `tipo` decide template y subject;
+// el resto de la data es común a los 3 casos que dispara el paciente.
+async function notificarProfesional(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  profesionalId: string,
+  tipo: 'nuevo' | 'confirmado' | 'cancelado',
+  info: ProfesionalNotifInfo,
+): Promise<void> {
+  const { data: profesional } = await supabase
+    .from('profiles')
+    .select('nombre, apellido, email')
+    .eq('id', profesionalId)
+    .maybeSingle()
+  if (!profesional?.email) return
+
+  const props = {
+    nombreProfesional: `${profesional.nombre} ${profesional.apellido}`.trim(),
+    pacienteNombre: info.pacienteNombre,
+    fecha: formatearFechaCorta(info.fecha),
+    horaInicio: info.horaInicio.slice(0, 5),
+    horaFin: info.horaFin.slice(0, 5),
+    servicioNombre: info.servicioNombre,
+    notas: info.notas,
+  }
+  const envio = {
+    nuevo: { subject: 'Nuevo turno reservado', react: TurnoNuevoProfesionalEmail(props) },
+    confirmado: { subject: 'Turno confirmado por el paciente', react: TurnoConfirmadoProfesionalEmail(props) },
+    cancelado: { subject: 'Turno cancelado por el paciente', react: TurnoCanceladoProfesionalEmail(props) },
+  }[tipo]
+
+  await enviarEmailTurno({ to: profesional.email, subject: envio.subject, react: envio.react })
+}
+
+type PacienteNotifInfo = { fecha: string; horaInicio: string; horaFin: string; servicioNombre: string }
+
+async function notificarPacienteReprogramado(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  pacienteId: string,
+  info: PacienteNotifInfo & { motivo: string },
+): Promise<void> {
+  const { data: paciente } = await supabase
+    .from('profiles')
+    .select('nombre, apellido, email')
+    .eq('id', pacienteId)
+    .maybeSingle()
+  if (!paciente?.email) return
+
+  await enviarEmailTurno({
+    to: paciente.email,
+    subject: 'Tu turno fue reprogramado',
+    react: TurnoReprogramadoPacienteEmail({
+      nombre: `${paciente.nombre} ${paciente.apellido}`.trim(),
+      fecha: formatearFechaCorta(info.fecha),
+      horaInicio: info.horaInicio.slice(0, 5),
+      horaFin: info.horaFin.slice(0, 5),
+      servicioNombre: info.servicioNombre,
+      motivo: info.motivo,
+    }),
+  })
+}
+
+async function notificarPacienteCanceladoStaff(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  pacienteId: string,
+  info: PacienteNotifInfo & { motivo: string | null },
+): Promise<void> {
+  const { data: paciente } = await supabase
+    .from('profiles')
+    .select('nombre, apellido, email')
+    .eq('id', pacienteId)
+    .maybeSingle()
+  if (!paciente?.email) return
+
+  await enviarEmailTurno({
+    to: paciente.email,
+    subject: 'Tu turno fue cancelado',
+    react: TurnoCanceladoStaffEmail({
+      nombre: `${paciente.nombre} ${paciente.apellido}`.trim(),
+      fecha: formatearFechaCorta(info.fecha),
+      horaInicio: info.horaInicio.slice(0, 5),
+      horaFin: info.horaFin.slice(0, 5),
+      servicioNombre: info.servicioNombre,
+      motivo: info.motivo,
+    }),
+  })
+}
+
 // Lógica compartida por la Server Action web (cookies) y por
 // app/api/mobile/turnos/crear (bearer token) — ver lib/supabase/bearer.ts.
 export async function crearTurno(
@@ -136,13 +240,22 @@ export async function crearTurno(
   const servicioId = Number(d.servicio_id)
   const { data: servicio } = await supabase
     .from('servicios')
-    .select('tipo, profesional_id')
+    .select('tipo, profesional_id, nombre')
     .eq('id', servicioId)
     .maybeSingle()
 
   if (!servicio) {
     return { error: 'Ese servicio ya no está disponible.' }
   }
+
+  const { data: pacienteProfile } = await supabase
+    .from('profiles')
+    .select('nombre, apellido')
+    .eq('id', userId)
+    .maybeSingle()
+  const pacienteNombre = pacienteProfile
+    ? `${pacienteProfile.nombre} ${pacienteProfile.apellido}`.trim()
+    : 'Un paciente'
 
   const franja: Franja = {
     fecha: d.fecha,
@@ -195,6 +308,19 @@ export async function crearTurno(
       return { error: 'No pudimos reservar el turno. Probá nuevamente.' }
     }
 
+    await Promise.all(
+      profesionalesIds.map((profId) =>
+        notificarProfesional(supabase, profId, 'nuevo', {
+          pacienteNombre,
+          fecha: franja.fecha,
+          horaInicio: franja.hora_inicio,
+          horaFin: franja.hora_fin,
+          servicioNombre: servicio.nombre,
+          notas: d.notas || null,
+        }),
+      ),
+    )
+
     revalidatePath('/mis-turnos')
     return { ok: true }
   }
@@ -222,6 +348,15 @@ export async function crearTurno(
   if (error) {
     return { error: 'No pudimos reservar el turno. Probá nuevamente.' }
   }
+
+  await notificarProfesional(supabase, d.profesional_id, 'nuevo', {
+    pacienteNombre,
+    fecha: d.fecha,
+    horaInicio: d.hora_inicio,
+    horaFin: d.hora_fin,
+    servicioNombre: servicio.nombre,
+    notas: d.notas || null,
+  })
 
   revalidatePath('/mis-turnos')
   return { ok: true }
@@ -276,6 +411,36 @@ export async function cancelarTurno(
     .gte('fecha', hoyArgentina())
     .select('id')
 
+  if (actualizados?.length) {
+    const { data: pacienteProfile } = await supabase
+      .from('profiles')
+      .select('nombre, apellido')
+      .eq('id', userId)
+      .maybeSingle()
+    const pacienteNombre = pacienteProfile
+      ? `${pacienteProfile.nombre} ${pacienteProfile.apellido}`.trim()
+      : 'Un paciente'
+
+    const { data: filas } = await supabase
+      .from('turnos')
+      .select('profesional_id, fecha, hora_inicio, hora_fin, notas_paciente, servicios(nombre)')
+      .in('id', ids)
+
+    await Promise.all(
+      (filas ?? []).map((f) => {
+        const servicioRow = Array.isArray(f.servicios) ? f.servicios[0] : f.servicios
+        return notificarProfesional(supabase, f.profesional_id, 'cancelado', {
+          pacienteNombre,
+          fecha: f.fecha,
+          horaInicio: f.hora_inicio,
+          horaFin: f.hora_fin,
+          servicioNombre: (servicioRow as { nombre: string } | undefined)?.nombre ?? 'un turno',
+          notas: f.notas_paciente,
+        })
+      }),
+    )
+  }
+
   revalidatePath('/mis-turnos')
   if (!actualizados?.length) return { error: 'No se pudo cancelar el turno.' }
   return { ok: true }
@@ -319,6 +484,36 @@ export async function confirmarTurno(
     .eq('estado', 'pendiente')
     .select('id')
 
+  if (actualizados?.length) {
+    const { data: pacienteProfile } = await supabase
+      .from('profiles')
+      .select('nombre, apellido')
+      .eq('id', userId)
+      .maybeSingle()
+    const pacienteNombre = pacienteProfile
+      ? `${pacienteProfile.nombre} ${pacienteProfile.apellido}`.trim()
+      : 'Un paciente'
+
+    const { data: filas } = await supabase
+      .from('turnos')
+      .select('profesional_id, fecha, hora_inicio, hora_fin, notas_paciente, servicios(nombre)')
+      .in('id', ids)
+
+    await Promise.all(
+      (filas ?? []).map((f) => {
+        const servicioRow = Array.isArray(f.servicios) ? f.servicios[0] : f.servicios
+        return notificarProfesional(supabase, f.profesional_id, 'confirmado', {
+          pacienteNombre,
+          fecha: f.fecha,
+          horaInicio: f.hora_inicio,
+          horaFin: f.hora_fin,
+          servicioNombre: (servicioRow as { nombre: string } | undefined)?.nombre ?? 'un turno',
+          notas: f.notas_paciente,
+        })
+      }),
+    )
+  }
+
   revalidatePath('/mis-turnos')
   if (!actualizados?.length) return { error: 'No se pudo confirmar el turno.' }
   return { ok: true }
@@ -341,6 +536,7 @@ const adminEstadoSchema = z.object({
   id: z.coerce.number().int().positive(),
   estado: z.enum(['pendiente', 'confirmado', 'cancelado', 'completado', 'no_asistio']),
   notas_profesional: z.string().max(2000).optional().default(''),
+  motivo_cancelacion: z.string().max(500).optional().default(''),
 })
 
 // `supabase` = cliente scoped al staff logueado (cookies o bearer), ya se usa
@@ -363,19 +559,31 @@ export async function actualizarTurnoStaff(
 
   const { data: actual } = await supabase
     .from('turnos')
-    .select('estado, turno_par_id')
+    .select('estado, turno_par_id, paciente_id, fecha, hora_inicio, hora_fin, servicios(nombre)')
     .eq('id', d.id)
     .maybeSingle()
   if (!actual || !['pendiente', 'confirmado'].includes(actual.estado)) {
     return { error: 'Este turno ya está cerrado y no puede modificarse.' }
   }
 
+  // Cancelar un turno que el paciente ya había confirmado exige avisarle el
+  // motivo — se lo va a mostrar en /mis-turnos (motivo_cancelacion, distinta
+  // de notas_profesional que es interna del staff). Cancelar uno "pendiente"
+  // no lo exige: el paciente todavía no había confirmado esa franja.
+  const motivoCancelacion = d.motivo_cancelacion?.trim() || null
+  if (d.estado === 'cancelado' && actual.estado === 'confirmado' && !motivoCancelacion) {
+    return { error: 'Contale al paciente por qué se cancela el turno.' }
+  }
+
+  const payload = {
+    estado: d.estado,
+    notas_profesional: d.notas_profesional || null,
+    motivo_cancelacion: d.estado === 'cancelado' ? motivoCancelacion : null,
+  }
+
   const { data: actualizado, error } = await supabase
     .from('turnos')
-    .update({
-      estado: d.estado,
-      notas_profesional: d.notas_profesional || null,
-    })
+    .update(payload)
     .eq('id', d.id)
     .select('id')
 
@@ -390,19 +598,25 @@ export async function actualizarTurnoStaff(
   // dueño legítimo de `actual` antes de llegar acá.
   if (actual.turno_par_id) {
     const admin = createAdminClient()
-    await admin
-      .from('turnos')
-      .update({
-        estado: d.estado,
-        notas_profesional: d.notas_profesional || null,
-      })
-      .eq('id', actual.turno_par_id)
+    await admin.from('turnos').update(payload).eq('id', actual.turno_par_id)
     revalidatePath(`/admin/turno/${actual.turno_par_id}`)
+  }
+
+  if (d.estado === 'cancelado') {
+    const servicioRow = Array.isArray(actual.servicios) ? actual.servicios[0] : actual.servicios
+    await notificarPacienteCanceladoStaff(supabase, actual.paciente_id, {
+      fecha: actual.fecha,
+      horaInicio: actual.hora_inicio,
+      horaFin: actual.hora_fin,
+      servicioNombre: (servicioRow as { nombre: string } | undefined)?.nombre ?? 'tu turno',
+      motivo: motivoCancelacion,
+    })
   }
 
   revalidatePath('/admin/calendario')
   revalidatePath('/admin/dashboard')
   revalidatePath(`/admin/turno/${d.id}`)
+  revalidatePath('/mis-turnos')
   return { ok: true }
 }
 
@@ -414,6 +628,7 @@ export async function actualizarTurnoStaffAction(
     id: formData.get('id'),
     estado: formData.get('estado'),
     notas_profesional: formData.get('notas_profesional') ?? '',
+    motivo_cancelacion: formData.get('motivo_cancelacion') ?? '',
   })
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
@@ -431,13 +646,17 @@ const reprogramarStaffSchema = z.object({
   fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida'),
   hora_inicio: z.string().regex(/^\d{2}:\d{2}$/, 'Hora inválida'),
   hora_fin: z.string().regex(/^\d{2}:\d{2}$/, 'Hora inválida'),
+  motivo_reprogramacion: z.string().max(500).optional().default(''),
 })
 
 // El profesional carga el horario nuevo después de coordinarlo por fuera del
 // sistema (llamada/WhatsApp al paciente) — no hay paso intermedio ni el
-// paciente elige nada. Si el turno estaba "pendiente" pasa a "confirmado"
-// (la llamada reemplaza el paso de confirmación); si ya estaba "confirmado"
-// se mantiene así.
+// paciente elige nada. Solo se puede reprogramar un turno ya "confirmado"
+// (no tiene sentido mover un horario que el paciente ni siquiera confirmó,
+// para eso ya existe cancelar); al reprogramar, el turno vuelve a "pendiente"
+// en la fecha nueva — el paciente tiene que volver a confirmarlo o puede
+// cancelarlo. Como siempre parte de un turno ya confirmado (el mismo caso de
+// máxima exigencia que motivo_cancelacion), el motivo es obligatorio.
 export async function reprogramarTurno(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
@@ -461,11 +680,16 @@ export async function reprogramarTurno(
 
   const { data: actual } = await supabase
     .from('turnos')
-    .select('estado, profesional_id, modalidad, turno_par_id')
+    .select('estado, profesional_id, modalidad, turno_par_id, paciente_id, servicios(nombre)')
     .eq('id', d.id)
     .maybeSingle()
-  if (!actual || !['pendiente', 'confirmado'].includes(actual.estado)) {
-    return { error: 'Este turno ya está cerrado y no puede modificarse.' }
+  if (!actual || actual.estado !== 'confirmado') {
+    return { error: 'Solo se puede reprogramar un turno ya confirmado.' }
+  }
+
+  const motivoReprogramacion = d.motivo_reprogramacion?.trim() || null
+  if (!motivoReprogramacion) {
+    return { error: 'Contale al paciente por qué se reprograma el turno.' }
   }
 
   const franja: Franja = {
@@ -478,12 +702,12 @@ export async function reprogramarTurno(
     return { error: 'Ese horario ya no está disponible.' }
   }
 
-  const nuevoEstado = actual.estado === 'pendiente' ? 'confirmado' : actual.estado
   const payload = {
     fecha: d.fecha,
     hora_inicio: d.hora_inicio,
     hora_fin: d.hora_fin,
-    estado: nuevoEstado,
+    estado: 'pendiente' as const,
+    motivo_reprogramacion: motivoReprogramacion,
   }
 
   const { data: actualizado, error } = await supabase
@@ -506,6 +730,15 @@ export async function reprogramarTurno(
     revalidatePath(`/admin/turno/${actual.turno_par_id}`)
   }
 
+  const servicioRow = Array.isArray(actual.servicios) ? actual.servicios[0] : actual.servicios
+  await notificarPacienteReprogramado(supabase, actual.paciente_id, {
+    fecha: d.fecha,
+    horaInicio: d.hora_inicio,
+    horaFin: d.hora_fin,
+    servicioNombre: (servicioRow as { nombre: string } | undefined)?.nombre ?? 'tu turno',
+    motivo: motivoReprogramacion,
+  })
+
   revalidatePath('/admin/calendario')
   revalidatePath('/admin/dashboard')
   revalidatePath(`/admin/turno/${d.id}`)
@@ -522,6 +755,7 @@ export async function reprogramarTurnoAction(
     fecha: formData.get('fecha'),
     hora_inicio: formData.get('hora_inicio'),
     hora_fin: formData.get('hora_fin'),
+    motivo_reprogramacion: formData.get('motivo_reprogramacion') ?? '',
   })
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 

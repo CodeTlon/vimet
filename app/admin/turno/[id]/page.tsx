@@ -20,6 +20,8 @@ type TurnoDetail = {
   estado: string
   notas_paciente: string | null
   notas_profesional: string | null
+  motivo_cancelacion: string | null
+  motivo_reprogramacion: string | null
   servicio_id: number
   profesional_id: string
   turno_par_id: number | null
@@ -45,7 +47,7 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
   const { data, error } = await supabase
     .from('turnos')
     .select(
-      'id, fecha, hora_inicio, hora_fin, modalidad, estado, notas_paciente, notas_profesional, servicio_id, profesional_id, turno_par_id, servicios(nombre), paciente:profiles!turnos_paciente_id_fkey(nombre, apellido, email, telefono), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
+      'id, fecha, hora_inicio, hora_fin, modalidad, estado, notas_paciente, notas_profesional, motivo_cancelacion, motivo_reprogramacion, servicio_id, profesional_id, turno_par_id, servicios(nombre), paciente:profiles!turnos_paciente_id_fkey(nombre, apellido, email, telefono), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
     )
     .eq('id', id)
     .maybeSingle()
@@ -151,7 +153,7 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
               <h3 className="font-heading text-base font-semibold text-gray-900">
                 Gestionar turno
               </h3>
-              {['pendiente', 'confirmado'].includes(turno.estado) ? (
+              {turno.estado === 'confirmado' ? (
                 <ReprogramarTurnoForm
                   turnoId={turno.id}
                   profesionalId={turno.profesional_id}
@@ -164,6 +166,8 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
               id={turno.id}
               estadoActual={turno.estado}
               notas={turno.notas_profesional}
+              motivoCancelacion={turno.motivo_cancelacion}
+              motivoReprogramacion={turno.motivo_reprogramacion}
             />
           </div>
         </div>

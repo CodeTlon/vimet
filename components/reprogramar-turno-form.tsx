@@ -53,6 +53,7 @@ export function ReprogramarTurnoForm({
   const [fecha, setFecha] = useState(hoyArgentina())
   const [slot, setSlot] = useState<Slot | null>(null)
   const [slots, setSlots] = useState<Slot[]>([])
+  const [motivo, setMotivo] = useState('')
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [slotError, setSlotError] = useState<string | null>(null)
 
@@ -115,8 +116,8 @@ export function ReprogramarTurnoForm({
           ) : null}
 
           <p className="text-xs text-gray-500">
-            Cargá el horario nuevo después de coordinarlo con el paciente. Si el turno estaba
-            pendiente, al reprogramarlo queda confirmado.
+            Cargá el horario nuevo después de coordinarlo con el paciente. El turno vuelve a
+            quedar pendiente en la fecha nueva — el paciente tiene que confirmarlo de nuevo.
           </p>
 
           <input type="hidden" name="id" value={turnoId} />
@@ -174,7 +175,23 @@ export function ReprogramarTurnoForm({
             )}
           </div>
 
-          <SubmitButton disabled={!slot} />
+          <div>
+            <label className="block text-sm font-medium text-gray-800 mb-1.5">
+              Mensaje para el paciente
+            </label>
+            <textarea
+              name="motivo_reprogramacion"
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              required
+              rows={4}
+              maxLength={500}
+              placeholder="Ej: Tuve que mover el turno porque..."
+              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none"
+            />
+          </div>
+
+          <SubmitButton disabled={!slot || !motivo.trim()} />
         </form>
       </Modal>
     </>
