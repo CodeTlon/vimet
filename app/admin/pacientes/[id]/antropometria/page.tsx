@@ -222,7 +222,6 @@ function ChartCard({
 }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-      <h3 className="font-heading font-semibold text-gray-900 mb-3">{title}</h3>
       <ExpandableChart title={title} series={series} unit={unit} />
       {children}
     </div>
