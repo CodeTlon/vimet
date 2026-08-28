@@ -80,9 +80,9 @@ export function MedicionesPanel({
           </p>
         ) : (
           <>
-            <ul className="sm:hidden divide-y divide-gray-100">
+            <ul className="sm:hidden p-4 space-y-3">
               {mediciones.map((m) => (
-                <li key={m.id} className="p-4 space-y-3">
+                <li key={m.id} className="rounded-xl border border-gray-100 p-4 space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-semibold text-gray-900">
                       {formatearFechaCorta(m.fecha_medicion)}
