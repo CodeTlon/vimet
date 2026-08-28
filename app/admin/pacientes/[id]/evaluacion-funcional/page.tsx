@@ -56,11 +56,13 @@ export default async function EvalFuncionalPage(
     <div className="space-y-6">
       {serieCompleta.length > 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h3 className="font-heading font-semibold text-gray-900 mb-3">
-            Evolución del puntaje total <span className="text-gray-500 font-normal">/ {PUNTAJE_MAX_FUNCIONAL}</span>
-          </h3>
           <ExpandableChart
             title="Evolución del puntaje total"
+            heading={
+              <>
+                Evolución del puntaje total <span className="text-gray-500 font-normal">/ {PUNTAJE_MAX_FUNCIONAL}</span>
+              </>
+            }
             series={[
               {
                 label: 'Puntaje',
