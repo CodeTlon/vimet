@@ -131,11 +131,11 @@ export function MetodologiaForm({
           >
             <label className="block text-sm">
               <span className="block font-medium text-gray-800 mb-1">Título {i + 1}</span>
-              <input name={`paso_${i + 1}_titulo`} required defaultValue={p.titulo} className={inputBase} />
+              <input name={`paso_${i + 1}_titulo`} required defaultValue={p.titulo} placeholder="Ej: Evaluación inicial" className={inputBase} />
             </label>
             <label className="block text-sm">
               <span className="block font-medium text-gray-800 mb-1">Descripción</span>
-              <input name={`paso_${i + 1}_desc`} required defaultValue={p.desc} className={inputBase} />
+              <input name={`paso_${i + 1}_desc`} required defaultValue={p.desc} placeholder="Ej: Charlamos sobre tus objetivos y hábitos" className={inputBase} />
             </label>
             <label className="block text-sm">
               <span className="block font-medium text-gray-800 mb-1">Ícono</span>
@@ -161,11 +161,11 @@ export function MetodologiaForm({
           >
             <label className="block text-sm">
               <span className="block font-medium text-gray-800 mb-1">Título {i + 1}</span>
-              <input name={`pilar_${i + 1}_titulo`} required defaultValue={p.titulo} className={inputBase} />
+              <input name={`pilar_${i + 1}_titulo`} required defaultValue={p.titulo} placeholder="Ej: Nutrición personalizada" className={inputBase} />
             </label>
             <label className="block text-sm">
               <span className="block font-medium text-gray-800 mb-1">Descripción</span>
-              <input name={`pilar_${i + 1}_desc`} required defaultValue={p.desc} className={inputBase} />
+              <input name={`pilar_${i + 1}_desc`} required defaultValue={p.desc} placeholder="Ej: Planes adaptados a tu metabolismo" className={inputBase} />
             </label>
             <label className="block text-sm">
               <span className="block font-medium text-gray-800 mb-1">Ícono</span>
@@ -191,7 +191,7 @@ export function MetodologiaForm({
           >
             <label className="block text-sm">
               <span className="block font-medium text-gray-800 mb-1">Texto {i + 1}</span>
-              <input name={`dirigido_${i + 1}_text`} required defaultValue={d.text} className={inputBase} />
+              <input name={`dirigido_${i + 1}_text`} required defaultValue={d.text} placeholder="Ej: Personas con resistencia a la insulina" className={inputBase} />
             </label>
             <label className="block text-sm">
               <span className="block font-medium text-gray-800 mb-1">Ícono</span>

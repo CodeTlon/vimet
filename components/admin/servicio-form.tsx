@@ -74,7 +74,7 @@ export function ServicioForm({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Nombre</span>
-          <input name="nombre" required defaultValue={servicio?.nombre} className={inputBase} />
+          <input name="nombre" required defaultValue={servicio?.nombre} placeholder="Ej: Consulta nutricional" className={inputBase} />
         </label>
         <label className="block">
           <span className="block font-medium text-gray-800 mb-1">Duración (min)</span>
@@ -85,6 +85,7 @@ export function ServicioForm({
             max={300}
             required
             defaultValue={servicio?.duracion_minutos ?? 60}
+            placeholder="Ej: 45"
             className={inputBase}
           />
         </label>
@@ -127,6 +128,7 @@ export function ServicioForm({
           name="descripcion"
           rows={2}
           defaultValue={servicio?.descripcion ?? ''}
+          placeholder="Ej: Evaluación inicial y plan alimentario personalizado"
           className={inputBase}
         />
       </label>

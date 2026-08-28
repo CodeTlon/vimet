@@ -79,62 +79,122 @@ export function MedicionesPanel({
             Todavía no hay mediciones registradas.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr className="text-left text-gray-700">
-                  <th className="px-3 py-2.5 font-semibold">Fecha</th>
-                  <th className="px-3 py-2.5 font-semibold">Peso</th>
-                  <th className="px-3 py-2.5 font-semibold">Talla</th>
-                  <th className="px-3 py-2.5 font-semibold">IMC</th>
-                  <th className="px-3 py-2.5 font-semibold">% grasa</th>
-                  <th className="px-3 py-2.5 font-semibold">% músc</th>
-                  <th className="px-3 py-2.5 font-semibold">DX</th>
-                  <th className="px-3 py-2.5 font-semibold">ISAK</th>
-                  <th className="px-3 py-2.5" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {mediciones.map((m) => (
-                  <tr key={m.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2.5 font-semibold text-gray-900">
+          <>
+            <ul className="sm:hidden divide-y divide-gray-100">
+              {mediciones.map((m) => (
+                <li key={m.id} className="p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-gray-900">
                       {formatearFechaCorta(m.fecha_medicion)}
-                    </td>
-                    <td className="px-3 py-2.5">{m.peso_kg ?? '—'}</td>
-                    <td className="px-3 py-2.5">{m.talla_cm ?? '—'}</td>
-                    <td className="px-3 py-2.5">{m.imc ?? '—'}</td>
-                    <td className="px-3 py-2.5">{m.porc_grasa ?? '—'}</td>
-                    <td className="px-3 py-2.5">{m.porc_masa_muscular ?? '—'}</td>
-                    <td className="px-3 py-2.5 text-gray-700">{m.dx_antropometrico ?? '—'}</td>
-                    <td className="px-3 py-2.5">
+                    </span>
+                    <div className="flex items-center gap-3 shrink-0">
                       <IsakDetalleModal medicion={m} />
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center justify-end gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setEditing(m)}
-                          className="text-gray-400 hover:text-vimet-orange"
-                          aria-label="Editar"
-                        >
-                          <Pencil className="size-4" />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={deletePending}
-                          onClick={() => setConfirmTarget(m)}
-                          className="text-vimet-red hover:text-vimet-red/80 disabled:opacity-50"
-                          aria-label="Eliminar"
-                        >
-                          <Trash2 className="size-4" />
-                        </button>
-                      </div>
-                    </td>
+                      <button
+                        type="button"
+                        onClick={() => setEditing(m)}
+                        className="text-gray-400 hover:text-vimet-orange"
+                        aria-label="Editar"
+                      >
+                        <Pencil className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deletePending}
+                        onClick={() => setConfirmTarget(m)}
+                        className="text-vimet-red hover:text-vimet-red/80 disabled:opacity-50"
+                        aria-label="Eliminar"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-gray-500">Peso</dt>
+                      <dd className="text-gray-900">{m.peso_kg ?? '—'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-gray-500">Talla</dt>
+                      <dd className="text-gray-900">{m.talla_cm ?? '—'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-gray-500">IMC</dt>
+                      <dd className="text-gray-900">{m.imc ?? '—'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-gray-500">% grasa</dt>
+                      <dd className="text-gray-900">{m.porc_grasa ?? '—'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-gray-500">% músc</dt>
+                      <dd className="text-gray-900">{m.porc_masa_muscular ?? '—'}</dd>
+                    </div>
+                    <div className="col-span-2">
+                      <dt className="text-xs uppercase tracking-wide text-gray-500">DX</dt>
+                      <dd className="text-gray-700">{m.dx_antropometrico ?? '—'}</dd>
+                    </div>
+                  </dl>
+                </li>
+              ))}
+            </ul>
+
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr className="text-left text-gray-700">
+                    <th className="px-3 py-2.5 font-semibold">Fecha</th>
+                    <th className="px-3 py-2.5 font-semibold">Peso</th>
+                    <th className="px-3 py-2.5 font-semibold">Talla</th>
+                    <th className="px-3 py-2.5 font-semibold">IMC</th>
+                    <th className="px-3 py-2.5 font-semibold">% grasa</th>
+                    <th className="px-3 py-2.5 font-semibold">% músc</th>
+                    <th className="px-3 py-2.5 font-semibold">DX</th>
+                    <th className="px-3 py-2.5 font-semibold">ISAK</th>
+                    <th className="px-3 py-2.5" />
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {mediciones.map((m) => (
+                    <tr key={m.id} className="hover:bg-gray-50">
+                      <td className="px-3 py-2.5 font-semibold text-gray-900">
+                        {formatearFechaCorta(m.fecha_medicion)}
+                      </td>
+                      <td className="px-3 py-2.5">{m.peso_kg ?? '—'}</td>
+                      <td className="px-3 py-2.5">{m.talla_cm ?? '—'}</td>
+                      <td className="px-3 py-2.5">{m.imc ?? '—'}</td>
+                      <td className="px-3 py-2.5">{m.porc_grasa ?? '—'}</td>
+                      <td className="px-3 py-2.5">{m.porc_masa_muscular ?? '—'}</td>
+                      <td className="px-3 py-2.5 text-gray-700">{m.dx_antropometrico ?? '—'}</td>
+                      <td className="px-3 py-2.5">
+                        <IsakDetalleModal medicion={m} />
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setEditing(m)}
+                            className="text-gray-400 hover:text-vimet-orange"
+                            aria-label="Editar"
+                          >
+                            <Pencil className="size-4" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={deletePending}
+                            onClick={() => setConfirmTarget(m)}
+                            className="text-vimet-red hover:text-vimet-red/80 disabled:opacity-50"
+                            aria-label="Eliminar"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
 

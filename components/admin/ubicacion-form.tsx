@@ -62,35 +62,35 @@ export function UbicacionForm({
 
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Lugar</span>
-        <input name="lugar" required defaultValue={lugar} className={inputBase} />
+        <input name="lugar" required defaultValue={lugar} placeholder="Ej: Instituto VIANETT" className={inputBase} />
       </label>
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Dirección</span>
-        <input name="direccion" required defaultValue={direccion} className={inputBase} />
+        <input name="direccion" required defaultValue={direccion} placeholder="Ej: Av. Pedro Simón Laplace 5573" className={inputBase} />
       </label>
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Ciudad</span>
-        <input name="ciudad" required defaultValue={ciudad} className={inputBase} />
+        <input name="ciudad" required defaultValue={ciudad} placeholder="Ej: Córdoba, Argentina" className={inputBase} />
       </label>
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">URL de mapa embebido</span>
-        <input name="map_embed_url" type="url" required defaultValue={mapEmbed} className={inputBase} />
+        <input name="map_embed_url" type="url" required defaultValue={mapEmbed} placeholder="https://www.google.com/maps/embed?..." className={inputBase} />
       </label>
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Email de contacto</span>
-        <input name="email_contacto" type="email" required defaultValue={emailContacto} className={inputBase} />
+        <input name="email_contacto" type="email" required defaultValue={emailContacto} placeholder="contacto@vimetsalud.com.ar" className={inputBase} />
       </label>
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">WhatsApp (URL wa.me)</span>
-        <input name="whatsapp_general" type="url" required defaultValue={whatsappGeneral} className={inputBase} />
+        <input name="whatsapp_general" type="url" required defaultValue={whatsappGeneral} placeholder="https://wa.me/5493511234567" className={inputBase} />
       </label>
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">Usuario de Instagram</span>
-        <input name="instagram_handle" required defaultValue={instagramHandle} className={inputBase} />
+        <input name="instagram_handle" required defaultValue={instagramHandle} placeholder="Ej: @vimet.salud" className={inputBase} />
       </label>
       <label className="block text-sm">
         <span className="block font-medium text-gray-800 mb-1">URL de Instagram</span>
-        <input name="instagram_url" type="url" required defaultValue={instagramUrl} className={inputBase} />
+        <input name="instagram_url" type="url" required defaultValue={instagramUrl} placeholder="https://instagram.com/vimet.salud" className={inputBase} />
       </label>
 
       <Btn />
