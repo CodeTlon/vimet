@@ -127,7 +127,7 @@ export default async function AntropometriaPage(
       ) : null}
 
       {hayDatosIsak ? (
-        <>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <ChartCard
             title="IMO (índice músculo/óseo)"
             series={[{ label: 'IMO', color: '#E8611A', data: imoSerie }]}
@@ -168,9 +168,16 @@ export default async function AntropometriaPage(
               unit=" mm"
               axisLabel="Pliegues (mm)"
             />
-            <div className="mt-4">
-              <BarChart bars={[{ label: 'Σ 8 pliegues', value: ultimaIsak ? sumaPliegues8(ultimaIsak) : null }]} unit=" mm" />
-            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <h3 className="font-heading font-semibold text-gray-900">Adiposidad — Total</h3>
+            {ultimaIsak ? (
+              <p className="text-xs text-gray-500 mb-3">
+                Última evaluación ISAK: {formatearFechaCorta(ultimaIsak.fecha_medicion)}
+              </p>
+            ) : null}
+            <BarChart bars={[{ label: 'Σ 8 pliegues', value: ultimaIsak ? sumaPliegues8(ultimaIsak) : null }]} unit=" mm" />
           </div>
 
           <BarChartCard
@@ -189,7 +196,7 @@ export default async function AntropometriaPage(
             unit=" cm"
             axisLabel="Perímetros (cm)"
           />
-        </>
+        </div>
       ) : null}
 
       <MedicionesPanel pacienteId={params.id} mediciones={mediciones} />
