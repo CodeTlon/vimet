@@ -3,7 +3,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { PlanForm } from '@/components/seguimiento/plan-form'
+import { PlanSeccionesPanel } from '@/components/seguimiento/plan-secciones-panel'
 import { RutinaPanel, type RutinaItem } from '@/components/seguimiento/rutina-panel'
+import { obtenerSeccionesPlan } from '@/lib/plan-secciones'
 import { createClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
@@ -44,6 +46,7 @@ export default async function EditarPlanPage(
   if (!plan) notFound()
 
   const tieneRutina = plan.tipo === 'entrenamiento' || plan.tipo === 'combo'
+  const secciones = await obtenerSeccionesPlan(supabase, planId)
 
   // Solo 2 columnas angostas de las 1324 filas (para armar los <select> de filtro),
   // no el catálogo completo con nombres/thumbnails — eso se busca on-demand vía /api/ejercicios.
@@ -102,6 +105,7 @@ export default async function EditarPlanPage(
       <PlanForm
         pacienteId={params.id}
         plan={plan}
+        secciones={<PlanSeccionesPanel planId={planId} pacienteId={params.id} secciones={secciones} />}
         rutina={
           tieneRutina ? (
             <RutinaPanel

@@ -80,6 +80,38 @@ export const TIPO_PLAN_LABEL: Record<string, string> = {
   combo: 'Combo',
 }
 
+export type TipoSeccionPlan = 'pautas_generales' | 'receta' | 'comidas_dia' | 'imagenes'
+
+export const TIPO_SECCION_PLAN = [
+  {
+    value: 'pautas_generales' as const,
+    label: 'Pautas generales',
+    descripcion: 'Texto libre, con imágenes opcionales',
+  },
+  {
+    value: 'receta' as const,
+    label: 'Receta',
+    descripcion: 'Ingredientes y preparación, con imágenes opcionales',
+  },
+  {
+    value: 'comidas_dia' as const,
+    label: 'Comidas del día',
+    descripcion: 'Un bloque por cada momento (desayuno, almuerzo, merienda...)',
+  },
+  {
+    value: 'imagenes' as const,
+    label: 'Imágenes',
+    descripcion: 'Para imprimir el plan más adelante — no se muestran grandes acá',
+  },
+]
+
+export const TIPO_SECCION_PLAN_LABEL: Record<TipoSeccionPlan, string> = {
+  pautas_generales: 'Pautas generales',
+  receta: 'Receta',
+  comidas_dia: 'Comidas del día',
+  imagenes: 'Imágenes',
+}
+
 export const SEXO_LABEL: Record<string, string> = {
   femenino: 'Femenino',
   masculino: 'Masculino',

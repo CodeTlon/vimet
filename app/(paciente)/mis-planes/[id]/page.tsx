@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { PlanPrintButton } from '@/components/seguimiento/plan-print-button'
 import { PlanDownloadButton } from '@/components/seguimiento/plan-download'
 import { RutinaViewer, type RutinaEjercicio } from '@/components/seguimiento/rutina-viewer'
+import { obtenerSeccionesPlan } from '@/lib/plan-secciones'
 import { createClient } from '@/lib/supabase/server'
 import {
   ESTADO_PLAN_BADGE,
@@ -52,6 +53,7 @@ export default async function MiPlanDetallePage(
 
   const rutinaOrdenada = (rutina ?? []) as unknown as RutinaEjercicio[]
   const diasDescanso = (plan.dias_descanso ?? []) as string[]
+  const secciones = await obtenerSeccionesPlan(supabase, Number(params.id))
 
   const dias = [
     { key: 'disponibilidad_lunes', label: 'Lunes' },
@@ -63,13 +65,6 @@ export default async function MiPlanDetallePage(
   ] as const
 
   const tieneEntreno = dias.some((d) => plan[d.key]) || plan.disciplina || plan.frecuencia
-  const tieneNutri =
-    plan.pautas_generales ||
-    plan.pautas_hidratacion ||
-    plan.suplementacion ||
-    plan.pre_entreno ||
-    plan.intra_entreno ||
-    plan.post_entreno
 
   return (
     <>
@@ -114,23 +109,56 @@ export default async function MiPlanDetallePage(
         ) : null}
       </header>
 
-      {tieneNutri ? (
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5">
-          <h2 className="font-heading text-lg font-semibold text-gray-900 mb-4">
-            Pautas nutricionales
-          </h2>
-          <div className="space-y-4">
-            <Block label="Pautas generales" value={plan.pautas_generales} />
-            <Block label="Hidratación" value={plan.pautas_hidratacion} />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Block label="Pre entreno" value={plan.pre_entreno} compact />
-              <Block label="Intra entreno" value={plan.intra_entreno} compact />
-              <Block label="Post entreno" value={plan.post_entreno} compact />
+      {secciones.map((s) => (
+        <section
+          key={s.id}
+          className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5 print:break-inside-avoid"
+        >
+          <h2 className="font-heading text-lg font-semibold text-gray-900 mb-4">{s.titulo}</h2>
+
+          {s.tipo === 'comidas_dia' ? (
+            <div className="space-y-4">
+              {s.momentos.map((m) => (
+                <div key={m.id}>
+                  <p className="font-semibold text-gray-900">{m.nombre_momento}</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-line mt-0.5">{m.contenido}</p>
+                </div>
+              ))}
             </div>
-            <Block label="Suplementación" value={plan.suplementacion} />
-          </div>
+          ) : s.tipo === 'imagenes' ? (
+            <div className="flex flex-wrap gap-2">
+              {s.imagenes.map((img) => (
+                <a key={img.id} href={img.url} target="_blank" rel="noopener noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img.url}
+                    alt=""
+                    className="h-16 w-16 rounded-lg object-cover border border-gray-200"
+                  />
+                </a>
+              ))}
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-gray-800 whitespace-pre-line">{s.contenido}</p>
+              {s.imagenes.length > 0 ? (
+                <div className="flex flex-wrap gap-3 mt-4">
+                  {s.imagenes.map((img) => (
+                    <a key={img.id} href={img.url} target="_blank" rel="noopener noreferrer">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img.url}
+                        alt=""
+                        className="max-w-[16rem] rounded-lg border border-gray-200"
+                      />
+                    </a>
+                  ))}
+                </div>
+              ) : null}
+            </>
+          )}
         </section>
-      ) : null}
+      ))}
 
       {tieneEntreno ? (
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5">
