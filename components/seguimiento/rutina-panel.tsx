@@ -2,7 +2,7 @@
 
 import { Trash2 } from 'lucide-react'
 import Image from 'next/image'
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 
 import {
   actualizarDiaDescansoAction,
@@ -163,14 +163,21 @@ export function RutinaPanel({
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
   const [ultimoAgregadoId, setUltimoAgregadoId] = useState<number | null>(null)
-  const ultimoAgregadoRef = useRef<HTMLTableRowElement | null>(null)
   const [ejercicioAbierto, setEjercicioAbierto] = useState<EjercicioDetalle | null>(null)
 
   useEffect(() => {
     if (ultimoAgregadoId == null) return
-    ultimoAgregadoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     setUltimoAgregadoId(null)
   }, [ultimoAgregadoId])
+
+  // El ítem recién agregado existe a la vez en la card mobile y en la fila
+  // desktop (una de las dos está oculta con `hidden`/`sm:hidden`, no
+  // desmontada) — solo hace scroll a la que efectivamente esté visible.
+  function scrollSiVisible(el: HTMLElement | null) {
+    if (el && el.offsetParent !== null) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }
 
   const diaValor = diaActivo === 'general' ? '' : diaActivo
   const rutinaDelDia = rutina.filter((r) => (r.dia_semana ?? '') === diaValor)
@@ -370,7 +377,86 @@ export function RutinaPanel({
               {itemsFuerza.length > 0 ? (
                 <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 space-y-3">
                   <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Fuerza</h4>
-                  <div className="overflow-x-auto rounded-lg bg-white border border-gray-100">
+
+                  <ul className="sm:hidden space-y-3">
+                    {itemsFuerza.map((item) => (
+                      <li
+                        key={item.id}
+                        ref={item.id === ultimoAgregadoId ? scrollSiVisible : undefined}
+                        className="rounded-lg bg-white border border-gray-100 p-3 space-y-3"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="font-medium text-gray-900">
+                            <EjercicioCelda item={item} onAbrir={setEjercicioAbierto} />
+                          </div>
+                          <button
+                            type="button"
+                            disabled={pending}
+                            onClick={() => eliminar(item)}
+                            className="text-gray-400 hover:text-vimet-red disabled:opacity-50 shrink-0"
+                            aria-label="Eliminar ejercicio"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <label className="block text-xs">
+                            <span className="block text-gray-500 mb-1">Series</span>
+                            <input
+                              className={inputBase}
+                              inputMode="numeric"
+                              placeholder="4"
+                              defaultValue={item.series ?? ''}
+                              onBlur={(e) => {
+                                actualizarCampo(item.id, 'series', e.target.value)
+                                guardar({ ...item, series: e.target.value ? Number(e.target.value) : null })
+                              }}
+                            />
+                          </label>
+                          <label className="block text-xs">
+                            <span className="block text-gray-500 mb-1">Reps</span>
+                            <input
+                              className={inputBase}
+                              placeholder="8-12"
+                              defaultValue={item.repeticiones ?? ''}
+                              onBlur={(e) => {
+                                actualizarCampo(item.id, 'repeticiones', e.target.value)
+                                guardar({ ...item, repeticiones: e.target.value || null })
+                              }}
+                            />
+                          </label>
+                          <label className="block text-xs">
+                            <span className="block text-gray-500 mb-1">Descanso (seg)</span>
+                            <input
+                              className={inputBase}
+                              inputMode="numeric"
+                              placeholder="60"
+                              defaultValue={item.descanso_seg ?? ''}
+                              onBlur={(e) => {
+                                actualizarCampo(item.id, 'descanso_seg', e.target.value)
+                                guardar({ ...item, descanso_seg: e.target.value ? Number(e.target.value) : null })
+                              }}
+                            />
+                          </label>
+                        </div>
+                        <label className="block text-xs">
+                          <span className="block text-gray-500 mb-1">Notas</span>
+                          <NotaTextarea
+                            rows={1}
+                            className={inputBase}
+                            placeholder="Opcional"
+                            defaultValue={item.notas}
+                            onSave={(value) => {
+                              actualizarCampo(item.id, 'notas', value)
+                              guardar({ ...item, notas: value || null })
+                            }}
+                          />
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="hidden sm:block overflow-x-auto rounded-lg bg-white border border-gray-100">
                     <table className="w-full min-w-[49rem] text-sm border-collapse table-fixed">
                       <colgroup>
                         <col className="w-10" />
@@ -396,7 +482,7 @@ export function RutinaPanel({
                         {itemsFuerza.map((item, idx) => (
                           <tr
                             key={item.id}
-                            ref={item.id === ultimoAgregadoId ? ultimoAgregadoRef : undefined}
+                            ref={item.id === ultimoAgregadoId ? scrollSiVisible : undefined}
                           >
                             <td className={`${tdBase} text-gray-400`}>{idx + 1}</td>
                             <td className={`${tdBase} font-medium text-gray-900`}>
@@ -471,7 +557,71 @@ export function RutinaPanel({
               {itemsCardio.length > 0 ? (
                 <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 space-y-3">
                   <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Cardio</h4>
-                  <div className="overflow-x-auto rounded-lg bg-white border border-gray-100">
+
+                  <ul className="sm:hidden space-y-3">
+                    {itemsCardio.map((item) => (
+                      <li
+                        key={item.id}
+                        ref={item.id === ultimoAgregadoId ? scrollSiVisible : undefined}
+                        className="rounded-lg bg-white border border-gray-100 p-3 space-y-3"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="font-medium text-gray-900">
+                            <EjercicioCelda item={item} onAbrir={setEjercicioAbierto} />
+                          </div>
+                          <button
+                            type="button"
+                            disabled={pending}
+                            onClick={() => eliminar(item)}
+                            className="text-gray-400 hover:text-vimet-red disabled:opacity-50 shrink-0"
+                            aria-label="Eliminar ejercicio"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                        <div className="space-y-2">
+                          {FASES_CARDIO.map((fase) => {
+                            const { valor: campoValor, unidad: campoUnidad } = FASE_CAMPOS[fase]
+                            return (
+                              <label key={fase} className="block text-xs">
+                                <span className="block text-gray-500 mb-1">{FASE_HEADER[fase]}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    className={`${inputBase} w-20 shrink-0`}
+                                    inputMode="decimal"
+                                    placeholder="30"
+                                    defaultValue={item[campoValor] ?? ''}
+                                    onBlur={(e) => guardarFaseCardio(item, fase, { valor: e.target.value })}
+                                  />
+                                  <Select
+                                    value={item[campoUnidad] ?? 'minutos'}
+                                    onChange={(v) => guardarFaseCardio(item, fase, { unidad: v })}
+                                    options={UNIDADES_CARDIO}
+                                    className="w-24 shrink-0"
+                                  />
+                                </div>
+                              </label>
+                            )
+                          })}
+                        </div>
+                        <label className="block text-xs">
+                          <span className="block text-gray-500 mb-1">Notas</span>
+                          <NotaTextarea
+                            rows={1}
+                            className={inputBase}
+                            placeholder="Opcional"
+                            defaultValue={item.notas}
+                            onSave={(value) => {
+                              actualizarCampo(item.id, 'notas', value)
+                              guardar({ ...item, notas: value || null })
+                            }}
+                          />
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="hidden sm:block overflow-x-auto rounded-lg bg-white border border-gray-100">
                     <table className="w-full min-w-[66rem] text-sm border-collapse table-fixed">
                       <colgroup>
                         <col className="w-10" />
@@ -497,7 +647,7 @@ export function RutinaPanel({
                         {itemsCardio.map((item, idx) => (
                           <tr
                             key={item.id}
-                            ref={item.id === ultimoAgregadoId ? ultimoAgregadoRef : undefined}
+                            ref={item.id === ultimoAgregadoId ? scrollSiVisible : undefined}
                           >
                             <td className={`${tdBase} text-gray-400`}>{idx + 1}</td>
                             <td className={`${tdBase} font-medium text-gray-900`}>

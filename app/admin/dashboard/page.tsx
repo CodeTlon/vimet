@@ -97,55 +97,93 @@ export default async function AdminDashboard() {
 
   function TurnoTable({ turnos, showFecha }: { turnos: TurnoRow[]; showFecha: boolean }) {
     return (
-      <div className="overflow-x-auto -mx-2">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-gray-700">
-              {showFecha ? <th className="px-2 py-2">Fecha</th> : null}
-              <th className="px-2 py-2">Hora</th>
-              <th className="px-2 py-2">Paciente</th>
-              <th className="px-2 py-2">Servicio</th>
-              <th className="px-2 py-2">Estado</th>
-              <th className="px-2 py-2" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {turnos.map((t) => (
-              <tr key={t.id} className="hover:bg-gray-50">
-                {showFecha ? (
-                  <td className="px-2 py-2.5 text-gray-700">
-                    {new Date(`${t.fecha}T00:00:00`).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}
-                  </td>
-                ) : null}
-                <td className="px-2 py-2.5 font-semibold text-gray-900">
-                  {t.hora_inicio.slice(0, 5)}
-                </td>
-                <td className="px-2 py-2.5 text-gray-800">
+      <>
+        <ul className="sm:hidden -mx-5 divide-y divide-gray-100">
+          {turnos.map((t) => (
+            <li key={t.id} className="px-5 py-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-semibold text-gray-900">{t.hora_inicio.slice(0, 5)}</span>
+                  {showFecha ? (
+                    <span className="text-xs text-gray-500">
+                      {new Date(`${t.fecha}T00:00:00`).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}
+                    </span>
+                  ) : null}
+                </div>
+                <p className="text-sm text-gray-800 truncate">
                   {t.paciente?.nombre} {t.paciente?.apellido}
-                </td>
-                <td className="px-2 py-2.5 text-gray-700">{t.servicios?.nombre ?? 'Consulta'}</td>
-                <td className="px-2 py-2.5">
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      ESTADO_TURNO_BADGE[t.estado] ?? 'bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    {ESTADO_TURNO_LABEL[t.estado] ?? t.estado}
-                  </span>
-                </td>
-                <td className="px-2 py-2.5 text-right">
-                  <Link
-                    href={`/admin/turno/${t.id}`}
-                    className="text-vimet-orange font-semibold text-sm hover:underline"
-                  >
-                    Ver
-                  </Link>
-                </td>
+                </p>
+                <p className="text-xs text-gray-500 truncate">{t.servicios?.nombre ?? 'Consulta'}</p>
+              </div>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <span
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    ESTADO_TURNO_BADGE[t.estado] ?? 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {ESTADO_TURNO_LABEL[t.estado] ?? t.estado}
+                </span>
+                <Link
+                  href={`/admin/turno/${t.id}`}
+                  className="text-vimet-orange font-semibold text-sm hover:underline"
+                >
+                  Ver
+                </Link>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <div className="hidden sm:block overflow-x-auto -mx-2">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-700">
+                {showFecha ? <th className="px-2 py-2">Fecha</th> : null}
+                <th className="px-2 py-2">Hora</th>
+                <th className="px-2 py-2">Paciente</th>
+                <th className="px-2 py-2">Servicio</th>
+                <th className="px-2 py-2">Estado</th>
+                <th className="px-2 py-2" />
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {turnos.map((t) => (
+                <tr key={t.id} className="hover:bg-gray-50">
+                  {showFecha ? (
+                    <td className="px-2 py-2.5 text-gray-700">
+                      {new Date(`${t.fecha}T00:00:00`).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}
+                    </td>
+                  ) : null}
+                  <td className="px-2 py-2.5 font-semibold text-gray-900">
+                    {t.hora_inicio.slice(0, 5)}
+                  </td>
+                  <td className="px-2 py-2.5 text-gray-800">
+                    {t.paciente?.nombre} {t.paciente?.apellido}
+                  </td>
+                  <td className="px-2 py-2.5 text-gray-700">{t.servicios?.nombre ?? 'Consulta'}</td>
+                  <td className="px-2 py-2.5">
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        ESTADO_TURNO_BADGE[t.estado] ?? 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {ESTADO_TURNO_LABEL[t.estado] ?? t.estado}
+                    </span>
+                  </td>
+                  <td className="px-2 py-2.5 text-right">
+                    <Link
+                      href={`/admin/turno/${t.id}`}
+                      className="text-vimet-orange font-semibold text-sm hover:underline"
+                    >
+                      Ver
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
     )
   }
 }
