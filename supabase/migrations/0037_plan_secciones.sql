@@ -123,17 +123,17 @@ create policy "plan_seccion_imagenes staff write"
 -- para no inventar un formato de combinación) y borrar esas columnas.
 -- ─────────────────────────────────────────────────────────
 insert into public.plan_secciones (plan_id, tipo, titulo, contenido, orden)
-select id, 'pautas_generales', 'Pautas generales', pautas_generales, 0 from public.planes where pautas_generales is not null
+select id, 'pautas_generales'::public.tipo_seccion_plan, 'Pautas generales', pautas_generales, 0 from public.planes where pautas_generales is not null
 union all
-select id, 'pautas_generales', 'Hidratación', pautas_hidratacion, 1 from public.planes where pautas_hidratacion is not null
+select id, 'pautas_generales'::public.tipo_seccion_plan, 'Hidratación', pautas_hidratacion, 1 from public.planes where pautas_hidratacion is not null
 union all
-select id, 'pautas_generales', 'Pre-entreno', pre_entreno, 2 from public.planes where pre_entreno is not null
+select id, 'pautas_generales'::public.tipo_seccion_plan, 'Pre-entreno', pre_entreno, 2 from public.planes where pre_entreno is not null
 union all
-select id, 'pautas_generales', 'Intra-entreno', intra_entreno, 3 from public.planes where intra_entreno is not null
+select id, 'pautas_generales'::public.tipo_seccion_plan, 'Intra-entreno', intra_entreno, 3 from public.planes where intra_entreno is not null
 union all
-select id, 'pautas_generales', 'Post-entreno', post_entreno, 4 from public.planes where post_entreno is not null
+select id, 'pautas_generales'::public.tipo_seccion_plan, 'Post-entreno', post_entreno, 4 from public.planes where post_entreno is not null
 union all
-select id, 'pautas_generales', 'Suplementación', suplementacion, 5 from public.planes where suplementacion is not null;
+select id, 'pautas_generales'::public.tipo_seccion_plan, 'Suplementación', suplementacion, 5 from public.planes where suplementacion is not null;
 
 alter table public.planes
   drop column if exists pautas_generales,
