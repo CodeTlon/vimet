@@ -88,11 +88,11 @@ export function PerfilPublicoForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="block text-sm">
             <span className="block font-medium text-gray-800 mb-1">Título profesional</span>
-            <input name="titulo" defaultValue={titulo} className={inputBase} />
+            <input name="titulo" defaultValue={titulo} placeholder="Ej: Lic. en Nutrición" className={inputBase} />
           </label>
           <label className="block text-sm">
             <span className="block font-medium text-gray-800 mb-1">Matrícula</span>
-            <input name="matricula" defaultValue={matricula} className={inputBase} />
+            <input name="matricula" defaultValue={matricula} placeholder="Ej: MP 12345" className={inputBase} />
           </label>
         </div>
 
@@ -107,21 +107,21 @@ export function PerfilPublicoForm({
 
         <label className="block text-sm">
           <span className="block font-medium text-gray-800 mb-1">Bio corta</span>
-          <input name="bio_corta" defaultValue={bioCorta} className={inputBase} />
+          <input name="bio_corta" defaultValue={bioCorta} placeholder="Ej: Nutricionista especializada en alteraciones metabólicas" className={inputBase} />
         </label>
         <label className="block text-sm">
           <span className="block font-medium text-gray-800 mb-1">Bio completa</span>
-          <textarea name="bio" rows={4} defaultValue={bio} className={inputBase} />
+          <textarea name="bio" rows={4} defaultValue={bio} placeholder="Contá tu formación, experiencia y enfoque profesional" className={inputBase} />
         </label>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="block text-sm">
             <span className="block font-medium text-gray-800 mb-1">Usuario de Instagram</span>
-            <input name="instagram_handle" defaultValue={instagramHandle} className={inputBase} />
+            <input name="instagram_handle" defaultValue={instagramHandle} placeholder="Ej: @vimet.salud" className={inputBase} />
           </label>
           <label className="block text-sm">
             <span className="block font-medium text-gray-800 mb-1">URL de Instagram</span>
-            <input name="instagram_url" type="url" defaultValue={instagramUrl} className={inputBase} />
+            <input name="instagram_url" type="url" defaultValue={instagramUrl} placeholder="https://instagram.com/vimet.salud" className={inputBase} />
           </label>
         </div>
 
@@ -144,6 +144,7 @@ export function PerfilPublicoForm({
           <input
             name="especialidades"
             defaultValue={especialidades.join(', ')}
+            placeholder="Ej: Diabetes, Obesidad, Nutrición deportiva"
             className={inputBase}
           />
         </label>
