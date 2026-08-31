@@ -1,8 +1,7 @@
 'use client'
 
 import { Save } from 'lucide-react'
-import { useState } from 'react'
-import { useFormStatus } from 'react-dom';
+import { useId, useState } from 'react'
 import { useActionState } from 'react';
 
 import {
@@ -51,11 +50,11 @@ type Plan = {
   notas: string | null
 }
 
-function Btn({ children }: { children: React.ReactNode }) {
-  const { pending } = useFormStatus()
+function Btn({ form, pending, children }: { form: string; pending: boolean; children: React.ReactNode }) {
   return (
     <button
       type="submit"
+      form={form}
       disabled={pending}
       className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-vimet-gradient text-white font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
     >
@@ -77,10 +76,11 @@ export function PlanForm({
   secciones?: React.ReactNode
 }) {
   const editing = Boolean(plan)
-  const [state, action] = useActionState(
+  const [state, action, isPending] = useActionState(
     editing ? actualizarPlanAction : crearPlanAction,
     initial,
   )
+  const formId = useId()
   const p = plan
   const remountKey = useRemountKeyOnSuccess(state)
   const msgRef = useScrollToMessage(state)
@@ -89,9 +89,20 @@ export function PlanForm({
   const [tipo, setTipo] = useState(p?.tipo ?? 'nutricion')
 
   return (
-    <form key={remountKey} action={action} className="space-y-6">
-      <input type="hidden" name="paciente_id" value={pacienteId} />
-      {editing ? <input type="hidden" name="id" value={p!.id} /> : null}
+    // `secciones`/`rutina` traen sus propios <form> internos (modales de
+    // agregar/editar sección) — si quedaran anidados dentro de este <form>,
+    // el HTML resultante ("form dentro de form") es inválido: el navegador
+    // bloquea en silencio el submit del form interno (sin error visible más
+    // que en consola) en vez de dispararlo. Por eso el <form> real acá abajo
+    // queda vacío (solo los hidden inputs) y cada campo visual se asocia por
+    // el atributo `form={formId}` en vez de por anidamiento en el DOM — así
+    // `secciones`/`rutina` pueden vivir fuera del <form> sin dejar de
+    // enviarse en el mismo submit.
+    <div key={remountKey} className="space-y-6">
+      <form id={formId} action={action}>
+        <input type="hidden" name="paciente_id" value={pacienteId} />
+        {editing ? <input type="hidden" name="id" value={p!.id} /> : null}
+      </form>
 
       <div ref={msgRef}>
         {visible && state.error ? (
@@ -110,6 +121,7 @@ export function PlanForm({
         <Field label="Tipo">
           <Select
             name="tipo"
+            form={formId}
             value={tipo}
             onChange={(v) => setTipo(v as typeof tipo)}
             options={[
@@ -122,6 +134,7 @@ export function PlanForm({
         <Field label="Estado">
           <Select
             name="estado"
+            form={formId}
             defaultValue={p?.estado ?? 'vigente'}
             options={[
               { value: 'vigente', label: 'Vigente' },
@@ -133,6 +146,7 @@ export function PlanForm({
         <FullField label="Título">
           <input
             name="titulo"
+            form={formId}
             defaultValue={p?.titulo ?? ''}
             required
             placeholder="Ej: Plan nutricional — Mayo 2026"
@@ -143,6 +157,7 @@ export function PlanForm({
           <input
             type="date"
             name="fecha_desde"
+            form={formId}
             defaultValue={fechaDesde}
             onChange={(e) => setFechaDesde(e.target.value)}
             required
@@ -153,6 +168,7 @@ export function PlanForm({
           <input
             type="date"
             name="fecha_hasta"
+            form={formId}
             defaultValue={p?.fecha_hasta ?? ''}
             min={fechaDesde}
             className={inputBase}
@@ -172,7 +188,7 @@ export function PlanForm({
           </FullField>
         ) : null}
         <FullField label={p?.archivo_path ? 'Nuevo PDF (opcional)' : 'PDF (opcional, máx 15MB)'}>
-          <input type="file" name="archivo" accept="application/pdf" className="text-sm" />
+          <input type="file" name="archivo" form={formId} accept="application/pdf" className="text-sm" />
         </FullField>
       </Section>
 
@@ -181,6 +197,7 @@ export function PlanForm({
         <FullField label="Pautas generales">
           <NotaTextarea
             name="pautas_generales"
+            form={formId}
             rows={4}
             defaultValue={p?.pautas_generales}
             placeholder="Indicaciones generales del plan alimentario"
@@ -190,6 +207,7 @@ export function PlanForm({
         <FullField label="Pautas de hidratación">
           <NotaTextarea
             name="pautas_hidratacion"
+            form={formId}
             rows={2}
             defaultValue={p?.pautas_hidratacion}
             placeholder="Ej: 2,5 L de agua por día, más en días de entrenamiento"
@@ -199,6 +217,7 @@ export function PlanForm({
         <Field label="Pre entreno">
           <NotaTextarea
             name="pre_entreno"
+            form={formId}
             rows={2}
             defaultValue={p?.pre_entreno}
             placeholder="Qué consumir antes de entrenar"
@@ -208,6 +227,7 @@ export function PlanForm({
         <Field label="Intra entreno">
           <NotaTextarea
             name="intra_entreno"
+            form={formId}
             rows={2}
             defaultValue={p?.intra_entreno}
             placeholder="Qué consumir durante el entrenamiento"
@@ -217,6 +237,7 @@ export function PlanForm({
         <Field label="Post entreno">
           <NotaTextarea
             name="post_entreno"
+            form={formId}
             rows={2}
             defaultValue={p?.post_entreno}
             placeholder="Qué consumir después de entrenar"
@@ -226,6 +247,7 @@ export function PlanForm({
         <Field label="Suplementación">
           <NotaTextarea
             name="suplementacion"
+            form={formId}
             rows={2}
             defaultValue={p?.suplementacion}
             placeholder="Suplementos sugeridos y dosis"
@@ -240,14 +262,15 @@ export function PlanForm({
       {tipo !== 'nutricion' && (
       <Section title="Datos de entrenamiento">
         <Field label="Disciplina">
-          <input name="disciplina" defaultValue={p?.disciplina ?? ''} placeholder="Ej: Musculación" className={inputBase} />
+          <input name="disciplina" form={formId} defaultValue={p?.disciplina ?? ''} placeholder="Ej: Musculación" className={inputBase} />
         </Field>
         <Field label="Frecuencia">
-          <input name="frecuencia" defaultValue={p?.frecuencia ?? ''} placeholder="Ej: 4 días/semana" className={inputBase} />
+          <input name="frecuencia" form={formId} defaultValue={p?.frecuencia ?? ''} placeholder="Ej: 4 días/semana" className={inputBase} />
         </Field>
         <FullField label="Experiencia previa">
           <NotaTextarea
             name="experiencia_previa"
+            form={formId}
             rows={2}
             defaultValue={p?.experiencia_previa}
             placeholder="Ej: 2 años de musculación, antecedentes deportivos"
@@ -257,6 +280,7 @@ export function PlanForm({
         <FullField label="Volumen / orientación general">
           <NotaTextarea
             name="volumen"
+            form={formId}
             rows={2}
             defaultValue={p?.volumen}
             placeholder="Ej: 12–16 series por grupo muscular, progresión semanal"
@@ -266,6 +290,7 @@ export function PlanForm({
         <Field label="Lunes">
           <input
             name="disponibilidad_lunes"
+            form={formId}
             defaultValue={p?.disponibilidad_lunes ?? ''}
             placeholder="Ej: 18–19 hs"
             className={inputBase}
@@ -274,6 +299,7 @@ export function PlanForm({
         <Field label="Martes">
           <input
             name="disponibilidad_martes"
+            form={formId}
             defaultValue={p?.disponibilidad_martes ?? ''}
             placeholder="Ej: 18–19 hs"
             className={inputBase}
@@ -282,6 +308,7 @@ export function PlanForm({
         <Field label="Miércoles">
           <input
             name="disponibilidad_miercoles"
+            form={formId}
             defaultValue={p?.disponibilidad_miercoles ?? ''}
             placeholder="Ej: 18–19 hs"
             className={inputBase}
@@ -290,6 +317,7 @@ export function PlanForm({
         <Field label="Jueves">
           <input
             name="disponibilidad_jueves"
+            form={formId}
             defaultValue={p?.disponibilidad_jueves ?? ''}
             placeholder="Ej: 18–19 hs"
             className={inputBase}
@@ -298,6 +326,7 @@ export function PlanForm({
         <Field label="Viernes">
           <input
             name="disponibilidad_viernes"
+            form={formId}
             defaultValue={p?.disponibilidad_viernes ?? ''}
             placeholder="Ej: 18–19 hs"
             className={inputBase}
@@ -306,6 +335,7 @@ export function PlanForm({
         <Field label="Sábado">
           <input
             name="disponibilidad_sabado"
+            form={formId}
             defaultValue={p?.disponibilidad_sabado ?? ''}
             placeholder="Ej: 10–11 hs"
             className={inputBase}
@@ -318,12 +348,21 @@ export function PlanForm({
 
       <Section title="Notas">
         <FullField label="Notas internas / extra">
-          <NotaTextarea name="notas" rows={4} defaultValue={p?.notas} placeholder="Notas internas o aclaraciones extra del plan" className={inputBase} />
+          <NotaTextarea
+            name="notas"
+            form={formId}
+            rows={4}
+            defaultValue={p?.notas}
+            placeholder="Notas internas o aclaraciones extra del plan"
+            className={inputBase}
+          />
         </FullField>
       </Section>
 
-      <Btn>{editing ? 'Guardar cambios' : 'Crear plan'}</Btn>
-    </form>
+      <Btn form={formId} pending={isPending}>
+        {editing ? 'Guardar cambios' : 'Crear plan'}
+      </Btn>
+    </div>
   )
 }
 
