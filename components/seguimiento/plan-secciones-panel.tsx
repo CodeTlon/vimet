@@ -7,7 +7,7 @@ import { eliminarSeccionAction, moverSeccionAction } from '@/actions/plan-seccio
 import { type Seccion, PlanSeccionForm } from '@/components/seguimiento/plan-seccion-form'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Modal } from '@/components/ui/modal'
-import { TIPO_SECCION_PLAN, type TipoSeccionPlan } from '@/lib/seguimiento'
+import { TIPO_SECCION_PLAN, TIPO_SECCION_PLAN_LABEL, type TipoSeccionPlan } from '@/lib/seguimiento'
 
 function ImagenesPreview({ seccion }: { seccion: Seccion }) {
   if (seccion.imagenes.length === 0) return null
@@ -49,7 +49,7 @@ function SeccionCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <span className="inline-block text-xs font-medium text-vimet-orange bg-vimet-tint1 rounded-full px-2 py-0.5 mb-1">
-            {TIPO_SECCION_PLAN.find((t) => t.value === seccion.tipo)?.label}
+            {TIPO_SECCION_PLAN_LABEL[seccion.tipo]}
           </span>
           <h3 className="font-heading font-semibold text-gray-900">{seccion.titulo}</h3>
 

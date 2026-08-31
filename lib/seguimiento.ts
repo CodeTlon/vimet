@@ -82,12 +82,9 @@ export const TIPO_PLAN_LABEL: Record<string, string> = {
 
 export type TipoSeccionPlan = 'pautas_generales' | 'receta' | 'comidas_dia' | 'imagenes'
 
+// "Pautas generales" NO está acá: sigue siendo el bloque fijo de siempre en
+// planes (columnas de texto), no una sección modular más — ver Quirks.
 export const TIPO_SECCION_PLAN = [
-  {
-    value: 'pautas_generales' as const,
-    label: 'Pautas generales',
-    descripcion: 'Texto libre, con imágenes opcionales',
-  },
   {
     value: 'receta' as const,
     label: 'Receta',
