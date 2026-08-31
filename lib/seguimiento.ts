@@ -80,10 +80,12 @@ export const TIPO_PLAN_LABEL: Record<string, string> = {
   combo: 'Combo',
 }
 
-export type TipoSeccionPlan = 'pautas_generales' | 'receta' | 'comidas_dia' | 'imagenes'
+export type TipoSeccionPlan = 'pautas_generales' | 'receta' | 'comidas_dia' | 'imagenes' | 'recomendaciones'
 
 // "Pautas generales" NO está acá: sigue siendo el bloque fijo de siempre en
 // planes (columnas de texto), no una sección modular más — ver Quirks.
+// "imagenes" tampoco: se retiró en favor de "recomendaciones" (mismo texto +
+// imágenes opcionales grandes que "receta"), ver Quirks.
 export const TIPO_SECCION_PLAN = [
   {
     value: 'receta' as const,
@@ -96,9 +98,9 @@ export const TIPO_SECCION_PLAN = [
     descripcion: 'Un bloque por cada momento (desayuno, almuerzo, merienda...)',
   },
   {
-    value: 'imagenes' as const,
-    label: 'Imágenes',
-    descripcion: 'Para imprimir el plan más adelante — no se muestran grandes acá',
+    value: 'recomendaciones' as const,
+    label: 'Recomendaciones',
+    descripcion: 'Texto libre + imágenes opcionales, se muestran grandes',
   },
 ]
 
@@ -107,6 +109,7 @@ export const TIPO_SECCION_PLAN_LABEL: Record<TipoSeccionPlan, string> = {
   receta: 'Receta',
   comidas_dia: 'Comidas del día',
   imagenes: 'Imágenes',
+  recomendaciones: 'Recomendaciones',
 }
 
 export const SEXO_LABEL: Record<string, string> = {

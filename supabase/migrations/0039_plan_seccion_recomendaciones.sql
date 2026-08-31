@@ -1,0 +1,15 @@
+-- VIMET — agrega 'recomendaciones' como tipo de sección de plan, en
+-- reemplazo de 'imagenes' (que solo mostraba thumbnails chicas, sin texto).
+-- 'recomendaciones' tiene texto obligatorio + imágenes opcionales mostradas
+-- grandes — mismo comportamiento que 'receta', solo cambia el propósito.
+--
+-- Postgres no permite quitar un valor de un enum sin recrear el tipo, así
+-- que 'imagenes' queda huérfano en el enum para siempre — mismo patrón ya
+-- usado con 'pautas_generales' en la migración 0038 (retirado del picker de
+-- la app sin tocar el CREATE TYPE). Sí se puede AGREGAR un valor nuevo sin
+-- recrear el tipo, por eso este ALTER TYPE es seguro.
+--
+-- La migración de datos (mover las filas existentes de 'imagenes' a
+-- 'recomendaciones') va en un archivo separado: Postgres no permite usar un
+-- valor de enum recién agregado en la misma transacción en que se lo agrega.
+alter type public.tipo_seccion_plan add value if not exists 'recomendaciones';

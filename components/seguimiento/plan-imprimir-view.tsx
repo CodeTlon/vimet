@@ -112,7 +112,7 @@ export function PlanImprimirView({
       <header className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-6">
         <div className="h-2 bg-vimet-gradient" />
         <div className="p-6 flex flex-wrap items-start justify-between gap-6">
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-4 min-w-0 flex-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/brand/logo-light.jpg"
@@ -202,21 +202,11 @@ export function PlanImprimirView({
                 </div>
               ))}
             </div>
-          ) : s.tipo === 'imagenes' ? (
-            <div className="flex flex-wrap gap-3">
-              {s.imagenes.map((img) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={img.id}
-                  src={img.url}
-                  alt=""
-                  className="h-20 w-20 rounded-lg object-cover border border-gray-200"
-                />
-              ))}
-            </div>
           ) : (
             <>
-              <p className="text-sm text-gray-800 whitespace-pre-line">{s.contenido}</p>
+              {s.contenido ? (
+                <p className="text-sm text-gray-800 whitespace-pre-line">{s.contenido}</p>
+              ) : null}
               {s.imagenes.length > 0 ? (
                 <div className="flex flex-wrap gap-3 mt-4">
                   {s.imagenes.map((img) => (

@@ -150,22 +150,11 @@ export default async function MiPlanDetallePage(
                 </div>
               ))}
             </div>
-          ) : s.tipo === 'imagenes' ? (
-            <div className="flex flex-wrap gap-2">
-              {s.imagenes.map((img) => (
-                <a key={img.id} href={img.url} target="_blank" rel="noopener noreferrer">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={img.url}
-                    alt=""
-                    className="h-16 w-16 rounded-lg object-cover border border-gray-200"
-                  />
-                </a>
-              ))}
-            </div>
           ) : (
             <>
-              <p className="text-sm text-gray-800 whitespace-pre-line">{s.contenido}</p>
+              {s.contenido ? (
+                <p className="text-sm text-gray-800 whitespace-pre-line">{s.contenido}</p>
+              ) : null}
               {s.imagenes.length > 0 ? (
                 <div className="flex flex-wrap gap-3 mt-4">
                   {s.imagenes.map((img) => (

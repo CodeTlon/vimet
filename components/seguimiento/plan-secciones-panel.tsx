@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronDown, ChevronUp, ImageIcon, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 
 import { eliminarSeccionAction, moverSeccionAction } from '@/actions/plan-secciones'
@@ -62,16 +62,11 @@ function SeccionCard({
                 </li>
               ))}
             </ul>
-          ) : seccion.tipo === 'imagenes' ? (
-            <p className="mt-1 text-sm text-gray-500 inline-flex items-center gap-1.5">
-              <ImageIcon className="size-3.5" /> {seccion.imagenes.length} imagen
-              {seccion.imagenes.length === 1 ? '' : 'es'}
-            </p>
           ) : (
             <p className="mt-1 text-sm text-gray-600 line-clamp-2 whitespace-pre-line">{seccion.contenido}</p>
           )}
 
-          {seccion.tipo !== 'imagenes' ? <ImagenesPreview seccion={seccion} /> : null}
+          <ImagenesPreview seccion={seccion} />
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
