@@ -58,7 +58,9 @@ const nextConfig = {
               // blob: hace falta para los preview de "Subir ejercicio propio"
               // (video elegido y GIF generado se muestran vía
               // URL.createObjectURL, nunca se suben a ningún lado hasta guardar).
-              "img-src 'self' data: blob: https://*.supabase.co",
+              // img.youtube.com sirve la miniatura real de un ejercicio con
+              // youtube_url (ver EjercicioYoutubeThumbnail/miniaturaYoutube).
+              "img-src 'self' data: blob: https://*.supabase.co https://img.youtube.com",
               "font-src 'self' data:",
               "media-src 'self' blob:",
               "connect-src 'self' https://*.supabase.co",
