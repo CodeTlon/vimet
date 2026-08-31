@@ -9,6 +9,8 @@ export type SelectOption = { value: string; label: string }
 type SelectProps = {
   options: readonly SelectOption[]
   name?: string
+  /** id de un <form> externo a asociar (cuando el select no es descendiente del <form>) */
+  form?: string
   placeholder?: string
   className?: string
   /** Reemplaza por completo las clases del trigger (default: caja tipo input). Para variantes como un badge/pill. */
@@ -43,6 +45,7 @@ type SelectProps = {
 export function Select({
   options,
   name,
+  form,
   placeholder = 'Seleccionar',
   className = '',
   triggerClassName,
@@ -162,7 +165,7 @@ export function Select({
 
   return (
     <div ref={wrapRef} className={`relative min-w-0 ${className}`}>
-      {name ? <input type="hidden" name={name} value={value} /> : null}
+      {name ? <input type="hidden" name={name} form={form} value={value} /> : null}
       <button
         ref={triggerRef}
         type="button"
