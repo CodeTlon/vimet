@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { PlanForm } from '@/components/seguimiento/plan-form'
+import { PlanPrintButton } from '@/components/seguimiento/plan-print-button'
 import { PlanSeccionesPanel } from '@/components/seguimiento/plan-secciones-panel'
 import { RutinaPanel, type RutinaItem } from '@/components/seguimiento/rutina-panel'
 import { obtenerSeccionesPlan } from '@/lib/plan-secciones'
@@ -101,7 +102,10 @@ export default async function EditarPlanPage(
       >
         <ChevronLeft className="size-4" /> Planes
       </Link>
-      <h2 className="font-heading text-xl font-semibold text-gray-900">Editar plan</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-heading text-xl font-semibold text-gray-900">Editar plan</h2>
+        <PlanPrintButton planId={planId} />
+      </div>
       <PlanForm
         pacienteId={params.id}
         plan={plan}
