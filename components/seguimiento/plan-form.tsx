@@ -32,6 +32,12 @@ type Plan = {
   fecha_desde: string
   fecha_hasta: string | null
   archivo_path: string | null
+  pautas_generales: string | null
+  pautas_hidratacion: string | null
+  pre_entreno: string | null
+  intra_entreno: string | null
+  post_entreno: string | null
+  suplementacion: string | null
   disciplina: string | null
   experiencia_previa: string | null
   frecuencia: string | null
@@ -169,6 +175,65 @@ export function PlanForm({
           <input type="file" name="archivo" accept="application/pdf" className="text-sm" />
         </FullField>
       </Section>
+
+      {tipo !== 'entrenamiento' && (
+      <Section title="Pautas nutricionales">
+        <FullField label="Pautas generales">
+          <NotaTextarea
+            name="pautas_generales"
+            rows={4}
+            defaultValue={p?.pautas_generales}
+            placeholder="Indicaciones generales del plan alimentario"
+            className={inputBase}
+          />
+        </FullField>
+        <FullField label="Pautas de hidratación">
+          <NotaTextarea
+            name="pautas_hidratacion"
+            rows={2}
+            defaultValue={p?.pautas_hidratacion}
+            placeholder="Ej: 2,5 L de agua por día, más en días de entrenamiento"
+            className={inputBase}
+          />
+        </FullField>
+        <Field label="Pre entreno">
+          <NotaTextarea
+            name="pre_entreno"
+            rows={2}
+            defaultValue={p?.pre_entreno}
+            placeholder="Qué consumir antes de entrenar"
+            className={inputBase}
+          />
+        </Field>
+        <Field label="Intra entreno">
+          <NotaTextarea
+            name="intra_entreno"
+            rows={2}
+            defaultValue={p?.intra_entreno}
+            placeholder="Qué consumir durante el entrenamiento"
+            className={inputBase}
+          />
+        </Field>
+        <Field label="Post entreno">
+          <NotaTextarea
+            name="post_entreno"
+            rows={2}
+            defaultValue={p?.post_entreno}
+            placeholder="Qué consumir después de entrenar"
+            className={inputBase}
+          />
+        </Field>
+        <Field label="Suplementación">
+          <NotaTextarea
+            name="suplementacion"
+            rows={2}
+            defaultValue={p?.suplementacion}
+            placeholder="Suplementos sugeridos y dosis"
+            className={inputBase}
+          />
+        </Field>
+      </Section>
+      )}
 
       {secciones}
 

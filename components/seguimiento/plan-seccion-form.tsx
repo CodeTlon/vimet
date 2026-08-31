@@ -167,7 +167,7 @@ export function PlanSeccionForm({
         />
       </label>
 
-      {(tipo === 'pautas_generales' || tipo === 'receta') && (
+      {tipo === 'receta' && (
         <>
           <label className="block text-sm">
             <span className="block font-medium text-gray-800 mb-1">Contenido</span>
