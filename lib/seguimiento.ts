@@ -135,6 +135,29 @@ export function formatearFechaCorta(iso: string | null | undefined) {
   })
 }
 
+export const DIA_LABEL: Record<string, string> = {
+  lunes: 'Lunes',
+  martes: 'Martes',
+  miercoles: 'Miércoles',
+  jueves: 'Jueves',
+  viernes: 'Viernes',
+  sabado: 'Sábado',
+  domingo: 'Domingo',
+}
+export const ORDEN_DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo', '']
+
+export function resumenFuerza(r: { series: number | null; repeticiones: string | null; descanso_seg: number | null }) {
+  return (
+    [
+      r.series ? `${r.series} series` : null,
+      r.repeticiones ? `${r.repeticiones} reps` : null,
+      r.descanso_seg ? `${r.descanso_seg}s descanso` : null,
+    ]
+      .filter(Boolean)
+      .join(' · ') || '—'
+  )
+}
+
 export const UNIDAD_CARDIO_LABEL: Record<string, string> = {
   minutos: 'min',
   horas: 'hs',

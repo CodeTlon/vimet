@@ -106,7 +106,7 @@ export default async function MiPlanDetallePage(
             >
               {ESTADO_PLAN_LABEL[plan.estado as keyof typeof ESTADO_PLAN_LABEL]}
             </span>
-            <PlanPrintButton />
+            <PlanPrintButton planId={Number(params.id)} />
           </div>
         </div>
         {plan.archivo_path ? (
