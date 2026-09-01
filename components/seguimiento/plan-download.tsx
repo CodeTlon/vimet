@@ -27,10 +27,10 @@ export function PlanDownloadButton({ planId }: { planId: number }) {
       }}
       disabled={pending}
       className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-vimet-gradient text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all disabled:opacity-50"
-      aria-label="Descargar PDF"
+      aria-label="Descargar material auxiliar"
     >
       <Download className="size-4" />
-      {pending ? 'Generando…' : 'Ver PDF'}
+      {pending ? 'Generando…' : 'Ver material auxiliar'}
       {error ? <span className="ml-2 text-xs text-white/80">({error})</span> : null}
     </button>
   )

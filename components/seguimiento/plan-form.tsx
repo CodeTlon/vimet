@@ -176,18 +176,18 @@ export function PlanForm({
         </Field>
       </Section>
 
-      <Section title="PDF del plan">
+      <Section title="Material auxiliar">
         {p?.archivo_path ? (
           <FullField label="Archivo actual">
             <p className="text-sm text-gray-700 break-all">
               {p.archivo_path.split('/').slice(1).join('/')}
             </p>
             <p className="mt-1 text-xs text-gray-500">
-              Si subís un PDF nuevo, reemplaza al actual.
+              Si subís uno nuevo, reemplaza al actual.
             </p>
           </FullField>
         ) : null}
-        <FullField label={p?.archivo_path ? 'Nuevo PDF (opcional)' : 'PDF (opcional, máx 15MB)'}>
+        <FullField label={p?.archivo_path ? 'Nuevo material auxiliar (opcional)' : 'Material auxiliar (opcional, máx 15MB)'}>
           <input type="file" name="archivo" form={formId} accept="application/pdf" className="text-sm" />
         </FullField>
       </Section>

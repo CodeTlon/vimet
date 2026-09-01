@@ -43,7 +43,7 @@ export default async function MisPlanesPage() {
       <header className="mb-6">
         <h1 className="font-heading text-3xl sm:text-4xl font-bold text-gray-900">Mis planes</h1>
         <p className="text-gray-700 mt-1">
-          Tus planes nutricionales y de entrenamiento, con acceso al PDF y a las pautas.
+          Tus planes nutricionales y de entrenamiento, con acceso al material auxiliar y a las pautas.
         </p>
       </header>
 
