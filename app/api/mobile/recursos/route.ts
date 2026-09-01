@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 
+import { pareceUnPdf, pareceUnVideo } from '@/lib/file-sniff'
 import { optimizeImage } from '@/lib/storage/optimize-image'
 import { requireMobileStaff } from '@/lib/supabase/bearer'
 
@@ -66,6 +67,10 @@ export async function POST(request: Request) {
     buf = await optimizeImage(buf)
     contentType = 'image/webp'
     storage_path = storage_path.replace(/\.\w+$/, '') + '.webp'
+  } else if (t === 'pdf' && !pareceUnPdf(buf)) {
+    return NextResponse.json({ error: 'El archivo no es un PDF válido.' }, { status: 400 })
+  } else if (t === 'video' && !pareceUnVideo(buf, file.type)) {
+    return NextResponse.json({ error: 'El archivo no es un video válido.' }, { status: 400 })
   }
 
   const { error: upErr } = await ctx.supabase.storage
