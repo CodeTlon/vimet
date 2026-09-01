@@ -13,7 +13,9 @@ export type CrearPacienteState = StaffState & { id?: string }
 // Los buckets `planes`/`recursos` no cascadean solos al borrar el usuario de
 // auth.users — hay que limpiarlos a mano antes de que quede el registro
 // huérfano. `recursos` tiene subcarpetas (r/, f/), por eso es recursivo.
-async function removeAllUnderPrefix(
+// Exportada para app/api/mobile/staff/eliminar-paciente (misma limpieza de
+// storage, reimplementada ahí sin sesión de cookies).
+export async function removeAllUnderPrefix(
   admin: ReturnType<typeof createAdminClient>,
   bucket: string,
   prefix: string,
@@ -119,7 +121,7 @@ export async function configurarProfesionalAction(
   return { ok: true }
 }
 
-const crearPacienteSchema = z.object({
+export const crearPacienteSchema = z.object({
   nombre: z.string().trim().min(1, 'El nombre es obligatorio'),
   apellido: z.string().trim().min(1, 'El apellido es obligatorio'),
   telefono: z.string().trim().min(6, 'Teléfono inválido'),
