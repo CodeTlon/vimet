@@ -2,9 +2,9 @@ import { randomUUID } from 'crypto'
 
 import { NextResponse } from 'next/server'
 
-import { crearPacienteSchema } from '@/actions/staff'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireMobileStaff } from '@/lib/supabase/bearer'
+import { crearPacienteSchema } from '@/lib/validation/staff'
 
 export const dynamic = 'force-dynamic'
 

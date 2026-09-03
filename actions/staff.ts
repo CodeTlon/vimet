@@ -6,6 +6,7 @@ import { z } from 'zod'
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, requireStaff } from '@/lib/supabase/auth-helpers'
+import { crearPacienteSchema } from '@/lib/validation/staff'
 
 export type StaffState = { ok?: boolean; error?: string }
 export type CrearPacienteState = StaffState & { id?: string }
@@ -120,13 +121,6 @@ export async function configurarProfesionalAction(
   revalidatePath('/admin', 'layout')
   return { ok: true }
 }
-
-export const crearPacienteSchema = z.object({
-  nombre: z.string().trim().min(1, 'El nombre es obligatorio'),
-  apellido: z.string().trim().min(1, 'El apellido es obligatorio'),
-  telefono: z.string().trim().min(6, 'Teléfono inválido'),
-  email: z.union([z.string().trim().email('Email inválido'), z.literal('')]).optional(),
-})
 
 // Alta de pacientes que nunca van a iniciar sesión (adultos mayores o con
 // dificultad para usar la web): el staff carga los datos y gestiona todo
