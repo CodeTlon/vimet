@@ -23,7 +23,7 @@ export function FaqList({ items }: { items: ReadonlyArray<{ q: string; a: string
               type="button"
               onClick={() => setOpenIdx(open ? null : i)}
               aria-expanded={open}
-              className="w-full flex items-center justify-between gap-4 p-5 text-left"
+              className="w-full flex items-center justify-between gap-4 p-5 text-left rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
             >
               <span className="font-heading font-semibold text-gray-900 text-base">
                 {faq.q}

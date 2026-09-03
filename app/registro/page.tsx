@@ -1,8 +1,14 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { AuthShell } from '@/components/auth-shell'
 import { RegisterForm } from '@/components/register-form'
-export const metadata = { title: 'Crear cuenta' }
+
+export const metadata: Metadata = {
+  title: 'Crear cuenta',
+  description: 'Creá tu cuenta de paciente en VIMET para reservar turnos de nutrición y entrenamiento.',
+  robots: { index: false, follow: false },
+}
 
 export default function RegistroPage() {
   return (

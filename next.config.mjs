@@ -58,12 +58,14 @@ const nextConfig = {
               // blob: hace falta para los preview de "Subir ejercicio propio"
               // (video elegido y GIF generado se muestran vía
               // URL.createObjectURL, nunca se suben a ningún lado hasta guardar).
-              // img.youtube.com sirve la miniatura real de un ejercicio con
-              // youtube_url (ver EjercicioYoutubeThumbnail/miniaturaYoutube).
-              "img-src 'self' data: blob: https://*.supabase.co https://img.youtube.com",
+              "img-src 'self' data: blob: https://*.supabase.co",
               "font-src 'self' data:",
               "media-src 'self' blob:",
               "connect-src 'self' https://*.supabase.co",
+              // Sin esto, default-src 'self' bloquea el iframe de Google Maps
+              // embebido en contacto/home (LazyMap, admin-configurable) — CSP
+              // sin frame-src cae al default, que no incluye orígenes externos.
+              "frame-src https://www.google.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",

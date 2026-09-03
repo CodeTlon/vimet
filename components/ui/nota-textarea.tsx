@@ -7,7 +7,6 @@ import { Modal } from '@/components/ui/modal'
 
 export function NotaTextarea({
   name,
-  form,
   defaultValue,
   rows = 3,
   placeholder,
@@ -17,8 +16,6 @@ export function NotaTextarea({
   onSave,
 }: {
   name?: string
-  /** id de un <form> externo a asociar (cuando el textarea no es descendiente del <form>) */
-  form?: string
   defaultValue?: string | null
   rows?: number
   placeholder?: string
@@ -43,7 +40,6 @@ export function NotaTextarea({
     <div className="relative">
       <textarea
         name={name}
-        form={form}
         rows={rows}
         value={value}
         readOnly

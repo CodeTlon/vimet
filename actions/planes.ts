@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import { pareceUnPdf } from '@/lib/file-sniff'
 import { createClient } from '@/lib/supabase/server'
+import { encryptClinical } from '@/lib/crypto/clinical'
 
 export type PlanState = { ok?: boolean; error?: string; planId?: number }
 
@@ -15,13 +16,6 @@ const planObjectSchema = z.object({
   estado: z.enum(['vigente', 'archivado', 'borrador']).default('vigente'),
   fecha_desde: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   fecha_hasta: z.string().optional().or(z.literal('')),
-  // nutri
-  pautas_generales: z.string().max(4000).optional().or(z.literal('')),
-  pautas_hidratacion: z.string().max(2000).optional().or(z.literal('')),
-  pre_entreno: z.string().max(1000).optional().or(z.literal('')),
-  intra_entreno: z.string().max(1000).optional().or(z.literal('')),
-  post_entreno: z.string().max(1000).optional().or(z.literal('')),
-  suplementacion: z.string().max(2000).optional().or(z.literal('')),
   // entreno
   disciplina: z.string().max(200).optional().or(z.literal('')),
   experiencia_previa: z.string().max(1000).optional().or(z.literal('')),
@@ -43,14 +37,6 @@ const vigenciaRefineOpts = {
   path: ['fecha_hasta'] as string[],
 }
 
-const NUTRI_FIELDS = [
-  'pautas_generales',
-  'pautas_hidratacion',
-  'pre_entreno',
-  'intra_entreno',
-  'post_entreno',
-  'suplementacion',
-] as const
 const ENTRENO_FIELDS = [
   'disciplina',
   'experiencia_previa',
@@ -66,17 +52,15 @@ const ENTRENO_FIELDS = [
 const tieneDatos = (d: Record<string, string | undefined>, fields: readonly string[]) =>
   fields.some((f) => (d[f] ?? '').trim() !== '')
 
-// Un plan sin ningún dato de su tipo no le sirve a nadie: exige al menos un
-// campo cargado del grupo correspondiente (ambos grupos si es combo).
+// El contenido nutricional ahora vive en secciones modulares opcionales
+// (plan_secciones, agregadas después de guardar el plan), así que solo el
+// bloque fijo de "Datos de entrenamiento" sigue exigiendo al menos un dato.
 const minimoRefine = (d: { tipo: string } & Record<string, string | undefined>) => {
-  const nutri = tieneDatos(d, NUTRI_FIELDS)
-  const entreno = tieneDatos(d, ENTRENO_FIELDS)
-  if (d.tipo === 'nutricion') return nutri
-  if (d.tipo === 'entrenamiento') return entreno
-  return nutri && entreno
+  if (d.tipo === 'nutricion') return true
+  return tieneDatos(d, ENTRENO_FIELDS)
 }
 const minimoRefineOpts = {
-  message: 'Cargá al menos un dato de nutrición y/o entrenamiento según el tipo de plan elegido',
+  message: 'Cargá al menos un dato de entrenamiento para este tipo de plan',
   path: ['tipo'] as string[],
 }
 
@@ -112,12 +96,6 @@ function buildPayload(d: z.infer<typeof baseSchema>, profesional_id: string) {
     estado: d.estado,
     fecha_desde: d.fecha_desde,
     fecha_hasta: toStr(d.fecha_hasta),
-    pautas_generales: toStr(d.pautas_generales),
-    pautas_hidratacion: toStr(d.pautas_hidratacion),
-    pre_entreno: toStr(d.pre_entreno),
-    intra_entreno: toStr(d.intra_entreno),
-    post_entreno: toStr(d.post_entreno),
-    suplementacion: toStr(d.suplementacion),
     disciplina: toStr(d.disciplina),
     experiencia_previa: toStr(d.experiencia_previa),
     frecuencia: toStr(d.frecuencia),
@@ -128,7 +106,10 @@ function buildPayload(d: z.infer<typeof baseSchema>, profesional_id: string) {
     disponibilidad_jueves: toStr(d.disponibilidad_jueves),
     disponibilidad_viernes: toStr(d.disponibilidad_viernes),
     disponibilidad_sabado: toStr(d.disponibilidad_sabado),
-    notas: toStr(d.notas),
+    // `notas` cifrado en Node antes de escribir (ver lib/crypto/clinical.ts)
+    // — la columna vieja queda en null a partir de acá.
+    notas: null,
+    notas_enc: encryptClinical(toStr(d.notas)),
   }
 }
 
@@ -146,7 +127,13 @@ export async function crearPlanAction(
   const d = parsed.data
   const file = formData.get('archivo') as File | null
 
-  const payload = buildPayload(d, ctx.user.id)
+  let payload: Record<string, unknown>
+  try {
+    payload = buildPayload(d, ctx.user.id)
+  } catch (e) {
+    console.error('crearPlanAction: fallo al cifrar notas', e)
+    return { error: 'No se pudo crear el plan (falló el cifrado — revisar CLINICAL_DATA_ENCRYPTION_KEY del entorno).' }
+  }
 
   let archivo_path: string | null = null
   if (file && file.size > 0) {
@@ -207,10 +194,13 @@ export async function actualizarPlanAction(
     .maybeSingle()
   if (!existente) return { error: 'Ese plan ya no existe.' }
 
-  const payload: Record<string, unknown> = buildPayload(
-    { ...d, paciente_id: existente.paciente_id },
-    ctx.user.id,
-  )
+  let payload: Record<string, unknown>
+  try {
+    payload = buildPayload({ ...d, paciente_id: existente.paciente_id }, ctx.user.id)
+  } catch (e) {
+    console.error('actualizarPlanAction: fallo al cifrar notas', e)
+    return { error: 'No se pudo actualizar el plan (falló el cifrado — revisar CLINICAL_DATA_ENCRYPTION_KEY del entorno).' }
+  }
 
   if (file && file.size > 0) {
     if (file.type !== 'application/pdf') return { error: 'El archivo debe ser PDF.' }

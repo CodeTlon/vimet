@@ -1,7 +1,8 @@
 'use client'
 
 import { Save, Trash2, X } from 'lucide-react'
-import { useActionState, useEffect, useId, useRef, useState } from 'react'
+import { useActionState, useEffect, useRef, useState } from 'react'
+import { useFormStatus } from 'react-dom'
 
 import {
   actualizarSeccionAction,
@@ -26,11 +27,11 @@ export type Seccion = {
   imagenes: ImagenSeccion[]
 }
 
-function Btn({ form, editing, pending }: { form: string; editing: boolean; pending: boolean }) {
+function Btn({ editing }: { editing: boolean }) {
+  const { pending } = useFormStatus()
   return (
     <button
       type="submit"
-      form={form}
       disabled={pending}
       className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-vimet-gradient text-white font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
     >
@@ -73,7 +74,7 @@ function ImagenExistente({
   )
 }
 
-function MomentosFields({ form, momentos: iniciales }: { form: string; momentos: MomentoSeccion[] }) {
+function MomentosFields({ momentos: iniciales }: { momentos: MomentoSeccion[] }) {
   const [filas, setFilas] = useState(() =>
     iniciales.length > 0
       ? iniciales.map((m) => ({ key: m.id, nombre_momento: m.nombre_momento, contenido: m.contenido }))
@@ -88,7 +89,6 @@ function MomentosFields({ form, momentos: iniciales }: { form: string; momentos:
           <div className="flex items-center justify-between gap-2">
             <input
               name="momento_nombre"
-              form={form}
               defaultValue={f.nombre_momento}
               required
               placeholder="Ej: Desayuno, Media mañana..."
@@ -107,7 +107,6 @@ function MomentosFields({ form, momentos: iniciales }: { form: string; momentos:
           </div>
           <textarea
             name="momento_contenido"
-            form={form}
             defaultValue={f.contenido}
             required
             rows={3}
@@ -141,27 +140,21 @@ export function PlanSeccionForm({
   onDone: () => void
 }) {
   const editing = Boolean(seccion)
-  const [state, action, isPending] = useActionState(editing ? actualizarSeccionAction : crearSeccionAction, initial)
-  const formId = useId()
+  const [state, action] = useActionState(editing ? actualizarSeccionAction : crearSeccionAction, initial)
 
   useEffect(() => {
     if (state.ok) onDone()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state])
 
+  const requiereImagenes = tipo === 'imagenes' && (!seccion || seccion.imagenes.length === 0)
+
   return (
-    // Igual que en plan-form.tsx: `ImagenExistente` trae su propio <form>
-    // (botón "Quitar imagen") — si quedara anidado dentro de este <form>, el
-    // navegador bloquea en silencio el submit del form interno. Por eso el
-    // <form> real queda vacío (solo hidden inputs) y cada campo se asocia
-    // por `form={formId}` en vez de por anidamiento en el DOM.
-    <div className="space-y-4">
-      <form id={formId} action={action}>
-        <input type="hidden" name="plan_id" value={planId} />
-        <input type="hidden" name="paciente_id" value={pacienteId} />
-        <input type="hidden" name="tipo" value={tipo} />
-        {seccion ? <input type="hidden" name="id" value={seccion.id} /> : null}
-      </form>
+    <form action={action} className="space-y-4">
+      <input type="hidden" name="plan_id" value={planId} />
+      <input type="hidden" name="paciente_id" value={pacienteId} />
+      <input type="hidden" name="tipo" value={tipo} />
+      {seccion ? <input type="hidden" name="id" value={seccion.id} /> : null}
 
       {state.error ? <p className="text-sm text-vimet-red">{state.error}</p> : null}
 
@@ -169,26 +162,24 @@ export function PlanSeccionForm({
         <span className="block font-medium text-gray-800 mb-1">Título</span>
         <input
           name="titulo"
-          form={formId}
           defaultValue={seccion?.titulo ?? TIPO_SECCION_PLAN_LABEL[tipo]}
           className={inputBase}
         />
       </label>
 
-      {(tipo === 'receta' || tipo === 'recomendaciones') && (
+      {(tipo === 'pautas_generales' || tipo === 'receta') && (
         <>
           <label className="block text-sm">
             <span className="block font-medium text-gray-800 mb-1">Contenido</span>
             <textarea
               name="contenido"
-              form={formId}
               defaultValue={seccion?.contenido ?? ''}
               required
               rows={8}
               placeholder={
                 tipo === 'receta'
                   ? 'Ingredientes y preparación'
-                  : 'Indicaciones o recomendaciones para el paciente'
+                  : 'Indicaciones, recomendaciones generales, etc.'
               }
               className={`${inputBase} resize-none`}
             />
@@ -204,14 +195,43 @@ export function PlanSeccionForm({
             <span className="block font-medium text-gray-800 mb-1">
               {seccion?.imagenes.length ? 'Agregar más imágenes (opcional)' : 'Imágenes (opcional)'}
             </span>
-            <input type="file" name="imagenes" form={formId} accept="image/*" multiple className="text-sm" />
+            <input type="file" name="imagenes" accept="image/*" multiple className="text-sm" />
           </label>
         </>
       )}
 
-      {tipo === 'comidas_dia' ? <MomentosFields form={formId} momentos={seccion?.momentos ?? []} /> : null}
+      {tipo === 'comidas_dia' ? <MomentosFields momentos={seccion?.momentos ?? []} /> : null}
 
-      <Btn form={formId} editing={editing} pending={isPending} />
-    </div>
+      {tipo === 'imagenes' && (
+        <>
+          <p className="text-sm text-gray-500">
+            Estas imágenes no se muestran grandes en el detalle del plan — se van a usar para imprimir el
+            plan más adelante.
+          </p>
+          {seccion && seccion.imagenes.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {seccion.imagenes.map((img) => (
+                <ImagenExistente key={img.id} imagen={img} planId={planId} pacienteId={pacienteId} />
+              ))}
+            </div>
+          ) : null}
+          <label className="block text-sm">
+            <span className="block font-medium text-gray-800 mb-1">
+              {requiereImagenes ? 'Imágenes' : 'Agregar más imágenes'}
+            </span>
+            <input
+              type="file"
+              name="imagenes"
+              accept="image/*"
+              multiple
+              required={requiereImagenes}
+              className="text-sm"
+            />
+          </label>
+        </>
+      )}
+
+      <Btn editing={editing} />
+    </form>
   )
 }

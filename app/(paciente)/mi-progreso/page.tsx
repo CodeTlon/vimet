@@ -7,6 +7,7 @@ import {
   categoriaCondicionFisica,
   formatearFechaCorta,
 } from '@/lib/seguimiento'
+import { readClinicalField } from '@/lib/crypto/clinical'
 export const metadata = { title: 'Mi progreso' }
 export const dynamic = 'force-dynamic'
 
@@ -31,12 +32,19 @@ export default async function MiProgresoPage() {
       .order('fecha', { ascending: true }),
     supabase
       .from('evolucion_entradas')
-      .select('id, origen, contenido, created_at')
+      .select('id, origen, contenido, contenido_enc, created_at')
       .eq('paciente_id', user.id)
       .eq('visible_paciente', true)
       .order('created_at', { ascending: false })
       .limit(10),
   ])
+
+  // Ver lib/crypto/clinical.ts — `_enc` si la entrada ya está cifrada, si
+  // no cae al texto plano viejo (histórico sin backfillear).
+  const evolucionDescifrada = (evolucion ?? []).map((e) => ({
+    ...e,
+    contenido: readClinicalField(e.contenido_enc, e.contenido) ?? '',
+  }))
 
   const tienemediciones = (mediciones?.length ?? 0) > 0
   const tieneEvals = (evals?.length ?? 0) > 0
@@ -205,7 +213,7 @@ export default async function MiProgresoPage() {
             Notas de tu equipo
           </h2>
           <ul className="space-y-3">
-            {(evolucion ?? []).map((e) => (
+            {evolucionDescifrada.map((e) => (
               <li key={e.id} className="border-l-2 border-vimet-orange pl-4">
                 <p className="text-xs uppercase tracking-wide font-semibold text-vimet-orange">
                   {e.origen}

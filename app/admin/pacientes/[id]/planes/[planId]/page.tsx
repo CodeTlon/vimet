@@ -3,11 +3,11 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { PlanForm } from '@/components/seguimiento/plan-form'
-import { PlanPrintButton } from '@/components/seguimiento/plan-print-button'
 import { PlanSeccionesPanel } from '@/components/seguimiento/plan-secciones-panel'
 import { RutinaPanel, type RutinaItem } from '@/components/seguimiento/rutina-panel'
 import { obtenerSeccionesPlan } from '@/lib/plan-secciones'
 import { createClient } from '@/lib/supabase/server'
+import { readClinicalField } from '@/lib/crypto/clinical'
 export const dynamic = 'force-dynamic'
 
 type SetDetalle = {
@@ -38,13 +38,17 @@ export default async function EditarPlanPage(
   const params = await props.params;
   const planId = Number(params.planId)
   const supabase = await createClient()
-  const { data: plan } = await supabase
+  const { data: planRaw } = await supabase
     .from('planes')
     .select('*')
     .eq('id', planId)
     .eq('paciente_id', params.id)
     .maybeSingle()
-  if (!plan) notFound()
+  if (!planRaw) notFound()
+
+  // Ver lib/crypto/clinical.ts — `_enc` si el plan ya está cifrado, si no
+  // cae a la columna vieja en texto plano (histórico sin backfillear).
+  const plan = { ...planRaw, notas: readClinicalField(planRaw.notas_enc, planRaw.notas) }
 
   const tieneRutina = plan.tipo === 'entrenamiento' || plan.tipo === 'combo'
   const secciones = await obtenerSeccionesPlan(supabase, planId)
@@ -102,10 +106,7 @@ export default async function EditarPlanPage(
       >
         <ChevronLeft className="size-4" /> Planes
       </Link>
-      <div className="flex items-center justify-between">
-        <h2 className="font-heading text-xl font-semibold text-gray-900">Editar plan</h2>
-        <PlanPrintButton planId={planId} />
-      </div>
+      <h2 className="font-heading text-xl font-semibold text-gray-900">Editar plan</h2>
       <PlanForm
         pacienteId={params.id}
         plan={plan}

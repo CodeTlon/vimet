@@ -2,6 +2,7 @@ import { ClipboardList, FileWarning } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/server'
 import { formatearFechaCorta, SEXO_LABEL, ACTIVIDAD_DIARIA_LABEL } from '@/lib/seguimiento'
+import { readClinicalField } from '@/lib/crypto/clinical'
 export const metadata = { title: 'Mi ficha' }
 export const dynamic = 'force-dynamic'
 
@@ -12,13 +13,24 @@ export default async function MiFichaPage() {
   } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: ficha } = await supabase
+  const { data: fichaRaw } = await supabase
     .from('fichas_paciente')
     .select(
-      'fecha_nacimiento, sexo, ocupacion, fecha_primera_consulta, fuma, bebe, drogas, entrena, actividad_diaria, horas_sueno, dx_medico, dx_nutricional, medicacion, suplementacion, lesiones, molestias, datos_laboratorio, motivos_consulta, updated_at',
+      'fecha_nacimiento, sexo, ocupacion, fecha_primera_consulta, fuma, bebe, drogas, entrena, actividad_diaria, horas_sueno, dx_medico, dx_medico_enc, dx_nutricional, dx_nutricional_enc, medicacion, medicacion_enc, suplementacion, lesiones, molestias, datos_laboratorio, datos_laboratorio_enc, motivos_consulta, updated_at',
     )
     .eq('paciente_id', user.id)
     .maybeSingle()
+
+  // Campos clínicos cifrados: `_enc` si la fila ya pasó por el cifrado
+  // (nueva o backfillada), si no cae a la columna vieja en texto plano
+  // (fila histórica todavía sin migrar) — ver lib/crypto/clinical.ts.
+  const ficha = fichaRaw && {
+    ...fichaRaw,
+    dx_medico: readClinicalField(fichaRaw.dx_medico_enc, fichaRaw.dx_medico),
+    dx_nutricional: readClinicalField(fichaRaw.dx_nutricional_enc, fichaRaw.dx_nutricional),
+    medicacion: readClinicalField(fichaRaw.medicacion_enc, fichaRaw.medicacion),
+    datos_laboratorio: readClinicalField(fichaRaw.datos_laboratorio_enc, fichaRaw.datos_laboratorio),
+  }
 
   return (
     <>

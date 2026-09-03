@@ -1,13 +1,13 @@
 'use client'
 
-import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, ImageIcon, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 
 import { eliminarSeccionAction, moverSeccionAction } from '@/actions/plan-secciones'
 import { type Seccion, PlanSeccionForm } from '@/components/seguimiento/plan-seccion-form'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Modal } from '@/components/ui/modal'
-import { TIPO_SECCION_PLAN, TIPO_SECCION_PLAN_LABEL, type TipoSeccionPlan } from '@/lib/seguimiento'
+import { TIPO_SECCION_PLAN, type TipoSeccionPlan } from '@/lib/seguimiento'
 
 function ImagenesPreview({ seccion }: { seccion: Seccion }) {
   if (seccion.imagenes.length === 0) return null
@@ -49,7 +49,7 @@ function SeccionCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <span className="inline-block text-xs font-medium text-vimet-orange bg-vimet-tint1 rounded-full px-2 py-0.5 mb-1">
-            {TIPO_SECCION_PLAN_LABEL[seccion.tipo]}
+            {TIPO_SECCION_PLAN.find((t) => t.value === seccion.tipo)?.label}
           </span>
           <h3 className="font-heading font-semibold text-gray-900">{seccion.titulo}</h3>
 
@@ -62,11 +62,16 @@ function SeccionCard({
                 </li>
               ))}
             </ul>
+          ) : seccion.tipo === 'imagenes' ? (
+            <p className="mt-1 text-sm text-gray-500 inline-flex items-center gap-1.5">
+              <ImageIcon className="size-3.5" /> {seccion.imagenes.length} imagen
+              {seccion.imagenes.length === 1 ? '' : 'es'}
+            </p>
           ) : (
             <p className="mt-1 text-sm text-gray-600 line-clamp-2 whitespace-pre-line">{seccion.contenido}</p>
           )}
 
-          <ImagenesPreview seccion={seccion} />
+          {seccion.tipo !== 'imagenes' ? <ImagenesPreview seccion={seccion} /> : null}
         </div>
 
         <div className="flex shrink-0 items-center gap-1">

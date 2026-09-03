@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { Instagram, MapPin, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
 
@@ -5,7 +6,18 @@ import { ContactoForm } from '@/components/contacto-form'
 import { LazyMap } from '@/components/lazy-map'
 import { PageHeader } from '@/components/page-header'
 import { getContenidoSitio, getProfesionales } from '@/lib/config/contenido'
-export const metadata = { title: 'Contacto' }
+
+export const metadata: Metadata = {
+  title: 'Contacto',
+  description:
+    'Escribinos por WhatsApp, Instagram o el formulario de contacto. Atención presencial en Instituto VIANETT (Córdoba) y virtual para cualquier ubicación.',
+  alternates: { canonical: '/contacto' },
+  openGraph: {
+    title: 'Contacto — VIMET',
+    description: 'WhatsApp, Instagram o formulario. Atención presencial en Córdoba y virtual.',
+    url: '/contacto',
+  },
+}
 
 export default async function ContactoPage() {
   const [contenido, profesionales] = await Promise.all([getContenidoSitio(), getProfesionales()])
@@ -27,7 +39,12 @@ export default async function ContactoPage() {
               </h2>
               <p className="mt-3 text-gray-700 leading-relaxed">
                 Podés comunicarte con nosotros por WhatsApp, Instagram o completando el
-                formulario. Atendemos de forma presencial y virtual.
+                formulario. Atendemos de forma presencial y virtual. Si ya sabés qué consulta
+                querés reservar, andá directo a{' '}
+                <Link href="/turnos/nuevo" className="text-vimet-orange hover:underline">
+                  sacar turno
+                </Link>
+                .
               </p>
 
               <ul className="mt-8 space-y-4">
@@ -120,7 +137,7 @@ function ContactItem({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-vimet-orange hover:underline"
+            className="text-sm text-vimet-orange rounded transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/40"
           >
             {value}
           </Link>

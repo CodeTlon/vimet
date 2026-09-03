@@ -13,6 +13,7 @@ import {
   TIPO_PLAN_LABEL,
   formatearFechaCorta,
 } from '@/lib/seguimiento'
+import { readClinicalField } from '@/lib/crypto/clinical'
 export const dynamic = 'force-dynamic'
 
 export default async function MiPlanDetallePage(
@@ -27,14 +28,18 @@ export default async function MiPlanDetallePage(
   } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: plan } = await supabase
+  const { data: planRaw } = await supabase
     .from('planes')
     .select('*')
     .eq('id', Number(params.id))
     .eq('paciente_id', user.id)
     .maybeSingle()
 
-  if (!plan) notFound()
+  if (!planRaw) notFound()
+
+  // Ver lib/crypto/clinical.ts — `_enc` si el plan ya está cifrado, si no
+  // cae a la columna vieja en texto plano (histórico sin backfillear).
+  const plan = { ...planRaw, notas: readClinicalField(planRaw.notas_enc, planRaw.notas) }
 
   const { data: rutina } =
     plan.tipo === 'entrenamiento' || plan.tipo === 'combo'
@@ -65,13 +70,6 @@ export default async function MiPlanDetallePage(
   ] as const
 
   const tieneEntreno = dias.some((d) => plan[d.key]) || plan.disciplina || plan.frecuencia
-  const tieneNutri =
-    plan.pautas_generales ||
-    plan.pautas_hidratacion ||
-    plan.suplementacion ||
-    plan.pre_entreno ||
-    plan.intra_entreno ||
-    plan.post_entreno
 
   return (
     <>
@@ -106,7 +104,7 @@ export default async function MiPlanDetallePage(
             >
               {ESTADO_PLAN_LABEL[plan.estado as keyof typeof ESTADO_PLAN_LABEL]}
             </span>
-            <PlanPrintButton planId={Number(params.id)} />
+            <PlanPrintButton />
           </div>
         </div>
         {plan.archivo_path ? (
@@ -115,24 +113,6 @@ export default async function MiPlanDetallePage(
           </div>
         ) : null}
       </header>
-
-      {tieneNutri ? (
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-5">
-          <h2 className="font-heading text-lg font-semibold text-gray-900 mb-4">
-            Pautas nutricionales
-          </h2>
-          <div className="space-y-4">
-            <Block label="Pautas generales" value={plan.pautas_generales} />
-            <Block label="Hidratación" value={plan.pautas_hidratacion} />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Block label="Pre entreno" value={plan.pre_entreno} compact />
-              <Block label="Intra entreno" value={plan.intra_entreno} compact />
-              <Block label="Post entreno" value={plan.post_entreno} compact />
-            </div>
-            <Block label="Suplementación" value={plan.suplementacion} />
-          </div>
-        </section>
-      ) : null}
 
       {secciones.map((s) => (
         <section
@@ -150,11 +130,22 @@ export default async function MiPlanDetallePage(
                 </div>
               ))}
             </div>
+          ) : s.tipo === 'imagenes' ? (
+            <div className="flex flex-wrap gap-2">
+              {s.imagenes.map((img) => (
+                <a key={img.id} href={img.url} target="_blank" rel="noopener noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img.url}
+                    alt=""
+                    className="h-16 w-16 rounded-lg object-cover border border-gray-200"
+                  />
+                </a>
+              ))}
+            </div>
           ) : (
             <>
-              {s.contenido ? (
-                <p className="text-sm text-gray-800 whitespace-pre-line">{s.contenido}</p>
-              ) : null}
+              <p className="text-sm text-gray-800 whitespace-pre-line">{s.contenido}</p>
               {s.imagenes.length > 0 ? (
                 <div className="flex flex-wrap gap-3 mt-4">
                   {s.imagenes.map((img) => (

@@ -80,13 +80,14 @@ export const TIPO_PLAN_LABEL: Record<string, string> = {
   combo: 'Combo',
 }
 
-export type TipoSeccionPlan = 'pautas_generales' | 'receta' | 'comidas_dia' | 'imagenes' | 'recomendaciones'
+export type TipoSeccionPlan = 'pautas_generales' | 'receta' | 'comidas_dia' | 'imagenes'
 
-// "Pautas generales" NO está acá: sigue siendo el bloque fijo de siempre en
-// planes (columnas de texto), no una sección modular más — ver Quirks.
-// "imagenes" tampoco: se retiró en favor de "recomendaciones" (mismo texto +
-// imágenes opcionales grandes que "receta"), ver Quirks.
 export const TIPO_SECCION_PLAN = [
+  {
+    value: 'pautas_generales' as const,
+    label: 'Pautas generales',
+    descripcion: 'Texto libre, con imágenes opcionales',
+  },
   {
     value: 'receta' as const,
     label: 'Receta',
@@ -98,9 +99,9 @@ export const TIPO_SECCION_PLAN = [
     descripcion: 'Un bloque por cada momento (desayuno, almuerzo, merienda...)',
   },
   {
-    value: 'recomendaciones' as const,
-    label: 'Recomendaciones',
-    descripcion: 'Texto libre + imágenes opcionales, se muestran grandes',
+    value: 'imagenes' as const,
+    label: 'Imágenes',
+    descripcion: 'Para imprimir el plan más adelante — no se muestran grandes acá',
   },
 ]
 
@@ -109,7 +110,6 @@ export const TIPO_SECCION_PLAN_LABEL: Record<TipoSeccionPlan, string> = {
   receta: 'Receta',
   comidas_dia: 'Comidas del día',
   imagenes: 'Imágenes',
-  recomendaciones: 'Recomendaciones',
 }
 
 export const SEXO_LABEL: Record<string, string> = {
@@ -136,29 +136,6 @@ export function formatearFechaCorta(iso: string | null | undefined) {
     month: 'short',
     year: 'numeric',
   })
-}
-
-export const DIA_LABEL: Record<string, string> = {
-  lunes: 'Lunes',
-  martes: 'Martes',
-  miercoles: 'Miércoles',
-  jueves: 'Jueves',
-  viernes: 'Viernes',
-  sabado: 'Sábado',
-  domingo: 'Domingo',
-}
-export const ORDEN_DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo', '']
-
-export function resumenFuerza(r: { series: number | null; repeticiones: string | null; descanso_seg: number | null }) {
-  return (
-    [
-      r.series ? `${r.series} series` : null,
-      r.repeticiones ? `${r.repeticiones} reps` : null,
-      r.descanso_seg ? `${r.descanso_seg}s descanso` : null,
-    ]
-      .filter(Boolean)
-      .join(' · ') || '—'
-  )
 }
 
 export const UNIDAD_CARDIO_LABEL: Record<string, string> = {

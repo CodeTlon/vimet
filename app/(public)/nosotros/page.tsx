@@ -9,10 +9,12 @@ import {
   Stethoscope,
   type LucideIcon,
 } from 'lucide-react'
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 
 import { PageHeader } from '@/components/page-header'
+import { AnimateIn } from '@/components/ui/animate-in'
 import { getProfesionales } from '@/lib/config/contenido'
 import { brand, type Profesional } from '@/lib/config/team'
 const ICONS: Record<string, LucideIcon> = {
@@ -25,7 +27,17 @@ const ICONS: Record<string, LucideIcon> = {
   Shield,
 }
 
-export const metadata = { title: 'Nosotros' }
+export const metadata: Metadata = {
+  title: 'Quiénes somos: nutricionista y entrenador en Córdoba',
+  description:
+    'Conocé a Avril Jerushalmi (Lic. en Nutrición, Antropometrista ISAK) y Gerónimo Gallardo (entrenador), el equipo interdisciplinario detrás de VIMET en Córdoba, Argentina.',
+  alternates: { canonical: '/nosotros' },
+  openGraph: {
+    title: 'Nosotros — VIMET',
+    description: 'El equipo interdisciplinario de nutrición y entrenamiento de VIMET.',
+    url: '/nosotros',
+  },
+}
 
 function ProfileSection({ prof, reverse }: { prof: Profesional; reverse: boolean }) {
   return (
@@ -39,7 +51,7 @@ function ProfileSection({ prof, reverse }: { prof: Profesional; reverse: boolean
           <div className="relative aspect-[4/5] w-full max-w-md mx-auto rounded-2xl overflow-hidden shadow-lg">
             <Image
               src={prof.avatar}
-              alt={prof.nombre}
+              alt={`${prof.nombre}, ${prof.titulo} en VIMET`}
               fill
               sizes="(min-width: 1024px) 480px, 100vw"
               className="object-cover"
@@ -55,7 +67,7 @@ function ProfileSection({ prof, reverse }: { prof: Profesional; reverse: boolean
             </h2>
             <p className="mt-4 text-gray-700 leading-relaxed">{prof.bio}</p>
 
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <AnimateIn className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {prof.areasTrabajo.map((area) => {
                 const Icon = ICONS[area.icon] ?? Activity
                 return (
@@ -73,14 +85,14 @@ function ProfileSection({ prof, reverse }: { prof: Profesional; reverse: boolean
                   </div>
                 )
               })}
-            </div>
+            </AnimateIn>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <a
                 href={prof.whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-vimet-gradient text-white font-semibold shadow-md hover:shadow-lg transition-all text-sm"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-vimet-gradient text-white font-semibold shadow-md text-sm transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
               >
                 Consultá por WhatsApp <ArrowRight className="size-4" />
               </a>
@@ -88,7 +100,7 @@ function ProfileSection({ prof, reverse }: { prof: Profesional; reverse: boolean
                 href={prof.instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-300 text-gray-800 font-semibold hover:bg-gray-50 transition-colors text-sm"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-300 text-gray-800 font-semibold text-sm transition-colors hover:bg-gray-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/40 focus-visible:ring-offset-2"
               >
                 {prof.instagram}
               </a>
@@ -126,12 +138,20 @@ export default async function NosotrosPage() {
           <p className="mt-3 max-w-xl mx-auto text-white/90">
             Descubrí cómo combinamos nutrición y entrenamiento para lograr resultados sostenibles.
           </p>
-          <Link
-            href="/metodologia"
-            className="mt-7 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-vimet-red font-semibold shadow-lg hover:shadow-xl transition-all"
-          >
-            Ver metodología <ArrowRight className="size-4" />
-          </Link>
+          <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/metodologia"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-vimet-red font-semibold shadow-lg transition-all hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-vimet-red"
+            >
+              Ver metodología <ArrowRight className="size-4" />
+            </Link>
+            <Link
+              href="/servicios"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white text-white font-semibold transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            >
+              Ver servicios
+            </Link>
+          </div>
         </div>
       </section>
     </>

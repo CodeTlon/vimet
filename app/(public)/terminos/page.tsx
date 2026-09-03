@@ -1,5 +1,11 @@
 import type { Metadata } from 'next'
-export const metadata: Metadata = { title: 'Términos y condiciones' }
+export const metadata: Metadata = {
+  title: 'Términos y condiciones',
+  description:
+    'Condiciones de uso de los servicios de nutrición y entrenamiento de VIMET: turnos, cancelaciones, formas de pago y alcance del acompañamiento profesional.',
+  alternates: { canonical: '/terminos' },
+  robots: { index: true, follow: true },
+}
 
 const LAST_UPDATE = '10 de mayo de 2026'
 

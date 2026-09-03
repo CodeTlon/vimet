@@ -15,7 +15,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
     <button
       type="submit"
       disabled={pending || disabled}
-      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
     >
       {pending ? 'Creando cuenta…' : (
         <>

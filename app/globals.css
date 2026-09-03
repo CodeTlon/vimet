@@ -55,3 +55,43 @@
     @apply mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8;
   }
 }
+
+/* ─── Scroll reveal — driven by IntersectionObserver (AnimateIn component) ─── */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-fade {
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+.reveal.in-view,
+.reveal-left.in-view,
+.reveal-fade.in-view {
+  opacity: 1;
+  transform: none;
+}
+
+/* Sin JS o con preferencia de menos movimiento: mostrar todo directo,
+   nunca dejar contenido invisible esperando un observer que no corrió. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-left,
+  .reveal-fade {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

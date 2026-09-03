@@ -17,6 +17,7 @@ import Link from 'next/link'
 
 import { HeroVideo } from '@/components/hero-video'
 import { LazyMap } from '@/components/lazy-map'
+import { AnimateIn } from '@/components/ui/animate-in'
 import { getProfesionales } from '@/lib/config/contenido'
 import { location, social } from '@/lib/config/team'
 const pilares = [
@@ -83,7 +84,7 @@ export default async function HomePage() {
           <div className="flex-none h-20 lg:h-24" />
           <div className="flex-1 flex items-center py-8">
             <div className="container-vimet">
-              <div className="w-full lg:w-1/2">
+              <AnimateIn variant="fade" className="w-full lg:w-1/2">
                 <div className="w-10 h-[3px] rounded-full bg-vimet-gradient mb-8" />
 
                 <h1 className="font-heading font-extrabold tracking-tight">
@@ -103,18 +104,18 @@ export default async function HomePage() {
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Link
                     href="/turnos/nuevo"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-lg hover:shadow-xl transition-all text-sm"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-lg text-sm transition-all hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                   >
                     <CalendarPlus className="size-4" /> Reservar turno
                   </Link>
                   <Link
                     href="/metodologia"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/20 text-white/80 font-semibold hover:bg-white/10 transition-colors text-sm"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/20 text-white/80 font-semibold text-sm transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
                   >
                     Cómo trabajamos <ArrowRight className="size-4" />
                   </Link>
                 </div>
-              </div>
+              </AnimateIn>
             </div>
           </div>
         </div>
@@ -130,7 +131,7 @@ export default async function HomePage() {
               Cuatro pilares que definen nuestra forma de trabajar
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <AnimateIn className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {pilares.map((p) => (
               <article
                 key={p.titulo}
@@ -145,14 +146,14 @@ export default async function HomePage() {
                 <p className="text-sm text-gray-700 leading-relaxed">{p.desc}</p>
               </article>
             ))}
-          </div>
+          </AnimateIn>
         </div>
       </section>
 
       <section className="relative h-[300px] sm:h-[360px] w-full overflow-hidden">
         <Image
           src="/images/sections/gym-wide.jpg"
-          alt="Entrenamiento"
+          alt="Persona entrenando fuerza en el gimnasio, parte del servicio de entrenamiento personalizado VIMET"
           fill
           quality={80}
           sizes="100vw"
@@ -176,7 +177,7 @@ export default async function HomePage() {
               Abordaje integral combinando nutrición y entrenamiento
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <AnimateIn className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {serviciosDestacados.map((s) => (
               <article
                 key={s.nombre}
@@ -193,11 +194,11 @@ export default async function HomePage() {
                 <p className="text-sm text-gray-700 leading-relaxed">{s.descripcion}</p>
               </article>
             ))}
-          </div>
+          </AnimateIn>
           <div className="text-center mt-10">
             <Link
               href="/turnos/nuevo"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md hover:shadow-lg transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
             >
               <CalendarPlus className="size-5" /> Agendá tu consulta
             </Link>
@@ -208,7 +209,7 @@ export default async function HomePage() {
       <section className="relative h-[300px] sm:h-[360px] w-full overflow-hidden">
         <Image
           src="/images/sections/healthy-food.jpg"
-          alt="Alimentación saludable"
+          alt="Plato de alimentación saludable, base del plan nutricional VIMET para el rendimiento"
           fill
           quality={80}
           sizes="100vw"
@@ -230,7 +231,7 @@ export default async function HomePage() {
             </h2>
             <p className="mt-3 text-gray-700">Profesionales comprometidos con tu salud</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <AnimateIn className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {Object.values(profesionales).map((prof) => (
               <article
                 key={prof.key}
@@ -239,7 +240,7 @@ export default async function HomePage() {
                 <div className="relative aspect-[4/3] w-full">
                   <Image
                     src={prof.avatar}
-                    alt={prof.nombre}
+                    alt={`${prof.nombre}, ${prof.titulo}`}
                     fill
                     sizes="(min-width: 768px) 50vw, 100vw"
                     className="object-cover"
@@ -264,7 +265,7 @@ export default async function HomePage() {
                 </div>
               </article>
             ))}
-          </div>
+          </AnimateIn>
         </div>
       </section>
 
@@ -278,13 +279,13 @@ export default async function HomePage() {
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/turnos/nuevo"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-vimet-red font-semibold shadow-lg hover:shadow-xl transition-all"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-vimet-red font-semibold shadow-lg transition-all hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-vimet-red"
             >
               <CalendarPlus className="size-5" /> Reservar turno
             </Link>
             <Link
               href="/contacto"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white text-white font-semibold hover:bg-white/10 transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white text-white font-semibold transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
             >
               Contactanos
             </Link>
@@ -324,7 +325,7 @@ export default async function HomePage() {
                       href={social.whatsapp}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-vimet-red hover:underline"
+                      className="text-sm text-vimet-red rounded transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/40"
                     >
                       Escribinos por WhatsApp
                     </a>
@@ -340,7 +341,7 @@ export default async function HomePage() {
                       href={social.instagram}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-vimet-red hover:underline"
+                      className="text-sm text-vimet-red rounded transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/40"
                     >
                       {social.instagramHandle}
                     </a>
@@ -349,7 +350,7 @@ export default async function HomePage() {
               </ul>
               <Link
                 href="/turnos/nuevo"
-                className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md hover:shadow-lg transition-all"
+                className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
               >
                 <CalendarPlus className="size-5" /> Reservar consulta
               </Link>

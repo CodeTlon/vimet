@@ -1,10 +1,17 @@
+import type { Metadata } from 'next'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { BookingWizard } from '@/components/booking-wizard'
 import { createClient } from '@/lib/supabase/server'
-export const metadata = { title: 'Sacar turno' }
+
+export const metadata: Metadata = {
+  title: 'Reservar turno',
+  description:
+    'Reservá tu turno de nutrición, entrenamiento o Plan Integral VIMET online, con disponibilidad en tiempo real. Presencial en Córdoba o modalidad virtual.',
+  alternates: { canonical: '/turnos/nuevo' },
+}
 export const dynamic = 'force-dynamic'
 
 export default async function NuevoTurnoPage() {

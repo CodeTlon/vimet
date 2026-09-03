@@ -1,7 +1,11 @@
+import type { Metadata } from 'next'
 import { CalendarPlus, Clock } from 'lucide-react'
 import Link from 'next/link'
 
+import { AnimateIn } from '@/components/ui/animate-in'
 import { PageHeader } from '@/components/page-header'
+import { ShareButton } from '@/components/share-button'
+import { TLDRBox } from '@/components/tldr-box'
 import {
   SERVICIO_ICONS,
   SERVICIOS_FALLBACK,
@@ -10,7 +14,18 @@ import {
 } from '@/lib/config/servicios'
 import { team } from '@/lib/config/team'
 import { createClient } from '@/lib/supabase/server'
-export const metadata = { title: 'Servicios' }
+
+export const metadata: Metadata = {
+  title: 'Servicios de nutrición y entrenamiento en Córdoba',
+  description:
+    'Consultas de nutrición, planes de entrenamiento personalizado y el Plan Integral VIMET (nutrición + entrenamiento). Presencial en Córdoba u online.',
+  alternates: { canonical: '/servicios' },
+  openGraph: {
+    title: 'Servicios — VIMET',
+    description: 'Nutrición, entrenamiento personalizado y Plan Integral VIMET.',
+    url: '/servicios',
+  },
+}
 
 type ServicioRow = {
   id: number | string
@@ -90,7 +105,34 @@ export default async function ServiciosPage() {
           </>
         }
         description="Abordaje integral combinando nutrición y entrenamiento personalizado"
-      />
+      >
+        <div className="mt-6 flex justify-center">
+          <ShareButton title="Servicios VIMET — Nutrición y entrenamiento en Córdoba" />
+        </div>
+      </PageHeader>
+
+      <section className="bg-white pt-16 lg:pt-20">
+        <div className="container-vimet">
+          <p className="max-w-3xl mx-auto text-center text-gray-700 leading-relaxed mb-8">
+            Si buscás una consulta de nutrición, un plan de entrenamiento adaptado a tu nivel o el
+            abordaje combinado del Plan Integral VIMET, acá están todas las opciones agrupadas por
+            tipo, con su duración y el profesional a cargo. Para entender cómo trabajamos en cada
+            etapa, mirá también nuestra{' '}
+            <Link href="/metodologia" className="text-vimet-orange hover:underline">
+              metodología
+            </Link>
+            .
+          </p>
+          <TLDRBox
+            items={[
+              'Consultas de nutrición individuales, con Avril (Lic. en Nutrición).',
+              'Planes de entrenamiento personalizado, con Gero.',
+              'Plan Integral VIMET: nutrición + entrenamiento coordinados en un solo turno.',
+              'Atención presencial en Instituto VIANETT (Córdoba) o 100% virtual.',
+            ]}
+          />
+        </div>
+      </section>
 
       {SECCIONES.map((sec) => {
         const items = servicios.filter((s) => s.tipo === sec.tipo)
@@ -99,7 +141,7 @@ export default async function ServiciosPage() {
         return (
           <section key={sec.tipo} id={sec.tipo} className={`${sec.bg} py-16 lg:py-24`}>
             <div className="container-vimet">
-              <div className="flex items-center gap-3 mb-10">
+              <AnimateIn className="flex items-center gap-3 mb-10">
                 <span
                   className={`inline-block size-2.5 rounded-full ${
                     sec.tipo === 'nutricion'
@@ -124,7 +166,7 @@ export default async function ServiciosPage() {
                     </p>
                   )}
                 </div>
-              </div>
+              </AnimateIn>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {items.map((s) => {
@@ -132,7 +174,7 @@ export default async function ServiciosPage() {
                   return (
                     <article
                       key={s.id}
-                      className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all flex flex-col"
+                      className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col"
                     >
                       <div
                         className={`size-12 rounded-lg flex items-center justify-center mb-4 ${
@@ -174,15 +216,21 @@ export default async function ServiciosPage() {
           <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/turnos/nuevo"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-vimet-red font-semibold shadow-lg hover:shadow-xl transition-all"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-vimet-red font-semibold shadow-lg transition-all hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-vimet-red"
             >
               <CalendarPlus className="size-5" /> Reservar turno
             </Link>
             <Link
               href="/faq"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white text-white font-semibold hover:bg-white/10 transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white text-white font-semibold transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
             >
               Ver FAQ
+            </Link>
+            <Link
+              href="/metodologia"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white/40 text-white/90 font-semibold transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            >
+              Ver metodología
             </Link>
           </div>
         </div>

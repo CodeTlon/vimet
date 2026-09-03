@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next'
 
+import { SITE_URL } from '@/lib/config/site'
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
@@ -11,6 +13,6 @@ export default function robots(): MetadataRoute.Robots {
         '/mis-recursos', '/mis-turnos', '/feedback-semanal',
       ],
     },
-    sitemap: 'https://vimetsalud.com.ar/sitemap.xml',
+    sitemap: `${SITE_URL}/sitemap.xml`,
   }
 }

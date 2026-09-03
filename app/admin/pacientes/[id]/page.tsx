@@ -8,6 +8,7 @@ import {
   categoriaCondicionFisica,
   formatearFechaCorta,
 } from '@/lib/seguimiento'
+import { readClinicalField } from '@/lib/crypto/clinical'
 export const dynamic = 'force-dynamic'
 
 export default async function PacienteResumen(
@@ -20,7 +21,7 @@ export default async function PacienteResumen(
   const id = params.id
 
   const [
-    { data: ficha },
+    { data: fichaRaw },
     { data: ultimaMedicion },
     { data: ultimaEval },
     { data: planes },
@@ -29,7 +30,7 @@ export default async function PacienteResumen(
   ] = await Promise.all([
     supabase
       .from('fichas_paciente')
-      .select('dx_medico, dx_nutricional, fecha_primera_consulta, updated_at')
+      .select('dx_medico, dx_medico_enc, dx_nutricional, dx_nutricional_enc, fecha_primera_consulta, updated_at')
       .eq('paciente_id', id)
       .maybeSingle(),
     supabase
@@ -70,6 +71,14 @@ export default async function PacienteResumen(
   const cat = ultimaEval?.puntaje_total != null
     ? categoriaCondicionFisica(ultimaEval.puntaje_total, PUNTAJE_MAX_FUNCIONAL)
     : null
+
+  // Ver lib/crypto/clinical.ts — `_enc` si la fila ya está cifrada, si no
+  // cae a la columna vieja en texto plano (histórico sin backfillear).
+  const ficha = fichaRaw && {
+    ...fichaRaw,
+    dx_medico: readClinicalField(fichaRaw.dx_medico_enc, fichaRaw.dx_medico),
+    dx_nutricional: readClinicalField(fichaRaw.dx_nutricional_enc, fichaRaw.dx_nutricional),
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

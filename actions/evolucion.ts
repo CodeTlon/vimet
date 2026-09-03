@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 import { createClient } from '@/lib/supabase/server'
+import { encryptClinical } from '@/lib/crypto/clinical'
 
 export type EvolucionState = { ok?: boolean; error?: string }
 
@@ -43,11 +44,21 @@ export async function crearEntradaEvolucionAction(
   if ('error' in ctx) return { error: ctx.error }
 
   const d = parsed.data
+  let contenido_enc: string | null
+  try {
+    contenido_enc = encryptClinical(d.contenido)
+  } catch (e) {
+    console.error('crearEntradaEvolucionAction: fallo al cifrar contenido', e)
+    return { error: 'No se pudo guardar la entrada (falló el cifrado — revisar CLINICAL_DATA_ENCRYPTION_KEY del entorno).' }
+  }
   const { error } = await ctx.supabase.from('evolucion_entradas').insert({
     paciente_id: d.paciente_id,
     origen: d.origen,
     tipo: d.tipo,
-    contenido: d.contenido,
+    // Cifrado en Node antes de escribir (ver lib/crypto/clinical.ts) — la
+    // columna vieja `contenido` queda en null para las entradas nuevas.
+    contenido: null,
+    contenido_enc,
     visible_paciente: d.visible_paciente === 'true',
     registrado_por: ctx.user.id,
   })
@@ -72,12 +83,20 @@ export async function actualizarEntradaEvolucionAction(
   if ('error' in ctx) return { error: ctx.error }
 
   const d = parsed.data
+  let contenido_enc: string | null
+  try {
+    contenido_enc = encryptClinical(d.contenido)
+  } catch (e) {
+    console.error('actualizarEntradaEvolucionAction: fallo al cifrar contenido', e)
+    return { error: 'No se pudo actualizar la entrada (falló el cifrado — revisar CLINICAL_DATA_ENCRYPTION_KEY del entorno).' }
+  }
   const { error } = await ctx.supabase
     .from('evolucion_entradas')
     .update({
       origen: d.origen,
       tipo: d.tipo,
-      contenido: d.contenido,
+      contenido: null,
+      contenido_enc,
       visible_paciente: d.visible_paciente === 'true',
     })
     .eq('id', d.id)

@@ -1,5 +1,11 @@
 import type { Metadata } from 'next'
-export const metadata: Metadata = { title: 'Política de privacidad' }
+export const metadata: Metadata = {
+  title: 'Política de privacidad',
+  description:
+    'Cómo VIMET recopila, usa y protege tus datos personales y de salud: responsable del tratamiento, finalidad, almacenamiento y tus derechos según la Ley 25.326.',
+  alternates: { canonical: '/privacidad' },
+  robots: { index: true, follow: true },
+}
 
 const LAST_UPDATE = '10 de mayo de 2026'
 

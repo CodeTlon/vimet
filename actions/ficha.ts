@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import { createClient } from '@/lib/supabase/server'
 import { hoyArgentina } from '@/lib/datetime'
+import { encryptClinical } from '@/lib/crypto/clinical'
 
 export type FichaState = { ok?: boolean; error?: string }
 
@@ -74,28 +75,45 @@ export async function guardarFichaAction(
   }
 
   const d = parsed.data
-  const payload = {
-    paciente_id: d.paciente_id,
-    fecha_nacimiento: toNullableString(d.fecha_nacimiento),
-    sexo: toNullableString(d.sexo),
-    ocupacion: toNullableString(d.ocupacion),
-    fecha_primera_consulta: toNullableString(d.fecha_primera_consulta),
-    fuma: toBool(d.fuma),
-    bebe: toBool(d.bebe),
-    drogas: toBool(d.drogas),
-    entrena: toBool(d.entrena),
-    actividad_diaria: toNullableString(d.actividad_diaria),
-    horas_sueno: toNullableNumber(d.horas_sueno),
-    dx_medico: toNullableString(d.dx_medico),
-    dx_nutricional: toNullableString(d.dx_nutricional),
-    medicacion: toNullableString(d.medicacion),
-    suplementacion: toNullableString(d.suplementacion),
-    lesiones: toNullableString(d.lesiones),
-    molestias: toNullableString(d.molestias),
-    datos_laboratorio: toNullableString(d.datos_laboratorio),
-    motivos_consulta: toNullableString(d.motivos_consulta),
-    observaciones_internas: toNullableString(d.observaciones_internas),
-    updated_by: user.id,
+  let payload: Record<string, unknown>
+  try {
+    payload = {
+      paciente_id: d.paciente_id,
+      fecha_nacimiento: toNullableString(d.fecha_nacimiento),
+      sexo: toNullableString(d.sexo),
+      ocupacion: toNullableString(d.ocupacion),
+      fecha_primera_consulta: toNullableString(d.fecha_primera_consulta),
+      fuma: toBool(d.fuma),
+      bebe: toBool(d.bebe),
+      drogas: toBool(d.drogas),
+      entrena: toBool(d.entrena),
+      actividad_diaria: toNullableString(d.actividad_diaria),
+      horas_sueno: toNullableNumber(d.horas_sueno),
+      // Campos clínicos sensibles: cifrados en Node antes de escribir (ver
+      // lib/crypto/clinical.ts) — la columna vieja se limpia en la misma
+      // escritura para no dejar el dato en texto plano a partir de acá.
+      dx_medico: null,
+      dx_medico_enc: encryptClinical(toNullableString(d.dx_medico)),
+      dx_nutricional: null,
+      dx_nutricional_enc: encryptClinical(toNullableString(d.dx_nutricional)),
+      medicacion: null,
+      medicacion_enc: encryptClinical(toNullableString(d.medicacion)),
+      datos_laboratorio: null,
+      datos_laboratorio_enc: encryptClinical(toNullableString(d.datos_laboratorio)),
+      observaciones_internas: null,
+      observaciones_internas_enc: encryptClinical(toNullableString(d.observaciones_internas)),
+      // No clínicos en el sentido estricto (suplementación/lesiones/molestias/
+      // motivos son datos de seguimiento, no diagnóstico/lab/medicación) —
+      // scope de cifrado acordado, quedan en texto plano por ahora.
+      suplementacion: toNullableString(d.suplementacion),
+      lesiones: toNullableString(d.lesiones),
+      molestias: toNullableString(d.molestias),
+      motivos_consulta: toNullableString(d.motivos_consulta),
+      updated_by: user.id,
+    }
+  } catch (e) {
+    console.error('guardarFichaAction: fallo al cifrar campos clínicos', e)
+    return { error: 'No se pudo guardar la ficha (falló el cifrado — revisar CLINICAL_DATA_ENCRYPTION_KEY del entorno).' }
   }
 
   const { error } = await supabase

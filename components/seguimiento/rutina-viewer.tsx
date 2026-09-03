@@ -5,7 +5,18 @@ import { useState } from 'react'
 
 import { EjercicioModal, type EjercicioDetalle } from '@/components/seguimiento/ejercicio-modal'
 import { EjercicioYoutubeThumbnail } from '@/components/seguimiento/ejercicio-youtube-thumbnail'
-import { DIA_LABEL, ORDEN_DIAS, resumenCardio, resumenFuerza } from '@/lib/seguimiento'
+import { resumenCardio } from '@/lib/seguimiento'
+
+const DIA_LABEL: Record<string, string> = {
+  lunes: 'Lunes',
+  martes: 'Martes',
+  miercoles: 'Miércoles',
+  jueves: 'Jueves',
+  viernes: 'Viernes',
+  sabado: 'Sábado',
+  domingo: 'Domingo',
+}
+const ORDEN_DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo', '']
 
 export type RutinaEjercicio = {
   id: number
@@ -115,6 +126,18 @@ function RutinaCard({
     >
       {contenido}
     </button>
+  )
+}
+
+function resumenFuerza(r: RutinaEjercicio) {
+  return (
+    [
+      r.series ? `${r.series} series` : null,
+      r.repeticiones ? `${r.repeticiones} reps` : null,
+      r.descanso_seg ? `${r.descanso_seg}s descanso` : null,
+    ]
+      .filter(Boolean)
+      .join(' · ') || '—'
   )
 }
 

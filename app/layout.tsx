@@ -1,7 +1,12 @@
 import type { Metadata, Viewport } from 'next'
 import { DM_Sans, Outfit } from 'next/font/google'
 
+import CookieConsent from '@/components/cookie-consent'
+import GoogleAnalytics from '@/components/google-analytics'
 import { HashInviteHandler } from '@/components/hash-invite-handler'
+import { JsonLd } from '@/components/seo/json-ld'
+import { location, social } from '@/lib/config/team'
+import { SITE_URL } from '@/lib/config/site'
 
 import './globals.css'
 const outfit = Outfit({
@@ -25,7 +30,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'VIMET — Vida y Metabolismo',
     template: '%s — VIMET',
@@ -66,12 +71,40 @@ export const metadata: Metadata = {
   },
 }
 
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID
+const gaActivo = Boolean(GA_ID && GA_ID !== 'G-XXXXXXXXXX')
+
+// LocalBusiness (no MedicalBusiness): VIMET es nutrición + entrenamiento
+// personalizado, no una clínica/consultorio médico — usar el tipo genérico
+// evita sobre-reclamar una certificación clínica que el servicio no tiene.
+const localBusinessSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  name: 'VIMET — Vida y Metabolismo',
+  description:
+    'Nutrición y entrenamiento especializado en alteraciones metabólicas. Equipo interdisciplinario en Córdoba, Argentina.',
+  url: SITE_URL,
+  image: `${SITE_URL}/images/hero/training.jpg`,
+  telephone: '+543513752818',
+  priceRange: '$$',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: location.address,
+    addressLocality: location.city,
+    addressCountry: 'AR',
+  },
+  sameAs: [social.instagram],
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${outfit.variable} ${dmSans.variable}`}>
       <body className="min-h-screen flex flex-col">
+        <JsonLd data={localBusinessSchema} />
+        {gaActivo && GA_ID ? <GoogleAnalytics gaId={GA_ID} /> : null}
         <HashInviteHandler />
         {children}
+        <CookieConsent />
       </body>
     </html>
   )

@@ -10,7 +10,6 @@ Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio 
 - `app/(paciente)/` — área paciente (turnos, ficha, progreso, planes, feedback, objetivos, recursos)
 - `app/admin/` — dashboard, calendario, turnos, pacientes (ficha/antropometría/eval/planes/feedback/evolución/objetivos/recursos)
 - `app/(public)/turnos/nuevo/` — wizard de reserva (dentro del grupo público, fuera del grupo paciente — sin subnav; hereda `(public)/loading.tsx`)
-- `app/planes/[id]/imprimir/` — vista de impresión de un plan, fuera de TODO route group (ni paciente ni admin sirven: cada uno redirige al otro tipo de usuario) — solo hereda `app/layout.tsx` raíz, sin navbar/sidebar
 - `app/api/slots/` — Route Handler GET de disponibilidad (lo consume el wizard)
 
 ## Para cambios comunes, leé solo esto
@@ -24,15 +23,14 @@ Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio 
 | Módulo seguimiento (ficha, mediciones, eval, planes, feedback, evolución, objetivos, recursos) | `actions/<modulo>.ts` + `components/seguimiento/<form>.tsx` + página admin correspondiente |
 | Chat de feedback semanal (mensajes ida y vuelta, se cierra el lunes siguiente) | `actions/feedback.ts` (`enviarMensajeFeedbackAction`/`editarMensajeFeedbackAction`) + `components/seguimiento/feedback-chat.tsx` + tabla `feedback_mensajes` |
 | Planes PDF (subida / signed URL) | `actions/planes.ts` (borra PDF previo al reemplazar) + bucket `planes` |
-| Exportar un plan a PDF (vista de impresión, `window.print()`) | `app/planes/[id]/imprimir/page.tsx` (auth combinado paciente/staff) + `components/seguimiento/plan-imprimir-view.tsx` + `rutina-imprimir.tsx` + `plan-imprimir-toolbar.tsx` — sin librerías de PDF, mismo patrón `print:*` que ya usaba `PlanPrintButton` |
-| Secciones modulares de un plan (receta / comidas del día / imágenes — el profesional agrega las que quiera; "Pautas nutricionales", "Datos de entrenamiento" y la rutina de ejercicios NO son parte de esto, siguen fijos) | `actions/plan-secciones.ts` + `components/seguimiento/plan-secciones-panel.tsx` + `plan-seccion-form.tsx` + `lib/plan-secciones.ts` (fetch + signed URLs) + tablas `plan_secciones`/`plan_seccion_comidas`/`plan_seccion_imagenes` |
+| Secciones modulares de un plan (pautas generales / receta / comidas del día / imágenes — el profesional agrega las que quiera, "Datos de entrenamiento" y la rutina de ejercicios NO son parte de esto, siguen fijos) | `actions/plan-secciones.ts` + `components/seguimiento/plan-secciones-panel.tsx` + `plan-seccion-form.tsx` + `lib/plan-secciones.ts` (fetch + signed URLs) + tablas `plan_secciones`/`plan_seccion_comidas`/`plan_seccion_imagenes` |
 | Recursos multimedia del paciente | `actions/recursos.ts` + bucket `recursos` |
 | Horarios de atención del profesional (agregar/editar/eliminar franjas) | `actions/horarios.ts` (`turnosSinCobertura` decide qué turnos se cancelan) + `components/horarios-editor.tsx` |
 | Contenido del sitio (servicios, ubicación, metodología, perfil público de **cualquier** profesional — foto/teléfono/bio) — cualquier staff puede editarlo, no solo admin ni solo el dueño del perfil | `actions/contenido.ts` (`requireStaffAction`/`actualizarPerfilPublicoAction`) + RLS `is_staff()` en `profiles` (migración `0032`) |
 | Imágenes subidas por usuarios (foto perfil, recursos, adjuntos) | `lib/storage/optimize-image.ts` (resize + webp vía `sharp`) antes de subir |
 | Formulario de contacto | `components/contacto-form.tsx` + `actions/contacto.ts` (Resend, sin DB) |
 | Catálogo de servicios / equipo (estático) | `lib/config/servicios.ts` / `lib/config/team.ts` |
-| Schema / columna / tabla / RLS | **nueva** migración numerada en `supabase/migrations/` (última: `0038_revertir_pautas_generales_seccion.sql`) |
+| Schema / columna / tabla / RLS | **nueva** migración numerada en `supabase/migrations/` (última: `0037_plan_secciones.sql`) |
 | Gestión de pacientes (activar/desactivar/eliminar) | `actions/staff.ts` (`toggleActivoAction`, `eliminarPacienteAction` — cualquier staff; eliminar exige que el paciente esté desactivado) + `app/admin/pacientes/page.tsx` |
 | Alta de paciente por staff (sin login propio, para adultos mayores / dificultad de acceso) | `actions/staff.ts` (`crearPacienteGestionadoAction` — cualquier staff) + `components/crear-paciente-button.tsx` |
 | Biblioteca de ejercicios propios (GIF o link de YouTube) | `actions/ejercicios.ts` + `components/seguimiento/ejercicio-uploader.tsx` + `lib/youtube.ts` + `app/admin/ejercicios/page.tsx` |

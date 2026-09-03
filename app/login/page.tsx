@@ -1,6 +1,13 @@
+import type { Metadata } from 'next'
+
 import { AuthShell } from '@/components/auth-shell'
 import { LoginForm } from '@/components/login-form'
-export const metadata = { title: 'Ingresar' }
+
+export const metadata: Metadata = {
+  title: 'Ingresar',
+  description: 'Iniciá sesión en tu cuenta VIMET para gestionar tus turnos, planes y seguimiento.',
+  robots: { index: false, follow: false },
+}
 
 export default async function LoginPage({
   searchParams,

@@ -34,10 +34,7 @@ async function requireStaff() {
 const baseSchema = z.object({
   plan_id: z.coerce.number().int().positive(),
   paciente_id: z.string().uuid(),
-  // 'pautas_generales' no es un tipo elegible acá: sigue siendo el bloque
-  // fijo de siempre en `planes` (actions/planes.ts), no una sección modular.
-  // 'imagenes' tampoco: retirado en favor de 'recomendaciones'.
-  tipo: z.enum(['receta', 'comidas_dia', 'recomendaciones']),
+  tipo: z.enum(['pautas_generales', 'receta', 'comidas_dia', 'imagenes']),
   titulo: z.string().max(200).optional().or(z.literal('')),
 })
 
@@ -106,12 +103,14 @@ export async function crearSeccionAction(_prev: unknown, formData: FormData): Pr
   let contenido: string | null = null
   let momentos: { nombre_momento: string; contenido: string }[] = []
 
-  if (tipo === 'receta' || tipo === 'recomendaciones') {
+  if (tipo === 'pautas_generales' || tipo === 'receta') {
     contenido = String(formData.get('contenido') ?? '').trim()
     if (!contenido) return { error: 'Escribí el contenido de la sección.' }
   } else if (tipo === 'comidas_dia') {
     momentos = leerMomentos(formData)
     if (momentos.length === 0) return { error: 'Agregá al menos un momento del día con su contenido.' }
+  } else if (tipo === 'imagenes' && imagenes.length === 0) {
+    return { error: 'Subí al menos una imagen.' }
   }
 
   const { data: max } = await ctx.supabase
@@ -165,7 +164,7 @@ export async function actualizarSeccionAction(_prev: unknown, formData: FormData
   let contenido: string | null = null
   let momentos: { nombre_momento: string; contenido: string }[] = []
 
-  if (tipo === 'receta' || tipo === 'recomendaciones') {
+  if (tipo === 'pautas_generales' || tipo === 'receta') {
     contenido = String(formData.get('contenido') ?? '').trim()
     if (!contenido) return { error: 'Escribí el contenido de la sección.' }
   } else if (tipo === 'comidas_dia') {
