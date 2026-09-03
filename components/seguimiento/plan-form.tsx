@@ -166,7 +166,7 @@ export function PlanForm({
           </FullField>
         ) : null}
         <FullField label={p?.archivo_path ? 'Nuevo material auxiliar (opcional)' : 'Material auxiliar (opcional, máx 15MB)'}>
-          <input type="file" name="archivo" form={formId} accept="application/pdf" className="text-sm" />
+          <input type="file" name="archivo" accept="application/pdf" className="text-sm" />
         </FullField>
       </Section>
 
