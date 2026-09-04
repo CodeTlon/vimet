@@ -3,6 +3,7 @@
 import { RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect } from 'react'
+import { isStaleServerActionError } from '@/lib/staleAction'
 
 // Boundary de errores para todo lo que renderiza DENTRO del root layout (navbar/
 // footer siguen en pie). Errores del layout raíz en sí los cubre global-error.tsx.
@@ -15,6 +16,7 @@ export default function ErrorBoundary({
 }) {
   useEffect(() => {
     console.error('Error de aplicación:', error)
+    if (isStaleServerActionError(error)) window.location.reload()
   }, [error])
 
   return (

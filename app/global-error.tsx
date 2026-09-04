@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 
+import { isStaleServerActionError } from '@/lib/staleAction'
 import './globals.css'
 
 // Reemplaza el layout raíz entero (por eso trae su propio <html>/<body>) —
@@ -17,6 +18,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error('Error global:', error)
+    if (isStaleServerActionError(error)) window.location.reload()
   }, [error])
 
   return (
