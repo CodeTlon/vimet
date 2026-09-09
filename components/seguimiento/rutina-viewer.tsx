@@ -7,7 +7,7 @@ import { EjercicioModal, type EjercicioDetalle } from '@/components/seguimiento/
 import { EjercicioYoutubeThumbnail } from '@/components/seguimiento/ejercicio-youtube-thumbnail'
 import { resumenCardio } from '@/lib/seguimiento'
 
-const DIA_LABEL: Record<string, string> = {
+export const DIA_LABEL: Record<string, string> = {
   lunes: 'Lunes',
   martes: 'Martes',
   miercoles: 'Miércoles',
@@ -16,7 +16,7 @@ const DIA_LABEL: Record<string, string> = {
   sabado: 'Sábado',
   domingo: 'Domingo',
 }
-const ORDEN_DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo', '']
+export const ORDEN_DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo', '']
 
 export type RutinaEjercicio = {
   id: number
@@ -129,7 +129,7 @@ function RutinaCard({
   )
 }
 
-function resumenFuerza(r: RutinaEjercicio) {
+export function resumenFuerza(r: RutinaEjercicio) {
   return (
     [
       r.series ? `${r.series} series` : null,
