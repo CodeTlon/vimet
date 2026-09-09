@@ -21,8 +21,9 @@ const registerSchema = z
   })
 
 // Misma lógica que registerAction (actions/auth.ts) — signUp + desactivar
-// hasta que el admin la active. Sin esto, un registro mobile quedaría activo
-// por el default de la columna (`profiles.activo default true`).
+// hasta que confirme el email (activarPerfilConfirmado, disparado desde
+// /auth/confirmar). Sin el activo:false de acá, un registro mobile quedaría
+// activo por el default de la columna (`profiles.activo default true`).
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
   const parsed = registerSchema.safeParse(body)
@@ -35,6 +36,8 @@ export async function POST(request: Request) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+
   const { data, error } = await anon.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
@@ -44,6 +47,10 @@ export async function POST(request: Request) {
         apellido: parsed.data.apellido,
         telefono: parsed.data.telefono,
       },
+      // Mismo destino que el registro web (actions/auth.ts) — el link de
+      // confirmación abre /auth/confirmar en el browser del teléfono, que
+      // dispara confirmarRegistroPacienteAction y activa la cuenta.
+      emailRedirectTo: `${siteUrl}/auth/confirmar`,
     },
   })
 
