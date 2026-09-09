@@ -161,12 +161,18 @@ export async function registerAction(_prev: unknown, formData: FormData): Promis
 
   if (data.user) {
     if (data.session) {
-      // Supabase ya devolvió sesión en el mismo signUp (pasa si "Confirm
-      // email" está deshabilitado en el proyecto) — no va a existir ningún
-      // link de confirmación que dispare la activación más adelante, así
-      // que activamos de una en vez de dejarlo trabado en activo:false.
-      await activarPerfilConfirmado(data.user.id)
-      redirect('/mis-turnos')
+      // Supabase ya devolvió sesión en el mismo signUp — pasa cuando
+      // "Confirm email" está deshabilitado en el proyecto, y en ese caso no
+      // va a llegar ningún mail de confirmación. Fail-closed a propósito: NO
+      // auto-activamos sin haber verificado el email, queda igual que el
+      // camino normal (activo:false, a la espera de activación manual vía
+      // toggleActivoAction) — más vale confirmar mal "Confirm email" en
+      // Supabase que dejar entrar a cualquiera sin probar que es dueño del
+      // email. Ver quirk de Resend/Supabase en .claude/CLAUDE.md.
+      console.error(
+        `registro: Supabase devolvió sesión inmediata para ${parsed.data.email} — ` +
+          '"Confirm email" parece estar deshabilitado en este proyecto de Supabase.',
+      )
     }
     // Camino normal: activo:false hasta que confirme el email (ver
     // app/auth/confirmar/page.tsx → confirmarRegistroPacienteAction).
