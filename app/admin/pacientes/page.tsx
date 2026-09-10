@@ -64,7 +64,7 @@ export default async function PacientesPage(
           </span>
           {pendientes > 0 && (
             <span className="inline-flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full shadow-sm">
-              {pendientes} pendiente{pendientes > 1 ? 's' : ''}
+              {pendientes} sin confirmar
             </span>
           )}
           <CrearPacienteButton />
@@ -98,7 +98,7 @@ export default async function PacientesPage(
                   </div>
                   {!p.activo && (
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 border ${p.activado_en ? 'text-gray-500 bg-gray-100 border-gray-200' : 'text-amber-700 bg-amber-100 border-amber-200'}`}>
-                      {p.activado_en ? 'Inactivo' : 'Pendiente'}
+                      {p.activado_en ? 'Inactivo' : 'Sin confirmar'}
                     </span>
                   )}
                 </div>
@@ -189,7 +189,7 @@ export default async function PacientesPage(
                         )}
                         {!p.activo && (
                           <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${p.activado_en ? 'text-gray-500 bg-gray-100 border-gray-200' : 'text-amber-700 bg-amber-100 border-amber-200'}`}>
-                            {p.activado_en ? 'Inactivo' : 'Pendiente'}
+                            {p.activado_en ? 'Inactivo' : 'Sin confirmar'}
                           </span>
                         )}
                       </div>

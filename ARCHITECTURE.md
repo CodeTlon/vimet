@@ -19,7 +19,9 @@ Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio 
 | Cálculo de slots / disponibilidad | `lib/booking/slots.ts` + `app/api/slots/route.ts` |
 | Fechas / zona horaria Argentina | `lib/datetime.ts` (`hoyArgentina`, `horaArgentina`, `lunesDeSemanaArgentina`) — **nunca** `new Date().toISOString().slice(0,10)` |
 | Crear / cancelar / actualizar turno | `actions/turnos.ts` |
+| Emails de notificación de turnos (al profesional: nuevo/confirmado/cancelado; al paciente: reprogramado/cancelado por staff/cancelado por cambio de agenda) | `lib/email/resend.ts` (`enviarEmailTurno`, usado por `actions/turnos.ts`) + `actions/horarios.ts` (llama a Resend directo, no usa el helper) + templates en `emails/turno-*.tsx` — ver quirk de Resend para el estado del dominio verificado |
 | Auth (login/registro/logout) + gating | `actions/auth.ts` + `lib/supabase/auth-helpers.ts` + `middleware.ts` |
+| Activación de cuenta de paciente (auto al confirmar el email, ya no requiere activación manual del staff) | `actions/auth.ts` (`registerAction`, `confirmarRegistroPacienteAction`, `activarPerfilConfirmado`) + `app/auth/confirmar/page.tsx` + `app/api/mobile/auth/registro/route.ts` — ver quirk de "Activación de cuenta de paciente" para el detalle completo |
 | Módulo seguimiento (ficha, mediciones, eval, planes, feedback, evolución, objetivos, recursos) | `actions/<modulo>.ts` + `components/seguimiento/<form>.tsx` + página admin correspondiente |
 | Chat de feedback semanal (mensajes ida y vuelta, se cierra el lunes siguiente) | `actions/feedback.ts` (`enviarMensajeFeedbackAction`/`editarMensajeFeedbackAction`) + `components/seguimiento/feedback-chat.tsx` + tabla `feedback_mensajes` |
 | Planes PDF (subida / signed URL) | `actions/planes.ts` (borra PDF previo al reemplazar) + bucket `planes` |

@@ -87,7 +87,38 @@ export async function loginAction(_prev: unknown, formData: FormData): Promise<A
   redirect(isStaff ? '/admin/dashboard' : '/mis-turnos')
 }
 
+// Activa el perfil de un paciente que confirmó su email — pisa `activado_en`
+// solo si todavía es null (primera activación real), mismo criterio que
+// `toggleActivoAction` en actions/staff.ts, para que /admin/pacientes siga
+// distinguiendo "nunca activado" de "activo/inactivo" después de esto.
+export async function activarPerfilConfirmado(userId: string): Promise<void> {
+  const admin = createAdminClient()
+  const { data: profile } = await admin.from('profiles').select('activado_en').eq('id', userId).maybeSingle()
+  const payload: { activo: true; activado_en?: string } = { activo: true }
+  if (!profile?.activado_en) payload.activado_en = new Date().toISOString()
+  await admin.from('profiles').update(payload).eq('id', userId)
+}
+
+// Llamada desde app/auth/confirmar/page.tsx justo después de que `verifyOtp`
+// confirma el signup del paciente — reemplaza la activación manual del staff.
+export async function confirmarRegistroPacienteAction(): Promise<{ ok: boolean }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false }
+
+  await activarPerfilConfirmado(user.id)
+  revalidatePath('/admin/pacientes')
+  return { ok: true }
+}
+
 export async function registerAction(_prev: unknown, formData: FormData): Promise<AuthState> {
+  const ip = await ipDeLaRequest()
+  if (!rateLimit(`registro:${ip}`, 5, 15 * 60 * 1000)) {
+    return { error: 'Demasiados intentos. Probá de nuevo en un rato.' }
+  }
+
   const fields = {
     nombre: String(formData.get('nombre') ?? ''),
     apellido: String(formData.get('apellido') ?? ''),
@@ -129,9 +160,23 @@ export async function registerAction(_prev: unknown, formData: FormData): Promis
   }
 
   if (data.user) {
-    // Marcar como inactivo hasta que el admin lo active
+    if (data.session) {
+      // Supabase ya devolvió sesión en el mismo signUp — pasa cuando
+      // "Confirm email" está deshabilitado en el proyecto, y en ese caso no
+      // va a llegar ningún mail de confirmación. Fail-closed a propósito: NO
+      // auto-activamos sin haber verificado el email, queda igual que el
+      // camino normal (activo:false, a la espera de activación manual vía
+      // toggleActivoAction) — más vale confirmar mal "Confirm email" en
+      // Supabase que dejar entrar a cualquiera sin probar que es dueño del
+      // email. Ver quirk de Resend/Supabase en .claude/CLAUDE.md.
+      console.error(
+        `registro: Supabase devolvió sesión inmediata para ${parsed.data.email} — ` +
+          '"Confirm email" parece estar deshabilitado en este proyecto de Supabase.',
+      )
+    }
+    // Camino normal: activo:false hasta que confirme el email (ver
+    // app/auth/confirmar/page.tsx → confirmarRegistroPacienteAction).
     await createAdminClient().from('profiles').update({ activo: false }).eq('id', data.user.id)
-    // Cerrar la sesión que pudo haberse abierto automáticamente
     await (await createClient()).auth.signOut()
   }
 

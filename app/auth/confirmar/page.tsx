@@ -8,17 +8,18 @@ import type { EmailOtpType } from '@supabase/supabase-js'
 
 import { AuthShell } from '@/components/auth-shell'
 import { createClient } from '@/lib/supabase/client'
+import { confirmarRegistroPacienteAction } from '@/actions/auth'
 
-// Signup: solo confirma el email, la cuenta sigue activo=false hasta que un
-// admin la active — no tiene sentido pedir contraseña de nuevo ni dejar
-// sesión abierta.
+// Signup: confirmar el email activa la cuenta de una (confirmarRegistroPacienteAction
+// reemplaza la activación manual del staff) y lo dejamos logueado — la sesión
+// que abrió verifyOtp ya sirve, no tiene sentido pedirle que loguee de nuevo.
 async function resolveDestino(
   supabase: ReturnType<typeof createClient>,
   type: EmailOtpType | null,
 ) {
   if (type === 'signup') {
-    await supabase.auth.signOut()
-    return '/login?confirmado=1'
+    await confirmarRegistroPacienteAction()
+    return '/mis-turnos'
   }
   const flow = type === 'recovery' ? 'recovery' : 'invite'
   return `/auth/nueva-contrasena?flow=${flow}`
