@@ -20,21 +20,18 @@ Al 2026-09-22, HEAD `dcdb7bf` (`origin/main`, recién sincronizado).
 
 Estos 4 fixes están en el working tree / commits locales de esta sesión — **pendientes de deploy a Coolify** hasta que se pusheen y se confirme el mecanismo de deploy (ver `OPEN_QUESTIONS.md`).
 
-## A medias / "wip" declarado por el propio equipo — investigado, sin aplicar fix (dato de salud, decisión pendiente del usuario)
+## 🔴 El hallazgo más grave de esta sesión, confirmado con evidencia dura contra prod real
 
-- **Cifrado clínico + audit log** (commit `6af5db6`, explícitamente "sin verificar end-to-end"): el algoritmo está bien implementado, pero investigado a fondo en esta sesión confirma 3 gaps reales, no cosméticos — ver `KNOWN_ISSUES.md` #3-#5:
-  - `plan_secciones`/`plan_seccion_comidas` contienen dato clínico-nutricional real (no metadata) y quedan sin cifrar.
-  - El audit log de lecturas tiene exactamente 1 call site en todo el repo (`grep` exhaustivo) — 7 superficies que leen datos clínicos no lo llaman.
-  - El script de backfill (`scripts/migrar-cifrado-clinico.mjs`) existe y está bien hecho, pero no hay evidencia de que se haya corrido contra ningún entorno — estado real de los datos históricos es UNKNOWN.
-- **Secciones modulares de plan** (v0.22.0): migración aplicada contra dev, build/tsc/lint limpios, pero el propio Historial de Cambios registra que faltó una pasada manual en el navegador antes de confiar en la feature en producción — no hay evidencia posterior de que esa pasada se haya hecho.
+**Producción real (`https://ayjzcxvtylvsjacgjxgh.supabase.co`, confirmado vía API de Coolify — no por inferencia) le falta un bloque de 6 migraciones** que el código deployado ya asume aplicadas: `0019` (`activado_en`), `0029` (`gestionado_por_staff`), `0030`/`0031` (ejercicios YouTube/cardio), `0033` (`slot_publico`), `0034` (antropometría ISAK) — mientras que `0037`-`0039` (secciones de plan, cifrado clínico, audit log), posteriores en número, sí están aplicadas. Ver `KNOWN_ISSUES.md` #1 (severidad CRÍTICA) para el análisis de riesgo completo de cada una — **ninguna se aplicó todavía**, queda pendiente de autorización del usuario.
 
-## Nuevo hallazgo de infraestructura (destapado verificando el fix de `activo`)
+Esto también explica por qué el cifrado clínico y el gap de `plan_secciones` bajaron de prioridad (ver abajo): producción tiene apenas 6 `profiles`, 2 pacientes, 1 turno, y **0 filas** en `ejercicios`, `plan_ejercicios`, `mediciones_antropometricas`, `fichas_paciente`, `evolucion_entradas` y `plan_secciones` — el sistema todavía no tuvo uso real más allá de una prueba inicial.
 
-La cuenta de Supabase tiene un segundo proyecto (`vimet`, `ayjzcxvtylvsjacgjxgh`, `ACTIVE_HEALTHY`, creado 2026-08-05) que ningún `.env*` local referencia y que no se identificó en esta sesión — ver `OPEN_QUESTIONS.md`.
+## A medias / "wip" declarado por el propio equipo — investigado con datos reales de prod, sin aplicar fix
+
+- **Cifrado clínico + audit log** (commit `6af5db6`): el algoritmo está bien implementado. Verificado por lectura directa contra prod real: **0 filas** en `fichas_paciente`/`evolucion_entradas`/`planes.notas` — no hay backfill pendiente porque no hay dato clínico cargado todavía. Sigue habiendo 2 gaps reales de cara al futuro (`KNOWN_ISSUES.md` #2-#3): `plan_secciones`/`plan_seccion_comidas` fuera del scope de cifrado (y también con 0 filas en prod hoy), y el audit log de lecturas con 1 solo call site en todo el repo. Ninguno es urgente **hoy** por falta de uso real — sí lo será en cuanto el gap de migraciones se resuelva y entre el primer paciente de verdad.
+- **Secciones modulares de plan** (v0.22.0): migración aplicada contra dev (y contra prod — 0037 sí está), build/tsc/lint limpios, pero sin pasada manual en el navegador confirmada, y sin datos reales todavía en prod para haberla probado con uso real.
 
 ## Sin verificar en esta sesión (UNKNOWN, no ASSUMPTION — no se intentó adivinar)
 
-- Estado real de las migraciones `0038`/`0039` (y su backfill) contra Supabase de prod (el dev SÍ se pudo reactivar y usar en esta sesión, ver arriba).
-- Mecanismo exacto de auto-deploy de Coolify (push automático vs. manual).
-- Si `RESEND_FROM_EMAIL` en el entorno de Coolify ya quedó con el dominio verificado.
-- Qué es el proyecto Supabase `vimet` (`ayjzcxvtylvsjacgjxgh`) — ver hallazgo de infraestructura arriba.
+- Mecanismo exacto de auto-deploy de Coolify (push automático vs. manual) — se confirmó la app/proyecto correctos, no el trigger de deploy en sí.
+- Si aplicar las 6 migraciones faltantes resuelve los 500 reales que debería resolver — no se aplicó ninguna todavía, falta la autorización del usuario.
