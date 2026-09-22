@@ -22,6 +22,21 @@ export async function requireMobileUser(request: Request) {
   } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' as const, status: 401 as const }
 
+  // Defensa en profundidad: la app mobile ya bloquea localmente una sesión
+  // con activo=false (vimet-app/store/session.ts, forzando signOut), pero
+  // eso es un chequeo client-side — un bearer token válido obtenido fuera de
+  // la app (ej. contra el endpoint REST de Supabase Auth directo, sin pasar
+  // nunca por esa pantalla) lo pasaría igual sin este chequeo server-side.
+  // Mismo criterio que ya aplica actions/auth.ts (loginAction) del lado web.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('activo')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (!profile || !profile.activo) {
+    return { error: 'Cuenta pendiente de activación.' as const, status: 403 as const }
+  }
+
   return { user, supabase }
 }
 
