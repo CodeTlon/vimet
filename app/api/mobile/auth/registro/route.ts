@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { ipDeRequest, rateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +26,13 @@ const registerSchema = z
 // /auth/confirmar). Sin el activo:false de acá, un registro mobile quedaría
 // activo por el default de la columna (`profiles.activo default true`).
 export async function POST(request: Request) {
+  // Mismo límite que registerAction (web) — antes esta ruta no tenía ningún
+  // freno, a diferencia del form web (ver KNOWN_ISSUES.md #6).
+  const ip = ipDeRequest(request)
+  if (!rateLimit(`registro:${ip}`, 5, 15 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Demasiados intentos. Probá de nuevo más tarde.' }, { status: 429 })
+  }
+
   const body = await request.json().catch(() => null)
   const parsed = registerSchema.safeParse(body)
   if (!parsed.success) {
