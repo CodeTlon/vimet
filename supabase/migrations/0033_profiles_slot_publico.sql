@@ -25,5 +25,15 @@ create unique index if not exists profiles_slot_publico_unique
 -- Backfill único, basado en los emails reales de hoy — de acá en adelante
 -- ya no se lee más el email para esto, así que un cambio de email futuro
 -- no rompe nada.
-update public.profiles set slot_publico = 'avril' where email = 'codetloncordoba+avril@gmail.com';
-update public.profiles set slot_publico = 'gero' where email = 'codetloncordoba+gero@gmail.com';
+--
+-- 2026-09-22: se agregan también los emails reales de producción
+-- (avriljerushalmi@vimetsalud.com.ar / geronimogallardo@vimetsalud.com.ar) —
+-- distintos de las cuentas de dev (codetloncordoba+avril/+gero@gmail.com).
+-- Esta migración nunca corrió contra prod (gap destapado en KNOWN_ISSUES.md
+-- #1), así que agregar el email real no reescribe nada ya aplicado en
+-- ningún entorno: en dev sigue matcheando exactamente lo mismo que antes
+-- (esos emails no existen ahí), y en prod ahora matchea de verdad.
+update public.profiles set slot_publico = 'avril'
+  where email in ('codetloncordoba+avril@gmail.com', 'avriljerushalmi@vimetsalud.com.ar');
+update public.profiles set slot_publico = 'gero'
+  where email in ('codetloncordoba+gero@gmail.com', 'geronimogallardo@vimetsalud.com.ar');
