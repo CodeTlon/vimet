@@ -1,12 +1,16 @@
 # Entornos — Vimet
 
-> ⚠️ **Desactualizado (09/09):** este documento describe un esquema Vercel
-> Preview/Production que no es como corre el proyecto en la práctica — la
-> producción real (`vimetsalud.com.ar`) la sirve **Coolify**, no Vercel; ver
-> el quirk "Deploy real es Coolify, no Vercel" en `.claude/CLAUDE.md`. No se
-> confirmó todavía cómo Coolify maneja sus propios entornos/ramas ni si usa
-> el mismo proyecto de Supabase que dev — hasta que se audite y reescriba
-> esta guía, no asumir que lo de abajo refleja la infra real.
+> ⚠️ **Desactualizado (última confirmación 22/09):** este documento describe un
+> esquema Vercel Preview/Production que no es como corre el proyecto en la
+> práctica — la producción real (`vimetsalud.com.ar`) la sirve **Coolify**, no
+> Vercel. **Confirmado con evidencia dura vía la API de Coolify** (no por
+> inferencia): el Supabase de producción real es `ayjzcxvtylvsjacgjxgh`,
+> **distinto** de `vimet-dev` (`qwzlhbecpgysgophpbyf`, el que usa este repo en
+> local) — ver el quirk correspondiente en `.claude/CLAUDE.md` y el detalle en
+> `.ai/context/ARCHITECTURE.md`. Sigue sin confirmarse cómo Coolify maneja sus
+> propios entornos/ramas (auto-deploy en push vs. trigger manual) — hasta que
+> se audite eso y se reescriba esta guía entera, no asumir que el resto de este
+> documento refleja la infra real.
 
 App con **Supabase** (auth + roles + área de pacientes/staff). Trabaja con **dos entornos**
 separados para probar el flujo de invitaciones, activación y roles sin tocar datos reales.

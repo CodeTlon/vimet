@@ -9,6 +9,7 @@ import { enviarEmailTurno } from '@/lib/email/resend'
 import { formatearFechaCorta } from '@/lib/seguimiento'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { crearSchema } from '@/lib/validation/turnos'
 import TurnoCanceladoProfesionalEmail from '@/emails/turno-cancelado-profesional'
 import TurnoCanceladoStaffEmail from '@/emails/turno-cancelado-staff'
 import TurnoConfirmadoProfesionalEmail from '@/emails/turno-confirmado-profesional'
@@ -62,15 +63,10 @@ export async function cancelarPendientesSinConfirmar() {
     .in('id', vencidos.map((t) => t.id))
 }
 
-const crearSchema = z.object({
-  profesional_id: z.string().uuid('Profesional inválido'),
-  servicio_id: z.string().min(1, 'Servicio inválido'),
-  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida'),
-  hora_inicio: z.string().regex(/^\d{2}:\d{2}$/, 'Hora inválida'),
-  hora_fin: z.string().regex(/^\d{2}:\d{2}$/, 'Hora inválida'),
-  modalidad: z.enum(['presencial', 'virtual']),
-  notas: z.string().max(500).optional().default(''),
-})
+// Vive en lib/validation/turnos.ts (no puede ser un export no-async de este
+// archivo 'use server') — reusado también por app/api/mobile/turnos/crear
+// para que la ruta mobile valide el mismo formato que este wrapper web
+// (ver KNOWN_ISSUES.md #8).
 
 type Franja = {
   fecha: string

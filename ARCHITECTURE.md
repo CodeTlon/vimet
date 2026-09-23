@@ -3,7 +3,7 @@
 Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio acá y abrí solo esos archivos. El mapa de archivos completo + DB + quirks vive en `.claude/CLAUDE.md`.
 
 ## Stack
-**Next.js 14** (App Router) · React 18 · TS · Tailwind · Shadcn/UI · Lucide · Supabase (Postgres + RLS + Auth + Storage) · Resend · Vercel. Migración de un sitio PHP MVC + MySQL. Web app con auth + booking + dashboard admin + módulo de seguimiento de pacientes.
+**Next.js 16** (App Router) · React 19 · TS · Tailwind · Shadcn/UI · Lucide · Supabase (Postgres + RLS + Auth + Storage) · Resend. Deploy real: **Coolify** (Vercel es solo preview, ver `.ai/context/ARCHITECTURE.md`). Migración de un sitio PHP MVC + MySQL. Web app con auth + booking + dashboard admin + módulo de seguimiento de pacientes.
 
 ## Route Groups / áreas
 - Público: home, nosotros, metodologia, servicios, faq, contacto, login, registro, legales
@@ -18,9 +18,10 @@ Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio 
 |-----------------|------|
 | Cálculo de slots / disponibilidad | `lib/booking/slots.ts` + `app/api/slots/route.ts` |
 | Fechas / zona horaria Argentina | `lib/datetime.ts` (`hoyArgentina`, `horaArgentina`, `lunesDeSemanaArgentina`) — **nunca** `new Date().toISOString().slice(0,10)` |
-| Crear / cancelar / actualizar turno | `actions/turnos.ts` |
+| Crear / cancelar / actualizar turno | `actions/turnos.ts` (schemas de validación compartidos con las rutas mobile en `lib/validation/turnos.ts` — un archivo `'use server'` no puede exportar un valor no-función) |
 | Emails de notificación de turnos (al profesional: nuevo/confirmado/cancelado; al paciente: reprogramado/cancelado por staff/cancelado por cambio de agenda) | `lib/email/resend.ts` (`enviarEmailTurno`, usado por `actions/turnos.ts`) + `actions/horarios.ts` (llama a Resend directo, no usa el helper) + templates en `emails/turno-*.tsx` — ver quirk de Resend para el estado del dominio verificado |
-| Auth (login/registro/logout) + gating | `actions/auth.ts` + `lib/supabase/auth-helpers.ts` + `middleware.ts` |
+| Auth (login/registro/logout) + gating | `actions/auth.ts` + `lib/supabase/auth-helpers.ts` + `proxy.ts` |
+| Auth de las rutas `app/api/mobile/*` (bearer, consumidas por la app mobile) | `lib/supabase/bearer.ts` (`requireMobileUser`/`Staff`/`Admin`) — `requireMobileUser` chequea `profiles.activo` server-side, no solo confiar en el chequeo client-side de la app |
 | Activación de cuenta de paciente (auto al confirmar el email, ya no requiere activación manual del staff) | `actions/auth.ts` (`registerAction`, `confirmarRegistroPacienteAction`, `activarPerfilConfirmado`) + `app/auth/confirmar/page.tsx` + `app/api/mobile/auth/registro/route.ts` — ver quirk de "Activación de cuenta de paciente" para el detalle completo |
 | Módulo seguimiento (ficha, mediciones, eval, planes, feedback, evolución, objetivos, recursos) | `actions/<modulo>.ts` + `components/seguimiento/<form>.tsx` + página admin correspondiente |
 | Chat de feedback semanal (mensajes ida y vuelta, se cierra el lunes siguiente) | `actions/feedback.ts` (`enviarMensajeFeedbackAction`/`editarMensajeFeedbackAction`) + `components/seguimiento/feedback-chat.tsx` + tabla `feedback_mensajes` |
