@@ -20,11 +20,11 @@ Al 2026-09-22, HEAD `dcdb7bf` (`origin/main`, recién sincronizado).
 
 Estos 4 fixes están en el working tree / commits locales de esta sesión — **pendientes de deploy a Coolify** hasta que se pusheen y se confirme el mecanismo de deploy (ver `OPEN_QUESTIONS.md`).
 
-## 🔴 El hallazgo más grave de esta sesión, confirmado con evidencia dura contra prod real
+## ✅ El hallazgo más grave de esta sesión — resuelto contra prod real
 
-**Producción real (`https://ayjzcxvtylvsjacgjxgh.supabase.co`, confirmado vía API de Coolify — no por inferencia) le falta un bloque de 6 migraciones** que el código deployado ya asume aplicadas: `0019` (`activado_en`), `0029` (`gestionado_por_staff`), `0030`/`0031` (ejercicios YouTube/cardio), `0033` (`slot_publico`), `0034` (antropometría ISAK) — mientras que `0037`-`0039` (secciones de plan, cifrado clínico, audit log), posteriores en número, sí están aplicadas. Ver `KNOWN_ISSUES.md` #1 (severidad CRÍTICA) para el análisis de riesgo completo de cada una — **ninguna se aplicó todavía**, queda pendiente de autorización del usuario.
+**Producción real (`https://ayjzcxvtylvsjacgjxgh.supabase.co`, confirmado vía API de Coolify) tenía un gap de 14 migraciones** (`0019`, `0024`-`0028`, `0029`-`0036`) — no solo las 6 detectadas en el primer chequeo — respecto al código ya deployado. Las 14 se aplicaron en orden el 2026-09-22 con autorización explícita del usuario, sin errores, y se verificaron funcionalmente contra prod (perfil público de Avril/Gero, listado de pacientes, todas las columnas/policies/enum de las 14). Detalle completo, comando por comando, en `KNOWN_ISSUES.md` #1.
 
-Esto también explica por qué el cifrado clínico y el gap de `plan_secciones` bajaron de prioridad (ver abajo): producción tiene apenas 6 `profiles`, 2 pacientes, 1 turno, y **0 filas** en `ejercicios`, `plan_ejercicios`, `mediciones_antropometricas`, `fichas_paciente`, `evolucion_entradas` y `plan_secciones` — el sistema todavía no tuvo uso real más allá de una prueba inicial.
+Esto también explica por qué el cifrado clínico y el gap de `plan_secciones` siguen sin ser urgentes (ver abajo): producción tiene apenas 6 `profiles`, 2 pacientes, 1 turno, y **0 filas** en `ejercicios`, `plan_ejercicios`, `mediciones_antropometricas`, `fichas_paciente`, `evolucion_entradas` y `plan_secciones` — el sistema todavía no tuvo uso real más allá de una prueba inicial. Con el gap de migraciones resuelto, el próximo paciente/staff real que use esas features ya no debería toparse con un 500.
 
 ## A medias / "wip" declarado por el propio equipo — investigado con datos reales de prod, sin aplicar fix
 
@@ -34,4 +34,4 @@ Esto también explica por qué el cifrado clínico y el gap de `plan_secciones` 
 ## Sin verificar en esta sesión (UNKNOWN, no ASSUMPTION — no se intentó adivinar)
 
 - Mecanismo exacto de auto-deploy de Coolify (push automático vs. manual) — se confirmó la app/proyecto correctos, no el trigger de deploy en sí.
-- Si aplicar las 6 migraciones faltantes resuelve los 500 reales que debería resolver — no se aplicó ninguna todavía, falta la autorización del usuario.
+- Si el código YA deployado en Coolify (no el de esta rama) queda 100% conforme con el nuevo schema — las migraciones están aplicadas, pero no se re-deployó la app en esta sesión.

@@ -4,40 +4,30 @@ Severidad explícita, evidencia con archivo:línea donde aplica, escenario de fa
 
 **Identidad de producción confirmada con evidencia dura (no por inferencia)**: se consultó la API de Coolify (`GET /api/v1/applications/{uuid}/envs` sobre la app `vimet`, `fqdn=https://vimetsalud.com.ar`) — `NEXT_PUBLIC_SUPABASE_URL` real de producción es `https://ayjzcxvtylvsjacgjxgh.supabase.co`. Ya no es una hipótesis por emails de staff: es el valor configurado de verdad. De paso, `RESEND_FROM_EMAIL` en ese mismo entorno ya está en `no-reply@vimetsalud.com.ar` (dominio verificado) — cierra `OPEN_QUESTIONS.md` #4.
 
-## 🔴 CRÍTICA
+## ✅ RESUELTO (era CRÍTICA)
 
-### 1. Gap de migraciones en producción — 6 migraciones de código ya deployado nunca corrieron contra la DB real
-**FACT, confirmado por lectura directa (solo lectura) contra `https://ayjzcxvtylvsjacgjxgh.supabase.co`, el Supabase real de producción (confirmado vía Coolify, ver arriba).** Mapeando qué migraciones existen realmente contra el HEAD del código (que ya asume todas aplicadas):
+### 1. Gap de migraciones en producción — 14 migraciones de código ya deployado nunca habían corrido contra la DB real
+**✅ RESUELTO en esta sesión (2026-09-22), aplicado contra producción con autorización explícita del usuario, verificado con evidencia funcional real.**
 
-| Migración | En producción real |
-|---|---|
-| 0001–0011 (init, seguimiento, recursos, contenido editable, feedback chat, turnos combo) | ✅ existen |
-| **`0019_paciente_estado.sql`** (`profiles.activado_en`) | ❌ **no existe** |
-| **`0029_paciente_gestionado_staff.sql`** (`profiles.gestionado_por_staff`) | ❌ **no existe** |
-| **`0030_ejercicios_youtube.sql`** (`ejercicios.youtube_url` + constraint) | ❌ **no existe** |
-| **`0031_ejercicios_modo_cardio.sql`** (`ejercicios.modo` + campos cardio en `plan_ejercicios`) | ❌ **no existe** |
-| **`0033_profiles_slot_publico.sql`** (`profiles.slot_publico`) | ❌ **no existe** |
-| **`0034_antropometria_isak.sql`** (13 columnas ISAK en `mediciones_antropometricas`) | ❌ **no existe** |
-| 0037–0039 (secciones de plan, cifrado clínico, audit log) | ✅ existen |
+**Hallazgo original** (confirmado por lectura directa contra `https://ayjzcxvtylvsjacgjxgh.supabase.co`, identidad confirmada vía Coolify): el chequeo inicial contra una lista curada de 6 migraciones (`0019`, `0029`, `0030`, `0031`, `0033`, `0034`) mostró que ninguna existía en prod, mientras que `0037`-`0039` sí. Un mapeo exhaustivo posterior de **las 18 migraciones entre `0019` y `0036`** (no solo las 6 originales) reveló que la tabla de tracking (`supabase_migrations.schema_migrations`) solo cubre hasta `0018` — de ahí en más, cada migración se aplicó (o no) a mano, de forma irregular:
+- **4 ya estaban aplicadas** sin quedar registradas en el tracking (`0020`, `0021`, `0022`, `0023` — RLS de agenda por profesional, fix de 3 policies con gap tipo IDOR, constraint de no-solapamiento de horarios, tabla `mediciones_wearable`).
+- **14 realmente faltaban**: `0019`, `0024`, `0025`, `0026`, `0027`, `0028`, `0029`, `0030`, `0031`, `0032`, `0033`, `0034`, `0035`, `0036`.
 
-No es un simple atraso lineal — alguien aplicó `0037`-`0039` (las más recientes) sin pasar antes por el bloque `0019`-`0034`. El código deployado en Coolify asume que TODAS estas columnas/tablas existen.
+**Escenario de falla que esto causaba**: confirmación de email → activación automática de cuenta, alta de paciente gestionado por staff, ejercicios con YouTube/cardio, **cualquier staff editando el perfil público de OTRO profesional** (la policy `0032` es la que habilita eso — sin ella solo `is_admin()` podía, pese a que el código ya asume `is_staff()`), antropometría ISAK, y los motivos de cancelación/reprogramación de turnos — todos rompían con 500 (columna/policy/tabla inexistente) apenas alguien real los tocara.
 
-**Escenario de falla concreto, por feature**: cualquier paciente/staff real que hoy toque en producción (a) confirmación de email → activación automática de cuenta (necesita `activado_en`), (b) alta de paciente gestionado por staff, (c) cargar un ejercicio con link de YouTube o modo cardio, (d) ver/editar el perfil público de Avril o Gero (necesita `slot_publico`), o (e) cargar una evaluación ISAK de antropometría — **muy probablemente rompe con error 500** (columna/tabla inexistente), no en silencio.
+**Fix del backfill de `0033`** (antes de aplicar nada): el `.sql` original buscaba `codetloncordoba+avril@gmail.com`/`+gero@gmail.com` (los emails reales de **dev**) — no existen en prod. Se corrigió el archivo para matchear ambos sets de emails (`IN (...)`, dev y prod), en vez de un swap directo, para no dejar de funcionar si alguna vez se corre de cero contra un dev fresco.
 
-**Mitigado por la falta de uso real, no por el gap**: `ejercicios` (0 filas), `plan_ejercicios` (0 filas) y `mediciones_antropometricas` (0 filas) están vacías en prod hoy — así que (c) y (e) todavía no le rompieron a nadie porque nadie las usó, no porque el gap no exista. `profiles` tiene 6 filas reales — (a), (b) y (d) sí son riesgo activo cada vez que alguien las toque.
+**Aplicación, 14 de 14 sin error, en orden, vía la Management API de Supabase (`POST /v1/projects/{ref}/database/query`, con el access token — scripteado, no pegado a mano en el navegador, mismo mecanismo con el que ya se habían aplicado `0037`-`0039`):**
 
-**Análisis de riesgo de aplicar cada una — leído el `.sql` completo de las 6, sin correr nada:**
+`0019` → `0024` → `0025` → `0026` → `0027` → `0028` → `0029` → `0030` → `0031` → `0032` → `0033` (corregida) → `0034` → `0035` → `0036`. Cada una devolvió `HTTP 201` y se verificó por separado contra el schema real antes de pasar a la siguiente. La saga `0024`-`0028` (agrega un enum + agrega y revierte una columna, por un cambio de decisión de producto ya documentado en el propio `0028`) se corrió completa para llegar limpio al estado que `0036` espera — el neto es un valor de enum inerte, sin columna extra.
 
-| Migración | ¿Destructiva / pisa datos? | Riesgo real contra los datos de prod hoy | Veredicto |
-|---|---|---|---|
-| `0019` | No — `add column if not exists activado_en timestamptz`, nullable, sin default | Ninguno | Segura tal cual |
-| `0029` | No — `add column ... not null default false` | Metadata-only en Postgres moderno; `false` es semánticamente correcto para las 6 filas existentes (ninguna vino del flujo "gestionado", que no existía) | Segura tal cual |
-| `0030` | No — columna nullable + `CHECK` que valida contra filas existentes | **Verificado con una query real**: `ejercicios` tiene 0 filas con `origen='staff'` (de hecho 0 filas en total) → el `CHECK` no tiene nada que violar | Segura tal cual |
-| `0031` | No — columnas nullable + 3 `CHECK` que son trivialmente ciertos cuando los valores son `null` | **Verificado**: `plan_ejercicios` tiene 0 filas | Segura tal cual |
-| `0033` | No estructuralmente, pero **el backfill queda inefectivo** | La migración incluye 2 `UPDATE` hardcodeados contra `codetloncordoba+avril@gmail.com`/`codetloncordoba+gero@gmail.com` — **verificado que NINGUNO de esos emails existe en prod**; los reales son `avriljerushalmi@vimetsalud.com.ar` / `geronimogallardo@vimetsalud.com.ar`. Aplicarla tal cual agrega la columna sin romper nada, pero deja `slot_publico` en `null` para ambas — el problema que la migración dice resolver seguiría sin resolverse, en silencio | Segura de aplicar, pero **necesita el backfill corregido con los emails reales de prod** para tener efecto — no alcanza con correr el archivo tal cual |
-| `0034` | No — 13 columnas nullable, sin `CHECK`, solo comentarios | **Verificado**: `mediciones_antropometricas` tiene 0 filas | Segura tal cual |
+**Verificación funcional post-migración, contra prod real, replicando el código exacto (no datos de prueba nuevos):**
+- `slot_publico`: el backfill corregido matcheó de verdad — `avriljerushalmi@vimetsalud.com.ar → 'avril'`, `geronimogallardo@vimetsalud.com.ar → 'gero'` (antes hubiera quedado `null` con el archivo original).
+- El `select` exacto de `app/admin/pacientes/page.tsx` (`activado_en`, `gestionado_por_staff`, etc.) corre sin error contra los pacientes reales de prod.
+- El `select` exacto de `getProfesionales()` (`lib/config/contenido.ts`, filtro `slot_publico in ('avril','gero')`) devuelve las filas de Avril y Gero con datos reales.
+- Columnas/policy/enum de las 14 migraciones confirmadas una por una contra `information_schema`/`pg_policies`/`pg_enum`/`pg_proc` tras aplicar.
 
-**No se aplicó ninguna de las 6** — queda pendiente de que el usuario lo autorice explícitamente, dado que es escritura contra producción real.
+**Nada de esto tocó datos de pacientes existentes** más allá del backfill de 2 filas de `slot_publico` (Avril/Gero) — todas las demás tablas afectadas tenían 0 filas al momento de aplicar.
 
 ## 🟠 ALTA
 
