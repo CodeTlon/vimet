@@ -16,7 +16,8 @@
     "translate:ejercicios": "node scripts/traducir-ejercicios.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:paridad": "node scripts/migracion/paridad-esquema.mjs"
+    "db:paridad": "node scripts/migracion/paridad-esquema.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1150.0",

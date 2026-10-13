@@ -28,6 +28,9 @@ Estado: hecho y verificado con PGlite (Postgres 17 en WASM, sin Docker). **No se
 2. Identidades con `maxValue: 9223372036854775807` (no representable en JS) generaban un `MAXVALUE` fuera de rango.
 3. Opclasses cruzadas en indices compuestos (`.op("uuid_ops")` sobre columnas timestamptz).
 4. El orden de columnas de un `unique` compuesto no se respeto (`mediciones_wearable`).
+5. El default `'{}'` de arrays salia como `'{""}'` (un elemento vacio); detectado por el test de borrado de paciente.
+
+Diferencia deliberada con Supabase: `audit_log` sin FK a `profiles` (el rastro sobrevive al borrado; ver HALLAZGOS.md).
 
 ## Notas para la Fase 7
 - Las columnas `id` son `GENERATED ALWAYS AS IDENTITY`: al importar filas con id explicito usar

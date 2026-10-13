@@ -45,7 +45,7 @@ function seccionPolicies() {
   out.push('')
   out.push(
     '> Guard y test IDOR son **sugeridos por heuristica** sobre la expresion SQL; hay que revisarlos uno por uno al implementar la Fase 4. ' +
-      'La columna "Estado" se completa a mano (pendiente / guard hecho / test verde).',
+      'La columna "Estado" remite a `AUTORIZACION.md`, donde cada regla tiene su guard y su test.',
   )
   out.push('')
   out.push('| # | Tabla / bucket | Policy | Op | Migracion | Expresion (resumida) | Guard server-side | Test IDOR | Estado |')
@@ -54,7 +54,7 @@ function seccionPolicies() {
     const expr = [p.using && `USING ${p.using}`, p.check && `CHECK ${p.check}`].filter(Boolean).join(' / ')
     out.push(
       `| ${i + 1} | \`${celda(p.tabla)}\` | ${celda(p.nombre)} | ${p.op} | ${p.archivo.replace('.sql', '')} | ` +
-        `\`${celda(corto(expr))}\` | ${celda(c.guard)} | ${celda(c.idor)} | pendiente |`,
+        `\`${celda(corto(expr))}\` | ${celda(c.guard)} | ${celda(c.idor)} | ver AUTORIZACION.md |`,
     )
   })
   out.push('')
