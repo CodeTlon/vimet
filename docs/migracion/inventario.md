@@ -93,7 +93,7 @@ Policies creadas y reemplazadas despues (ya no vigentes, solo informativo):
 ## 2. Huella de `@supabase/*` por capa
 
 <!-- BEGIN:huella -->
-Archivos de codigo que referencian `@supabase/*` o `lib/supabase/*`: **88**.
+Archivos de codigo que referencian `@supabase/*` o `lib/supabase/*`: **89**.
 
 ### Por ubicacion
 
@@ -103,7 +103,7 @@ Archivos de codigo que referencian `@supabase/*` o `lib/supabase/*`: **88**.
 | actions | 16 |
 | api-mobile | 15 |
 | lib | 10 |
-| scripts | 4 |
+| scripts | 5 |
 | components | 3 |
 | api | 2 |
 | e2e | 1 |
@@ -111,7 +111,7 @@ Archivos de codigo que referencian `@supabase/*` o `lib/supabase/*`: **88**.
 
 ### Por capa (un archivo puede estar en mas de una)
 
-<details><summary><b>auth</b> (61)</summary>
+<details><summary><b>auth</b> (62)</summary>
 
 - `actions/auth.ts`
 - `actions/contenido.ts`
@@ -173,11 +173,12 @@ Archivos de codigo que referencian `@supabase/*` o `lib/supabase/*`: **88**.
 - `lib/supabase/client.ts`
 - `lib/supabase/middleware.ts`
 - `lib/supabase/server.ts`
+- `scripts/migracion/generar-inventario.mjs`
 - `scripts/seed-demo-pacientes.mjs`
 
 </details>
 
-<details><summary><b>storage</b> (14)</summary>
+<details><summary><b>storage</b> (15)</summary>
 
 - `actions/contenido.ts`
 - `actions/ejercicios.ts`
@@ -192,11 +193,12 @@ Archivos de codigo que referencian `@supabase/*` o `lib/supabase/*`: **88**.
 - `app/admin/pacientes/[id]/recursos/page.tsx`
 - `app/api/mobile/recursos/route.ts`
 - `lib/plan-secciones.ts`
+- `scripts/migracion/generar-inventario.mjs`
 - `scripts/seed-ejercicios.mjs`
 
 </details>
 
-<details><summary><b>datos</b> (72)</summary>
+<details><summary><b>datos</b> (73)</summary>
 
 - `actions/auth.ts`
 - `actions/contenido.ts`
@@ -267,6 +269,7 @@ Archivos de codigo que referencian `@supabase/*` o `lib/supabase/*`: **88**.
 - `lib/plan-secciones.ts`
 - `lib/supabase/bearer.ts`
 - `lib/supabase/middleware.ts`
+- `scripts/migracion/generar-inventario.mjs`
 - `scripts/seed-demo-pacientes.mjs`
 - `scripts/seed-ejercicios.mjs`
 - `scripts/traducir-ejercicios.mjs`
@@ -283,7 +286,7 @@ Archivos de codigo que referencian `@supabase/*` o `lib/supabase/*`: **88**.
 
 ### Llamadas `.from()` a tablas
 
-Total con tabla literal: **270** en 72 archivos (+ 4 `.from(<variable>)` no resolubles estaticamente).
+Total con tabla literal: **270** en 72 archivos (+ 10 `.from(<variable>)` no resolubles estaticamente).
 
 | Tabla | `.from()` | Archivos |
 |---|---|---|
@@ -321,3 +324,75 @@ Total con tabla literal: **270** en 72 archivos (+ 4 `.from(<variable>)` no reso
 | `ejercicios-media` | 6 |
 | `sitio` | 3 |
 <!-- END:huella -->
+
+## 3. Conteos de produccion (Supabase `ayjzcxvtylvsjacgjxgh`)
+
+**Pendiente.** El token de la Management API no esta disponible en el entorno de la sesion `dev1`
+(los `.env*` estan enmascarados y no hay variable `SUPABASE_*`), asi que no se pudo consultar produccion.
+El script de solo lectura ya esta listo y solo emite cantidades, sin datos personales:
+
+```bash
+SUPABASE_ACCESS_TOKEN=... node scripts/migracion/conteos-prod.mjs > docs/migracion/conteos-prod.md
+```
+
+Cubre: usuarios de `auth.users` (confirmados, invitados, sinteticos, formato de hash bcrypt/otro),
+filas por tabla de `public` con estado de RLS, objetos y MB por bucket, `audit_log` por accion/tabla
+y filas clinicas todavia en texto plano. Con eso se decide la opcion A/B de contrasenas (Fase 3).
+
+## 4. Auditoria de `audit_log` (migracion `0039`, `lib/audit.ts`)
+
+**Que existe**
+- Tabla `audit_log` append-only (sin policy de update/delete), lectura solo `is_admin()`, insert de staff solo como si mismo.
+- Escrituras: trigger `log_audit_change()` (security definer) en 5 tablas: `fichas_paciente`, `planes`,
+  `evolucion_entradas`, `mediciones_antropometricas`, `evaluaciones_funcionales`. Guarda solo los *nombres* de columna
+  modificados, no los valores.
+- Lecturas: `logAuditView()` a nivel app, accion `ver`.
+
+**Hallazgos**
+1. **Cobertura de lecturas minima.** `logAuditView` tiene un unico call site: `app/admin/pacientes/[id]/ficha/page.tsx`.
+   No se registran lecturas de evolucion, planes, antropometria, evaluaciones ni resumen del paciente, ni el acceso del propio paciente.
+2. **El actor depende de `auth.uid()`.** En el trigger, `actor_id = auth.uid()`. Con service role (`createAdminClient()`) queda `null`.
+   En el backend propio `auth.uid()` no existe: hay que pasar el actor por `set_config('app.user_id', ..., true)` dentro de la
+   transaccion o registrar desde la capa de datos (ya previsto en la Fase 2 del plan). Sin eso, todo el log queda sin actor.
+3. **Nadie lee el log.** Ninguna pantalla consulta `audit_log` (solo existe el insert); solo es accesible por SQL. Cumple como
+   registro, no como control operativo.
+4. **Sin retencion definida.** No hay politica de purga; la migracion lo deja como accion manual de DBA.
+5. **`on delete set null` en `paciente_id`/`actor_id`.** Al eliminar un paciente (`eliminarPacienteAction`) sus filas de
+   auditoria quedan huerfanas (sin `paciente_id`). Ademas, el borrado en cascada de `fichas_paciente` dispara el trigger
+   mientras el perfil se esta borrando: **no verificado** si el insert de auditoria choca con la FK; probarlo en el ensayo en `test`.
+6. **Dependencia de Supabase.** `lib/audit.ts` tipa su parametro con `createClient` de `lib/supabase/server`; se reescribe en la Fase 4.
+   Los triggers migran como SQL manual (no hay policies que portar, pero si la referencia a `auth.uid()`).
+
+**Para migrar:** conservar tabla y triggers, cambiar el origen del actor, extender `logAuditView` a las vistas clinicas
+que faltan (decision de producto, no tecnica), y ver el conteo real de filas en el punto 3.
+
+## 5. Auditoria del cifrado clinico (migracion `0038`, `lib/crypto/clinical.ts`)
+
+**Que existe**
+- AES-256-GCM con `node:crypto`, clave `CLINICAL_DATA_ENCRYPTION_KEY` (32 bytes en base64) solo en el entorno de la app.
+- Formato `v1.<iv>.<tag>.<ciphertext>` en columnas `_enc`. IV aleatorio de 12 bytes por valor, authTag validado al leer.
+- 7 campos: `fichas_paciente.{dx_medico, dx_nutricional, medicacion, datos_laboratorio, observaciones_internas}`,
+  `evolucion_entradas.contenido`, `planes.notas`.
+- Escritura: `actions/ficha.ts`, `actions/evolucion.ts`, `actions/planes.ts`. Lectura: `readClinicalField()` en 8 vistas
+  (`mi-ficha`, `mi-progreso`, `mis-planes/[id]`, `planes/[id]/imprimir`, y las de admin de ficha, evolucion, resumen y plan).
+
+**Hallazgos**
+1. **Portable tal cual.** El modulo solo depende de `node:crypto`; no cambia en la migracion. El `pg_dump` copia los
+   ciphertexts como texto.
+2. **La clave es el unico punto de falla.** Perderla = perder los 7 campos. Los backups a B2 contienen los ciphertexts
+   pero **no** la clave: debe respaldarse por separado (gestor de secretos), y viajar a Coolify antes del primer arranque.
+   No hay rotacion ni identificador de clave en el formato (solo el prefijo `v1`).
+3. **Siguen existiendo las columnas planas.** Estan marcadas `DEPRECATED` pero no se dropearon (son el rollback).
+   Si el backfill `scripts/migrar-cifrado-clinico.mjs` no corrio completo en produccion, hay texto plano real en la base.
+   El conteo exacto esta en el script de produccion (seccion 3). Decidir si el esquema nuevo las arrastra o no.
+4. **Sin AAD.** El ciphertext no esta ligado a fila ni columna: un valor copiado a otra fila o columna descifra bien.
+   Mejora de bajo costo para el formato `v2` si se quiere, no bloquea la migracion.
+5. **`readClinicalField` cae a la columna plana** si `_enc` es null: correcto durante la transicion, pero oculta filas sin
+   migrar. Tras el backfill, pasar a leer solo `_enc`.
+6. **Datos de salud que NO se cifran:** `fichas_paciente` (`lesiones`, `molestias`, `suplementacion`, `motivos_consulta`,
+   `fuma`, `bebe`, `drogas`), `feedback_semanal` y `feedback_mensajes` (dudas y chat), `plan_secciones.contenido` y
+   `plan_seccion_comidas` (ya documentado como pendiente), mediciones antropometricas, evaluaciones y adjuntos. Es una
+   decision de alcance, no un bug; queda anotado para la revision de seguridad.
+7. **El script de backfill usa `supabase-js`** y duplica el algoritmo (corre standalone); se reescribe sobre Drizzle en la Fase 4.
+8. **Pendiente de `vimet-app`:** ninguna ruta `app/api/mobile/*` lee campos clinicos, pero si la app lee `fichas_paciente`
+   o `evolucion_entradas` directo con `supabase-js` recibiria `_enc` o texto plano sin descifrar. Confirmar en el inventario de la app.
