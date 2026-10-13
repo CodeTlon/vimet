@@ -3,7 +3,6 @@ import { DM_Sans, Outfit } from 'next/font/google'
 
 import CookieConsent from '@/components/cookie-consent'
 import GoogleAnalytics from '@/components/google-analytics'
-import { HashInviteHandler } from '@/components/hash-invite-handler'
 import { JsonLd } from '@/components/seo/json-ld'
 import { location, social } from '@/lib/config/team'
 import { SITE_URL } from '@/lib/config/site'
@@ -102,7 +101,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen flex flex-col">
         <JsonLd data={localBusinessSchema} />
         {gaActivo && GA_ID ? <GoogleAnalytics gaId={GA_ID} /> : null}
-        <HashInviteHandler />
         {children}
         <CookieConsent />
       </body>

@@ -3,14 +3,12 @@
 import { useRouter } from 'next/navigation'
 import { type ButtonHTMLAttributes, type ReactNode, useState } from 'react'
 
-import { createClient } from '@/lib/supabase/client'
+import { authClient } from '@/lib/auth-client'
 
 /**
- * Logout del lado del cliente: el signOut corre sobre el cliente browser de
- * Supabase para que dispare `onAuthStateChange` (así la navbar y demás UI que
- * escuchan la sesión se actualizan al instante) y además limpie las cookies.
- * Un server action solo limpiaba las cookies en el server y dejaba el estado
- * en memoria del cliente colgado mostrando "Panel"/"Mi espacio".
+ * Logout del lado del cliente: `signOut` revoca la sesion en el servidor y limpia la cookie;
+ * despues se refresca la ruta para que el layout (que resuelve la sesion en el servidor)
+ * vuelva a renderizar sin el usuario.
  */
 export function LogoutButton({
   className,
@@ -26,11 +24,7 @@ export function LogoutButton({
   const onLogout = async () => {
     if (loading) return
     setLoading(true)
-    const supabase = createClient()
-    // scope 'local': limpia la sesión y las cookies del browser al instante, sin
-    // round-trip a Supabase para revocar el token globalmente. Evita que el logout
-    // se cuelgue cuando la conexión a Supabase está lenta.
-    await supabase.auth.signOut({ scope: 'local' })
+    await authClient.signOut()
     router.replace('/')
     router.refresh()
   }

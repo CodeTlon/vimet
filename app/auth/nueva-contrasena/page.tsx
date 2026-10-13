@@ -25,8 +25,10 @@ function SubmitButton({ recovery }: { recovery: boolean }) {
 function NuevaContrasenaInner() {
   const [state, formAction] = useActionState(nuevaContrasenaAction, {})
   const searchParams = useSearchParams()
-  // recovery = usuario existente cambiando su contraseña (no pedir datos de perfil).
-  const recovery = searchParams.get('flow') === 'recovery'
+  // Con `token` es una invitación (cuenta nueva: se piden datos de perfil). Sin token es un
+  // usuario ya logueado que tiene que cambiar su contraseña (no se piden datos de perfil).
+  const token = searchParams.get('token')
+  const recovery = !token
 
   return (
     <AuthShell
@@ -46,6 +48,7 @@ function NuevaContrasenaInner() {
       }
     >
       <form action={formAction} className="space-y-4">
+        {token && <input type="hidden" name="token" value={token} />}
         {state.error && (
           <div role="alert" className="rounded-lg bg-vimet-red/10 border border-vimet-red/20 px-4 py-3 text-sm text-vimet-red">
             {state.error}
@@ -99,8 +102,8 @@ function NuevaContrasenaInner() {
             type="password"
             name="password"
             required
-            minLength={6}
-            placeholder="Mínimo 6 caracteres"
+            minLength={8}
+            placeholder="Mínimo 8 caracteres"
             className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
           />
         </div>
@@ -110,7 +113,7 @@ function NuevaContrasenaInner() {
             type="password"
             name="confirm"
             required
-            minLength={6}
+            minLength={8}
             placeholder="Repetí la contraseña"
             className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
           />

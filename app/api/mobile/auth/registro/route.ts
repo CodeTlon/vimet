@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
-import { createAdminClient } from '@/lib/supabase/admin'
+import { registrarPaciente } from '@/lib/auth/registro'
 import { ipDeRequest, rateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
@@ -21,13 +20,10 @@ const registerSchema = z
     path: ['password_confirm'],
   })
 
-// Misma lógica que registerAction (actions/auth.ts) — signUp + desactivar
-// hasta que confirme el email (activarPerfilConfirmado, disparado desde
-// /auth/confirmar). Sin el activo:false de acá, un registro mobile quedaría
-// activo por el default de la columna (`profiles.activo default true`).
+// Misma lógica que registerAction (actions/auth.ts) vía registrarPaciente: alta inactiva hasta
+// que confirme el email. El link de confirmación abre /auth/confirmar en el browser del teléfono.
 export async function POST(request: Request) {
-  // Mismo límite que registerAction (web) — antes esta ruta no tenía ningún
-  // freno, a diferencia del form web (ver KNOWN_ISSUES.md #6).
+  // Mismo límite que registerAction (web).
   const ip = ipDeRequest(request)
   if (!rateLimit(`registro:${ip}`, 5, 15 * 60 * 1000)) {
     return NextResponse.json({ error: 'Demasiados intentos. Probá de nuevo más tarde.' }, { status: 429 })
@@ -39,40 +35,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 })
   }
 
-  const anon = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  )
-
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-
-  const { data, error } = await anon.auth.signUp({
-    email: parsed.data.email,
-    password: parsed.data.password,
-    options: {
-      data: {
-        nombre: parsed.data.nombre,
-        apellido: parsed.data.apellido,
-        telefono: parsed.data.telefono,
-      },
-      // Mismo destino que el registro web (actions/auth.ts) — el link de
-      // confirmación abre /auth/confirmar en el browser del teléfono, que
-      // dispara confirmarRegistroPacienteAction y activa la cuenta.
-      emailRedirectTo: `${siteUrl}/auth/confirmar`,
-    },
-  })
-
-  if (error) {
-    const msg = error.message.toLowerCase()
-    if (msg.includes('already') || msg.includes('registered')) {
-      return NextResponse.json({ error: 'Ya existe una cuenta con ese email.' }, { status: 409 })
-    }
-    return NextResponse.json({ error: error.message }, { status: 400 })
-  }
-
-  if (data.user) {
-    await createAdminClient().from('profiles').update({ activo: false }).eq('id', data.user.id)
-  }
-
+  const res = await registrarPaciente(parsed.data, request.headers)
+  if (!res.ok) return NextResponse.json({ error: res.error }, { status: res.status })
   return NextResponse.json({ ok: true })
 }

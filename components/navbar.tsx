@@ -7,7 +7,6 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useLayoutEffect, useState } from 'react'
 
 import { LogoutButton } from '@/components/logout-button'
-import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
 const links = [
@@ -32,7 +31,7 @@ const HIDE_PREFIXES = [
   '/mis-recursos',
 ]
 
-export function Navbar() {
+export function Navbar({ user }: { user: { id: string; rol: string } | null }) {
   const pathname = usePathname()
   const router = useRouter()
   const hidden = HIDE_PREFIXES.some(
@@ -46,10 +45,6 @@ export function Navbar() {
   // calculado del scroll real en el mismo render de hidratación puede
   // aplicarse de forma no atómica entre el header y los links anidados).
   const [heroDarkness, setHeroDarkness] = useState(0)
-  // undefined = todavía no se resolvió la sesión (evita mostrar "Ingresar" un
-  // instante antes de corregir a "Salir" cuando el usuario sí está logueado).
-  const [user, setUser] = useState<{ id: string; rol: string } | null | undefined>(undefined)
-
   useLayoutEffect(() => {
     const onScroll = () => {
       const threshold = window.innerHeight * 0.3
@@ -71,38 +66,6 @@ export function Navbar() {
   useEffect(() => {
     setOpen(false)
   }, [pathname])
-
-  useEffect(() => {
-    const supabase = createClient()
-    let mounted = true
-
-    const refresh = async () => {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser()
-      if (!authUser) {
-        if (mounted) setUser(null)
-        return
-      }
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('rol')
-        .eq('id', authUser.id)
-        .maybeSingle()
-      if (mounted) setUser({ id: authUser.id, rol: profile?.rol ?? 'paciente' })
-    }
-
-    refresh()
-
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      refresh()
-    })
-
-    return () => {
-      mounted = false
-      sub.subscription.unsubscribe()
-    }
-  }, [])
 
   const isStaff = user && ['nutricionista', 'entrenador', 'admin'].includes(user.rol)
   const scrolled = heroDarkness >= 1
