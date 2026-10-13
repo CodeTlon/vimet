@@ -57,6 +57,9 @@ for (const [, sql] of leer('drizzle')) {
   for (const stmt of sql.split('--> statement-breakpoint')) if (stmt.trim()) await nuevo.exec(stmt)
 }
 
+// Las tablas de Better Auth no existian en Supabase (alli vivian en el esquema `auth`): se sacan de la comparacion.
+await nuevo.exec('drop table session, account, verification, "user" cascade')
+
 // 3. Comparacion estructural.
 const snap = async (db) => {
   const q = async (s) => (await db.query(s)).rows.map((r) => Object.values(r).join(' | '))

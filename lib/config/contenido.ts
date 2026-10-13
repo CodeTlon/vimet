@@ -1,7 +1,10 @@
 // Contenido editable desde /admin — lee de Supabase con fallback a lib/config/team.ts
 // (mismo patrón que loadServicios() en app/(public)/servicios/page.tsx)
 
-import { createClient } from '@/lib/supabase/server'
+import { eq, inArray } from 'drizzle-orm'
+
+import { contenido_sitio, profiles } from '@/db/schema'
+import { db } from '@/lib/db'
 import {
   team as TEAM_FALLBACK,
   location as LOCATION_FALLBACK,
@@ -24,8 +27,7 @@ export type ContenidoSitio = {
 }
 
 export async function getContenidoSitio(): Promise<ContenidoSitio> {
-  const supabase = await createClient()
-  const { data } = await supabase.from('contenido_sitio').select('*').eq('id', 1).maybeSingle()
+  const [data] = await db.select().from(contenido_sitio).where(eq(contenido_sitio.id, 1)).limit(1)
 
   return {
     direccion: data?.direccion ?? LOCATION_FALLBACK.address,
@@ -47,15 +49,25 @@ export async function getContenidoSitio(): Promise<ContenidoSitio> {
 }
 
 export async function getProfesionales(): Promise<Record<'avril' | 'gero', Profesional>> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('profiles')
-    .select(
-      'slot_publico, nombre, titulo, matricula, foto_url, instagram_handle, instagram_url, whatsapp_url, bio_corta, bio, especialidades, areas_trabajo',
-    )
-    .in('slot_publico', ['avril', 'gero'])
+  const data = await db
+    .select({
+      slot_publico: profiles.slot_publico,
+      nombre: profiles.nombre,
+      titulo: profiles.titulo,
+      matricula: profiles.matricula,
+      foto_url: profiles.foto_url,
+      instagram_handle: profiles.instagram_handle,
+      instagram_url: profiles.instagram_url,
+      whatsapp_url: profiles.whatsapp_url,
+      bio_corta: profiles.bio_corta,
+      bio: profiles.bio,
+      especialidades: profiles.especialidades,
+      areas_trabajo: profiles.areas_trabajo,
+    })
+    .from(profiles)
+    .where(inArray(profiles.slot_publico, ['avril', 'gero']))
 
-  const bySlot = new Map(data?.map((p) => [p.slot_publico, p]))
+  const bySlot = new Map(data.map((p) => [p.slot_publico, p]))
 
   function build(key: 'avril' | 'gero'): Profesional {
     const fallback = TEAM_FALLBACK[key]

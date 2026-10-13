@@ -1,6 +1,8 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { and, eq, gte, inArray, lte, ne } from 'drizzle-orm'
 
+import { bloqueos_horario, horarios_disponibles, profiles, turnos } from '@/db/schema'
 import { HORAS_CORTE_RESERVA, hoyArgentina, horaArgentina } from '@/lib/datetime'
+import { db as dbGlobal, type Db } from '@/lib/db'
 
 export type Slot = { hora_inicio: string; hora_fin: string }
 
@@ -25,7 +27,6 @@ export function diaSemana(fechaISO: string): number {
 }
 
 export async function getSlotsDisponibles(
-  supabase: SupabaseClient,
   {
     profesionalId,
     fecha,
@@ -39,45 +40,53 @@ export async function getSlotsDisponibles(
     modalidad?: 'presencial' | 'virtual'
     excludeTurnoId?: number
   },
+  db: Db = dbGlobal,
 ): Promise<Slot[]> {
   if (!profesionalId || !fecha || !duracion) return []
 
   const dia = diaSemana(fecha)
 
-  let horariosQuery = supabase
-    .from('horarios_disponibles')
-    .select('hora_inicio, hora_fin, modalidad')
-    .eq('profesional_id', profesionalId)
-    .eq('dia_semana', dia)
-    .eq('activo', true)
-  if (modalidad) {
-    horariosQuery = horariosQuery.in('modalidad', [modalidad, 'ambas'])
-  }
-
-  let turnosQuery = supabase
-    .from('turnos')
-    .select('hora_inicio, hora_fin')
-    .eq('profesional_id', profesionalId)
-    .eq('fecha', fecha)
-    .in('estado', ['pendiente', 'confirmado'])
-  if (excludeTurnoId) {
-    turnosQuery = turnosQuery.neq('id', excludeTurnoId)
-  }
-
-  const [{ data: horarios }, { data: turnos }, { data: bloqueos }] = await Promise.all([
-    horariosQuery,
-    turnosQuery,
-    supabase
-      .from('bloqueos_horario')
-      .select('fecha_inicio, fecha_fin')
-      .eq('profesional_id', profesionalId)
-      .lte('fecha_inicio', `${fecha}T23:59:59-03:00`)
-      .gte('fecha_fin', `${fecha}T00:00:00-03:00`),
+  // Se leen TODOS los turnos activos del profesional ese dia (sin RLS): antes un paciente solo
+  // veia los suyos y la base rechazaba el choque recien al insertar (exclusion constraint).
+  const [horarios, turnosDelDia, bloqueos] = await Promise.all([
+    db
+      .select({ hora_inicio: horarios_disponibles.hora_inicio, hora_fin: horarios_disponibles.hora_fin })
+      .from(horarios_disponibles)
+      .where(
+        and(
+          eq(horarios_disponibles.profesional_id, profesionalId),
+          eq(horarios_disponibles.dia_semana, dia),
+          eq(horarios_disponibles.activo, true),
+          modalidad ? inArray(horarios_disponibles.modalidad, [modalidad, 'ambas']) : undefined,
+        ),
+      ),
+    db
+      .select({ hora_inicio: turnos.hora_inicio, hora_fin: turnos.hora_fin })
+      .from(turnos)
+      .where(
+        and(
+          eq(turnos.profesional_id, profesionalId),
+          eq(turnos.fecha, fecha),
+          inArray(turnos.estado, ['pendiente', 'confirmado']),
+          excludeTurnoId ? ne(turnos.id, excludeTurnoId) : undefined,
+        ),
+      ),
+    db
+      .select({ fecha_inicio: bloqueos_horario.fecha_inicio, fecha_fin: bloqueos_horario.fecha_fin })
+      .from(bloqueos_horario)
+      .where(
+        and(
+          eq(bloqueos_horario.profesional_id, profesionalId),
+          lte(bloqueos_horario.fecha_inicio, `${fecha}T23:59:59-03:00`),
+          gte(bloqueos_horario.fecha_fin, `${fecha}T00:00:00-03:00`),
+        ),
+      ),
   ])
+  const turnos_ = turnosDelDia
 
-  if (!horarios?.length) return []
+  if (!horarios.length) return []
 
-  const ocupadas = (turnos ?? []).map((t) => ({
+  const ocupadas = turnos_.map((t) => ({
     inicio: toMinutes(t.hora_inicio.slice(0, 5)),
     fin: toMinutes(t.hora_fin.slice(0, 5)),
   }))
@@ -85,7 +94,7 @@ export async function getSlotsDisponibles(
   // Argentina es UTC-3 fija (sin horario de verano): anclamos el "día" del
   // bloqueo a medianoche Argentina, no UTC, para no desfasarlo 3hs.
   const dayStart = new Date(`${fecha}T00:00:00-03:00`).getTime()
-  const bloqueadas = (bloqueos ?? [])
+  const bloqueadas = bloqueos
     .map((b) => {
       const ini = new Date(b.fecha_inicio).getTime()
       const fin = new Date(b.fecha_fin).getTime()
@@ -128,7 +137,6 @@ export async function getSlotsDisponibles(
 // Slots donde TODOS los profesionales activos (nutricionista + entrenador)
 // están libres a la vez — para servicios "combo" que requieren a ambos.
 export async function getSlotsDisponiblesCombo(
-  supabase: SupabaseClient,
   {
     fecha,
     duracion,
@@ -140,19 +148,13 @@ export async function getSlotsDisponiblesCombo(
     modalidad?: 'presencial' | 'virtual'
     excludeTurnoId?: number
   },
+  db: Db = dbGlobal,
 ): Promise<Slot[]> {
-  const { data: profesionales } = await supabase
-    .from('profiles')
-    .select('id')
-    .in('rol', ['nutricionista', 'entrenador'])
-    .eq('activo', true)
-
-  if (!profesionales || profesionales.length < 2) return []
+  const profesionales = await getProfesionalesCombo(db)
+  if (profesionales.length < 2) return []
 
   const listas = await Promise.all(
-    profesionales.map((p) =>
-      getSlotsDisponibles(supabase, { profesionalId: p.id, fecha, duracion, modalidad, excludeTurnoId }),
-    ),
+    profesionales.map((id) => getSlotsDisponibles({ profesionalId: id, fecha, duracion, modalidad, excludeTurnoId }, db)),
   )
 
   const [primera, ...resto] = listas
@@ -164,11 +166,10 @@ export async function getSlotsDisponiblesCombo(
 }
 
 // ids de los profesionales activos que participan de un servicio combo.
-export async function getProfesionalesCombo(supabase: SupabaseClient): Promise<string[]> {
-  const { data } = await supabase
-    .from('profiles')
-    .select('id')
-    .in('rol', ['nutricionista', 'entrenador'])
-    .eq('activo', true)
-  return (data ?? []).map((p) => p.id)
+export async function getProfesionalesCombo(db: Db = dbGlobal): Promise<string[]> {
+  const filas = await db
+    .select({ id: profiles.id })
+    .from(profiles)
+    .where(and(inArray(profiles.rol, ['nutricionista', 'entrenador']), eq(profiles.activo, true)))
+  return filas.map((p) => p.id)
 }

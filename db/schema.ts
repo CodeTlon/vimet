@@ -41,7 +41,7 @@ export const servicios = pgTable("servicios", {
 		}).onDelete("set null"),
 ]);
 
-export const horariosDisponibles = pgTable("horarios_disponibles", {
+export const horarios_disponibles = pgTable("horarios_disponibles", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	profesional_id: uuid().notNull(),
 	dia_semana: smallint().notNull(),
@@ -59,7 +59,7 @@ export const horariosDisponibles = pgTable("horarios_disponibles", {
 	check("horarios_disponibles_dia_semana_check", sql`(dia_semana >= 0) AND (dia_semana <= 6)`),
 ]);
 
-export const evaluacionesFuncionales = pgTable("evaluaciones_funcionales", {
+export const evaluaciones_funcionales = pgTable("evaluaciones_funcionales", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	paciente_id: uuid().notNull(),
 	fecha: date().default(sql`CURRENT_DATE`).notNull(),
@@ -121,7 +121,7 @@ export const objetivos = pgTable("objetivos", {
 		}).onDelete("set null"),
 ]);
 
-export const contenidoSitio = pgTable("contenido_sitio", {
+export const contenido_sitio = pgTable("contenido_sitio", {
 	id: integer().default(1).primaryKey().notNull(),
 	direccion: text(),
 	lugar: text(),
@@ -131,15 +131,15 @@ export const contenidoSitio = pgTable("contenido_sitio", {
 	whatsapp_general: text(),
 	instagram_handle: text(),
 	instagram_url: text(),
-	metodologia_pasos: jsonb().default([]).notNull(),
-	metodologia_pilares: jsonb().default([]).notNull(),
-	metodologia_dirigido_a: jsonb().default([]).notNull(),
+	metodologia_pasos: jsonb().$type<unknown[]>().default([]).notNull(),
+	metodologia_pilares: jsonb().$type<unknown[]>().default([]).notNull(),
+	metodologia_dirigido_a: jsonb().$type<unknown[]>().default([]).notNull(),
 	updated_at: timestamp({ withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	check("contenido_sitio_singleton", sql`id = 1`),
 ]);
 
-export const feedbackSemanal = pgTable("feedback_semanal", {
+export const feedback_semanal = pgTable("feedback_semanal", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	paciente_id: uuid().notNull(),
 	semana_inicio: date().notNull(),
@@ -176,7 +176,7 @@ export const feedbackSemanal = pgTable("feedback_semanal", {
 	check("feedback_semanal_adherencia_alimentacion_check", sql`(adherencia_alimentacion >= 0) AND (adherencia_alimentacion <= 100)`),
 ]);
 
-export const recursosPaciente = pgTable("recursos_paciente", {
+export const recursos_paciente = pgTable("recursos_paciente", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	paciente_id: uuid().notNull(),
 	tipo: tipoRecurso().notNull(),
@@ -210,7 +210,7 @@ export const recursosPaciente = pgTable("recursos_paciente", {
 	check("recursos_url_o_path", sql`((tipo = 'link'::tipo_recurso) AND (url IS NOT NULL) AND (storage_path IS NULL)) OR ((tipo <> 'link'::tipo_recurso) AND (storage_path IS NOT NULL) AND (url IS NULL))`),
 ]);
 
-export const feedbackMensajes = pgTable("feedback_mensajes", {
+export const feedback_mensajes = pgTable("feedback_mensajes", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	feedback_id: bigint({ mode: "number" }).notNull(),
 	autor_id: uuid().notNull(),
@@ -221,7 +221,7 @@ export const feedbackMensajes = pgTable("feedback_mensajes", {
 	index("feedback_mensajes_feedback_idx").using("btree", table.feedback_id.asc().nullsLast(), table.id.asc().nullsLast()),
 	foreignKey({
 			columns: [table.feedback_id],
-			foreignColumns: [feedbackSemanal.id],
+			foreignColumns: [feedback_semanal.id],
 			name: "feedback_mensajes_feedback_id_fkey"
 		}).onDelete("cascade"),
 	foreignKey({
@@ -251,7 +251,7 @@ export const profiles = pgTable("profiles", {
 	bio_corta: text(),
 	bio: text(),
 	especialidades: text().array().default([""]).notNull(),
-	areas_trabajo: jsonb().default([]).notNull(),
+	areas_trabajo: jsonb().$type<unknown[]>().default([]).notNull(),
 	debe_cambiar_password: boolean().default(false).notNull(),
 	activado_en: timestamp({ withTimezone: true, mode: 'string' }),
 	gestionado_por_staff: boolean().default(false).notNull(),
@@ -263,7 +263,7 @@ export const profiles = pgTable("profiles", {
 	check("profiles_slot_publico_check", sql`slot_publico = ANY (ARRAY['avril'::text, 'gero'::text])`),
 ]);
 
-export const medicionesWearable = pgTable("mediciones_wearable", {
+export const mediciones_wearable = pgTable("mediciones_wearable", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	paciente_id: uuid().notNull(),
 	fecha: date().notNull(),
@@ -286,7 +286,7 @@ export const medicionesWearable = pgTable("mediciones_wearable", {
 	check("mediciones_wearable_fuente_valida", sql`fuente = ANY (ARRAY['health_connect'::text, 'apple_health'::text])`),
 ]);
 
-export const sesionesEntrenamiento = pgTable("sesiones_entrenamiento", {
+export const sesiones_entrenamiento = pgTable("sesiones_entrenamiento", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	plan_id: bigint({ mode: "number" }).notNull(),
 	paciente_id: uuid().notNull(),
@@ -342,7 +342,7 @@ export const ejercicios = pgTable("ejercicios", {
 	check("ejercicios_modo_check", sql`modo = ANY (ARRAY['fuerza'::text, 'cardio'::text])`),
 ]);
 
-export const setsCompletados = pgTable("sets_completados", {
+export const sets_completados = pgTable("sets_completados", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	sesion_id: bigint({ mode: "number" }).notNull(),
 	plan_ejercicio_id: bigint({ mode: "number" }).notNull(),
@@ -356,17 +356,17 @@ export const setsCompletados = pgTable("sets_completados", {
 	index("sets_completados_sesion_idx").using("btree", table.sesion_id.asc().nullsLast()),
 	foreignKey({
 			columns: [table.sesion_id],
-			foreignColumns: [sesionesEntrenamiento.id],
+			foreignColumns: [sesiones_entrenamiento.id],
 			name: "sets_completados_sesion_id_fkey"
 		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.plan_ejercicio_id],
-			foreignColumns: [planEjercicios.id],
+			foreignColumns: [plan_ejercicios.id],
 			name: "sets_completados_plan_ejercicio_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
-export const planEjercicios = pgTable("plan_ejercicios", {
+export const plan_ejercicios = pgTable("plan_ejercicios", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	plan_id: bigint({ mode: "number" }).notNull(),
 	ejercicio_id: bigint({ mode: "number" }).notNull(),
@@ -444,7 +444,7 @@ export const turnos = pgTable("turnos", {
 		}).onDelete("set null"),
 ]);
 
-export const bloqueosHorario = pgTable("bloqueos_horario", {
+export const bloqueos_horario = pgTable("bloqueos_horario", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	profesional_id: uuid().notNull(),
 	fecha_inicio: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
@@ -459,7 +459,7 @@ export const bloqueosHorario = pgTable("bloqueos_horario", {
 		}).onDelete("cascade"),
 ]);
 
-export const fichasPaciente = pgTable("fichas_paciente", {
+export const fichas_paciente = pgTable("fichas_paciente", {
 	paciente_id: uuid().primaryKey().notNull(),
 	fecha_nacimiento: date(),
 	sexo: sexoPaciente(),
@@ -502,7 +502,7 @@ export const fichasPaciente = pgTable("fichas_paciente", {
 		}).onDelete("set null"),
 ]);
 
-export const planSecciones = pgTable("plan_secciones", {
+export const plan_secciones = pgTable("plan_secciones", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	plan_id: bigint({ mode: "number" }).notNull(),
 	tipo: tipoSeccionPlan().notNull(),
@@ -520,7 +520,7 @@ export const planSecciones = pgTable("plan_secciones", {
 		}).onDelete("cascade"),
 ]);
 
-export const medicionesAntropometricas = pgTable("mediciones_antropometricas", {
+export const mediciones_antropometricas = pgTable("mediciones_antropometricas", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	paciente_id: uuid().notNull(),
 	fecha_medicion: date().default(sql`CURRENT_DATE`).notNull(),
@@ -562,7 +562,7 @@ export const medicionesAntropometricas = pgTable("mediciones_antropometricas", {
 		}).onDelete("set null"),
 ]);
 
-export const planSeccionComidas = pgTable("plan_seccion_comidas", {
+export const plan_seccion_comidas = pgTable("plan_seccion_comidas", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	seccion_id: bigint({ mode: "number" }).notNull(),
 	nombre_momento: text().notNull(),
@@ -572,12 +572,12 @@ export const planSeccionComidas = pgTable("plan_seccion_comidas", {
 	index("plan_seccion_comidas_seccion_idx").using("btree", table.seccion_id.asc().nullsLast(), table.orden.asc().nullsLast()),
 	foreignKey({
 			columns: [table.seccion_id],
-			foreignColumns: [planSecciones.id],
+			foreignColumns: [plan_secciones.id],
 			name: "plan_seccion_comidas_seccion_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
-export const planSeccionImagenes = pgTable("plan_seccion_imagenes", {
+export const plan_seccion_imagenes = pgTable("plan_seccion_imagenes", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	seccion_id: bigint({ mode: "number" }).notNull(),
 	storage_path: text().notNull(),
@@ -587,12 +587,12 @@ export const planSeccionImagenes = pgTable("plan_seccion_imagenes", {
 	index("plan_seccion_imagenes_seccion_idx").using("btree", table.seccion_id.asc().nullsLast(), table.orden.asc().nullsLast()),
 	foreignKey({
 			columns: [table.seccion_id],
-			foreignColumns: [planSecciones.id],
+			foreignColumns: [plan_secciones.id],
 			name: "plan_seccion_imagenes_seccion_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
-export const evolucionEntradas = pgTable("evolucion_entradas", {
+export const evolucion_entradas = pgTable("evolucion_entradas", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	paciente_id: uuid().notNull(),
 	origen: origenEvolucion().notNull(),
@@ -657,14 +657,14 @@ export const planes = pgTable("planes", {
 	check("planes_dias_descanso_check", sql`dias_descanso <@ ARRAY['lunes'::text, 'martes'::text, 'miercoles'::text, 'jueves'::text, 'viernes'::text, 'sabado'::text, 'domingo'::text]`),
 ]);
 
-export const auditLog = pgTable("audit_log", {
+export const audit_log = pgTable("audit_log", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
 	paciente_id: uuid(),
 	actor_id: uuid(),
 	accion: text().notNull(),
 	tabla: text().notNull(),
 	registro_id: text(),
-	metadata: jsonb(),
+	metadata: jsonb().$type<Record<string, unknown>>(),
 	created_at: timestamp({ withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	index("audit_log_actor_idx").using("btree", table.actor_id.asc().nullsLast(), table.created_at.desc().nullsFirst()),
