@@ -84,3 +84,5 @@
 ## Entrega
 - [ ] Merge `dev` → `main` + tag `v1.0.0` + push
 - [ ] Actualizar `.claude/CLAUDE.md` con URL producción tras deploy del usuario
+
+> **Estado 2026-10-13:** la lista vigente de pendientes de la migración está en `docs/migracion/CORTE.md` y `.ai/context/CURRENT_STATE.md`.

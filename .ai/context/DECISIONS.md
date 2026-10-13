@@ -17,3 +17,25 @@ Decisiones de diseño reales con su porqué — no solo "qué se hizo". Extraíd
 **Deploy real en Coolify self-hosted, con Vercel como proyecto aparte de preview.** No hay comentario/commit que explique el porqué de mantener ambas plataformas — es un dato de infraestructura, no una decisión de arquitectura de código. Ver `OPEN_QUESTIONS.md` sobre si vale la pena decomisionar Vercel.
 
 **Barridos perezosos en vez de cron** (no-show de turnos, cancelación de pendientes sin confirmar). Se ejecutan cuando alguien visita una pantalla que lista turnos, no en background — trade-off explícito para no sumar infraestructura de cron; el costo es que un turno vencido no cambia de estado hasta que alguien entra a una pantalla relevante.
+
+## Decisiones de la migración a backend propio (2026-10-13)
+
+**Sin RLS: autorización explícita en el servidor, con tests.** La doctrina de la fábrica elige Postgres propio + Drizzle + Better Auth; sin PostgREST no hay RLS, así que cada policy (60 vigentes) se reemplazó por una regla en `lib/data|services` y un test (`docs/migracion/AUTORIZACION.md`). Costo: la corrección depende del código y de los tests, no del motor.
+
+**Servicios compartidos web/mobile (`lib/services/*`), no duplicados.** La paridad de permisos pasa a ser estructural. Un archivo `'use server'` solo exporta `*Action` (todo export es invocable desde el cliente).
+
+**La app mobile usa un catálogo cerrado de operaciones (`POST /api/mobile/data`), no un proxy genérico de tablas.** Más código, pero cada operación declara su `acceso` y se puede auditar/testear. Se descartó un cliente tipo PostgREST en el servidor por superficie de ataque.
+
+**Auth mobile por HTTP plano con token bearer, sin `@better-auth/expo`.** Menos piezas sin probar en dispositivo (la doctrina nota que el cliente Expo no está validado); solo `fetch` + SecureStore.
+
+**Importar hashes bcrypt de Supabase** en vez de forzar un reset masivo: Better Auth acepta un `verify` propio; los nuevos hashes son scrypt.
+
+**`audit_log` sin FK a `profiles`.** El rastro debe sobrevivir al borrado del paciente (con FK, el borrado en cascada fallaba).
+
+**Tests sobre PGlite en vez de Docker.** Corren en cualquier cuenta (VPS, PC, CI) con las migraciones reales; no reemplazan una prueba contra Postgres real.
+
+**Esquema editado a mano, no regenerado con `drizzle-kit pull`** (5 bugs conocidos); `npm run db:paridad` es la red de seguridad.
+
+**Flujo de ramas**: `feature/*` → `dev` (merge directo) → `test` (merge directo) → PR `test` → `main` (lo mergea Mateo). La app (`vimet-app`) usa el mismo flujo.
+
+**`toggleActivoAction` ya no es "cualquier staff sobre cualquiera"**: staff sobre pacientes; solo admin sobre cuentas del equipo (corrige la decisión histórica de arriba, que en la práctica permitía desactivar al admin).

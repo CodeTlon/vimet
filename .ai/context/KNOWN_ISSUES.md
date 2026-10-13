@@ -1,5 +1,30 @@
 # KNOWN_ISSUES — VIMET (web)
 
+## Estado tras la migración a backend propio (2026-10-13)
+
+Los items 1-11 de abajo describen producción con Supabase (`main`). En la rama `feature/dev1-backend-propio`:
+
+| # | Tema | Estado en la rama |
+|---|---|---|
+| 1 | Gap de migraciones aplicadas a mano | **Obsoleto**: el esquema sale de `drizzle/` y se verifica con `npm run db:paridad`. Al corte la base nueva nace completa. |
+| 2 | Cifrado clínico sin cubrir `plan_secciones` | **Sigue abierto** (decisión de producto, ver `OPEN_QUESTIONS.md`). Además no se cifran: `fichas_paciente` (lesiones, molestias, suplementación, motivos, hábitos), `feedback_*`, mediciones. |
+| 3 | Audit log de lecturas con un solo call site | **Sigue abierto** (`logAuditView` solo en la ficha de admin). El actor de las escrituras ahora sale de `app.user_id` (`conActor`). |
+| 4 | Backfill de cifrado | `scripts/migrar-cifrado-clinico.mjs` reescrito con `pg`; las columnas planas siguen existiendo (rollback). Hoy 0 filas clínicas en prod. |
+| 5-9 | Next/sharp, rate limit y `activo` mobile, validación de turnos | **Resueltos** y preservados (`requireMobileUser` chequea `activo`; `crearSchema` en `lib/validation/turnos.ts`). |
+| 10 | README/`docs/environments.md` hablan de Vercel | README actualizado; `docs/environments.md` sigue desactualizado. |
+| 11 | `recursos` mobile con validación laxa | **Resuelto**: web y app comparten `lib/services/recursos.ts` (uuid validado, mismos tipos y tamaños). |
+
+### Nuevos (abiertos)
+- **N1 — Sin verificar contra infra real** (Postgres/MinIO/correo/dispositivo): ver `CURRENT_STATE.md`. Severidad ALTA para el corte, no para producción actual.
+- **N2 — `.env.example` desactualizado** (lista Supabase); está protegido en el sandbox de dev1. Fuente vigente: `docs/migracion/ENTORNO.md`.
+- **N3 — Falta cobertura automática de las acciones web y páginas de admin** (la protección es `requireStaff()` + filtros explícitos). Hace falta una pasada manual con un paciente y un staff no admin.
+- **N4 — Rate limit en memoria** (`lib/rate-limit.ts`): no se comparte entre instancias; ya era así.
+- **N5 — Contraseñas vacías importadas** (invitados que nunca eligieron): quedan sin hash y deben usar "recuperar contraseña".
+- **N6 — La app publicada (Supabase directo) deja de funcionar al apagar Supabase**: coordinar update forzado antes de la baja.
+- **N7 — Lint**: 20 errores `react-hooks/set-state-in-effect` preexistentes sin limpiar.
+Corregidos en la migración (detalle en `docs/migracion/HALLAZGOS.md`): `activarPerfilConfirmado` expuesta como Server Action, reglas con `userId` exportadas desde `'use server'`, desactivación de cuentas del equipo por cualquier staff, ficha/evolución escritas en texto plano por la app, borrado de paciente roto por la FK de `audit_log`.
+
+
 Severidad explícita, evidencia con archivo:línea donde aplica, escenario de falla concreto, fix propuesto **sin aplicar** salvo que se indique lo contrario. Generado el 2026-09-22 combinando verificación directa (`npm audit`, DNS/curl, GitHub Apps, **API de Coolify**, lectura directa de la DB de producción real) y dos auditorías de subagente de solo lectura (cifrado clínico + Quirks; paridad auth web/mobile).
 
 **Identidad de producción confirmada con evidencia dura (no por inferencia)**: se consultó la API de Coolify (`GET /api/v1/applications/{uuid}/envs` sobre la app `vimet`, `fqdn=https://vimetsalud.com.ar`) — `NEXT_PUBLIC_SUPABASE_URL` real de producción es `https://ayjzcxvtylvsjacgjxgh.supabase.co`. Ya no es una hipótesis por emails de staff: es el valor configurado de verdad. De paso, `RESEND_FROM_EMAIL` en ese mismo entorno ya está en `no-reply@vimetsalud.com.ar` (dominio verificado) — cierra `OPEN_QUESTIONS.md` #4.

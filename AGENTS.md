@@ -1,16 +1,16 @@
 # VIMET (web)
 
-App de nutrición/entrenamiento para VIMET (Avril + Gero, Córdoba). Next.js 16 (App Router) + Supabase (Postgres/RLS/Auth/Storage) + Resend. Migración de un sitio PHP MVC + MySQL. Sirve: sitio público, auth + booking de turnos, área paciente, dashboard admin/staff, y un módulo de seguimiento clínico-nutricional (ficha, mediciones, evaluación funcional, planes, feedback semanal, evolución, objetivos, recursos).
+App de nutrición/entrenamiento para VIMET (Avril + Gero, Córdoba). Next.js 16 (App Router) + Postgres/Drizzle + Better Auth + MinIO(S3) + Resend (en `main` todavía Supabase hasta el corte; ver `docs/migracion/`). Migración de un sitio PHP MVC + MySQL. Sirve: sitio público, auth + booking de turnos, área paciente, dashboard admin/staff, y un módulo de seguimiento clínico-nutricional (ficha, mediciones, evaluación funcional, planes, feedback semanal, evolución, objetivos, recursos).
 
 > ⚠️ **Este proyecto está en producción con datos reales de pacientes.** Nunca mutar datos de producción sin confirmación explícita del usuario. Nunca asumir el mecanismo de deploy o el estado de una migración — verificarlo (ver `.ai/context/ARCHITECTURE.md`). Cualquier hallazgo de seguridad real (credencial expuesta, falta de auth server-side, vulnerabilidad crítica) se documenta en `.ai/context/KNOWN_ISSUES.md`, no se "arregla de paso".
 
 ## Repo hermano
 
-`../vimet-app` (Expo/React Native) es el cliente mobile — consume este backend vía 15 rutas `app/api/mobile/*` (auth Bearer) más el SDK de Supabase directo para el resto. Un cambio de contrato en esas rutas, o en las reglas de negocio que ambos lados deben respetar, rompe la app mobile en silencio si no se revisa `../vimet-app`.
+`../vimet-app` (Expo/React Native) es el cliente mobile — consume este backend: auth por token bearer (Better Auth) y datos por `POST /api/mobile/data` (catálogo de operaciones) más las rutas `app/api/mobile/*` con lógica propia. Un cambio de contrato en esas rutas, o en las reglas de negocio que ambos lados deben respetar, rompe la app mobile en silencio si no se revisa `../vimet-app`.
 
 ## Stack
 
-Next.js 16 (App Router) · React 19 · TypeScript · Tailwind (utility-only, sin styled-jsx) · Shadcn/UI · Lucide React · Supabase (Postgres + RLS + Auth + Storage) · Resend · `sharp` (optimización de imágenes) · Zod + `useActionState` (React 19, no `useFormState`). Deploy real: **Coolify** (self-hosted, sirve `vimetsalud.com.ar`) — Vercel existe aparte, solo preview/pruebas (ver quirk "Deploy real es Coolify, no Vercel" en `.claude/CLAUDE.md` y el detalle en `.ai/context/ARCHITECTURE.md`).
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind (utility-only, sin styled-jsx) · Shadcn/UI · Lucide React · Postgres + Drizzle + Better Auth + MinIO (S3) · Resend · `sharp` (optimización de imágenes) · Zod + `useActionState` (React 19, no `useFormState`). Deploy real: **Coolify** (self-hosted, sirve `vimetsalud.com.ar`) — Vercel existe aparte, solo preview/pruebas (ver quirk "Deploy real es Coolify, no Vercel" en `.claude/CLAUDE.md` y el detalle en `.ai/context/ARCHITECTURE.md`).
 
 ## Comandos
 
@@ -18,7 +18,9 @@ Next.js 16 (App Router) · React 19 · TypeScript · Tailwind (utility-only, sin
 npm run dev          # Dev server
 npm run build        # Build producción
 npm start            # Serve producción (Procfile: web: npm run start)
-npx playwright test  # E2E (e2e/global-setup.ts crea staff efímero por service role)
+npm test             # Vitest + PGlite (autorización, auth, importador)
+npm run db:paridad   # esquema Drizzle == supabase/migrations
+npx playwright test  # E2E (e2e/global-setup.ts crea staff efímero en la base de TEST)
 npm audit            # Ver .ai/context/KNOWN_ISSUES.md — hay un CRÍTICO sin parchear hoy
 ```
 
@@ -29,11 +31,11 @@ npm audit            # Ver .ai/context/KNOWN_ISSUES.md — hay un CRÍTICO sin p
 | Server Actions por módulo | `actions/*.ts` (uno por entidad: `turnos`, `horarios`, `staff`, `ficha`, `mediciones`, `evaluaciones`, `planes`, `plan-secciones`, `plan-ejercicios`, `feedback`, `evolucion`, `objetivos`, `recursos`, `ejercicios`, `contenido`, `auth`, `contacto`) |
 | Rutas API mobile (Bearer, consumidas por `vimet-app`) | `app/api/mobile/*` |
 | Rutas API web con soporte dual cookie/bearer | `app/api/slots`, `app/api/auth/check-email` |
-| Cliente Supabase cookies / admin / bearer | `lib/supabase/{server,client,admin,bearer,auth-helpers}.ts` |
+| Auth / sesión / datos / servicios | `lib/auth.ts`, `lib/auth/session.ts`, `lib/db.ts`, `lib/services/*`, `lib/data/*`, `lib/mobile/*` |
 | Fechas en zona Argentina (nunca `Date().toISOString()` para "hoy") | `lib/datetime.ts` |
 | Cifrado de campos clínicos sensibles | `lib/crypto/clinical.ts` — ver estado real (a medias) en `.ai/context/KNOWN_ISSUES.md` |
 | Audit log de accesos | `lib/audit.ts` — prácticamente sin usar hoy, ver `KNOWN_ISSUES.md` |
-| Migraciones (nunca editar una ya aplicada) | `supabase/migrations/*.sql` — última: `0039` |
+| Migraciones (nunca editar una ya aplicada) | `drizzle/*.sql` (`supabase/migrations` solo referencia hasta el corte) |
 | Mapa de archivos completo + DB + Quirks detallados (memoria de sesión mutable) | `.claude/CLAUDE.md` |
 | Tabla "qué abrir para cada tipo de cambio" | `ARCHITECTURE.md` (raíz) |
 
@@ -43,13 +45,13 @@ npm audit            # Ver .ai/context/KNOWN_ISSUES.md — hay un CRÍTICO sin p
 - **Inputs decimales** (peso, pliegues ISAK, etc.): `type="text" inputMode="decimal"`, nunca `type="number"` — el navegador vacía el campo en silencio si el usuario tipea coma (convención argentina).
 - **Dropdowns**: siempre `components/ui/select.tsx`, nunca un `<select>` nativo nuevo.
 - **Server Actions**: firma `(prevState, formData)` + `useActionState` de `react` (no `useFormState`, removido en React 19).
-- **Redirects post-auth con param `next`/`token`**: siempre por un allowlist de paths relativos (`safeNextPath`) — nunca `new URL(paramCrudo, origin)` (fue un open redirect real, ya corregido).
-- **RLS + triggers**: los triggers `BEFORE UPDATE` que bloquean auto-escalación de rol/turnos arbitrarios chequean `auth.uid() is null or is_staff()` — si agregás un trigger nuevo sobre una tabla que recibe writes del cliente admin (service role), sumale ese mismo bypass o vas a romper una Server Action en silencio.
-- **Storage** (`planes`, `recursos`): privados, acceso solo vía signed URL con verificación de permisos en la Server Action — nunca exponer paths directo.
+- **Redirects post-auth**: solo paths relativos internos; nunca `new URL(paramCrudo, origin)`.
+- **Autorización**: sin RLS; cada consulta filtra por la sesión y la regla vive en `lib/services|data`. Un archivo `'use server'` solo exporta `*Action`; nunca funciones con `userId`.
+- **Storage** (`planes`, `recursos`): privados (MinIO), acceso solo vía URL firmada tras verificar permisos — nunca exponer paths directo.
 
 ## Ramas y entornos
 
-`feature/<origen>-<tarea>` -> PR a `dev` -> `test` (Coolify, apagada, se prende antes del PR a `main`) -> `main`. Los agentes no pushean a `dev`, `test` ni `main`. Detalle y pasos manuales en `docs/FLUJO-ENTORNOS.md`. Los mails en `APP_ENV=test` van siempre a `MAIL_SANDBOX_TO` (`lib/email/sandbox.ts`).
+`feature/<origen>-<tarea>` -> `dev` (merge directo) -> `test` (merge directo; Coolify apagada, se prende antes del PR a `main`) -> **PR** `test` -> `main` (lo mergea Mateo). Nunca pushear a `main`. Detalle y pasos manuales en `docs/FLUJO-ENTORNOS.md`. Los mails en `APP_ENV=test` van siempre a `MAIL_SANDBOX_TO` (`lib/email/sandbox.ts`).
 
 ## Workflow de mantenimiento
 

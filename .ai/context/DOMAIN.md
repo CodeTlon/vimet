@@ -2,11 +2,11 @@
 
 ## Roles
 
-`paciente` (default) · `nutricionista` · `entrenador` · `admin`. Desde las migraciones `0010`/`0032`, `admin` **no** es un nivel de permiso distinto para el contenido del sitio ni para editar el perfil público de otro profesional — cualquier `is_staff()` (nutricionista/entrenador/admin) puede hacer eso. `admin` sigue siendo el único que puede reasignar el `rol` de otro usuario (trigger dedicado).
+`paciente` (default) · `nutricionista` · `entrenador` · `admin`. Desde las migraciones `0010`/`0032`, `admin` **no** es un nivel de permiso distinto para el contenido del sitio ni para editar el perfil público de otro profesional — cualquier staff (nutricionista/entrenador/admin) puede hacer eso. `admin` sigue siendo el único que puede reasignar el `rol` de otro usuario (trigger dedicado).
 
 Un paciente puede ser:
 - **Auto-registrado**: se activa solo al confirmar su email (no requiere paso manual del staff desde la migración de activación automática).
-- **"Gestionado" por staff** (`profiles.gestionado_por_staff`): para adultos mayores o pacientes sin acceso cómodo a la web — el staff lo da de alta desde el admin, con credenciales aleatorias que nunca se comunican; el paciente nunca inicia sesión, el staff opera todo por él.
+- **"Gestionado" por staff** (`profiles.gestionado_por_staff`): para adultos mayores o pacientes sin acceso cómodo a la web — el staff lo da de alta desde el admin (`crearPacienteGestionado`), con credenciales aleatorias que nunca se comunican; el paciente nunca inicia sesión, el staff opera todo por él.
 
 ## Turnos (booking)
 
@@ -30,3 +30,8 @@ Un paciente tiene, a lo largo del tiempo:
 - "Datos de entrenamiento" (disciplina/frecuencia) y la rutina de ejercicios **no** son parte del sistema de secciones modulares — quedan fijos a propósito.
 - Un ejercicio de cardio no usa series/reps/descanso — usa 3 fases (entrada en calor / trabajo principal / vuelta a la calma), cada una valor+unidad.
 - El scope del cifrado clínico cubre `fichas_paciente`, `evolucion_entradas.contenido` y `planes.notas` — **no** cubre `plan_secciones` (el contenido real del plan de comidas/pautas queda en texto plano hoy).
+
+## Permisos efectivos (backend propio; detalle en `docs/migracion/AUTORIZACION.md`)
+- **Paciente**: solo sus datos; no ve `observaciones_internas`, evolución no visible ni recursos ocultos; solo confirma/cancela sus turnos.
+- **Staff no admin**: ve y gestiona sus turnos (los del otro profesional solo vía el turno vinculado de un combo); lee/escribe fichas, mediciones, planes, etc. de cualquier paciente; activa/desactiva solo pacientes.
+- **Admin**: todos los turnos; cambia `rol`/`activo` de cuentas del equipo, configura profesionales y contraseñas.

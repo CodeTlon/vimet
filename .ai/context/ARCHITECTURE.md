@@ -2,30 +2,28 @@
 
 Para la tabla "qué archivo abrir para tal cambio", ver `/ARCHITECTURE.md` (raíz) — este documento es el nivel de sistema, no el de archivo.
 
-## Capas
+## Capas (backend propio — rama `feature/dev1-backend-propio`, en `dev`/`test`)
 
 - **UI**: App Router de Next.js, Server Components por defecto, `'use client'` solo donde hay interactividad. Tailwind + Shadcn/UI + Lucide.
-- **Lógica de negocio**: Server Actions en `actions/*.ts`, casi todas con el patrón `(prevState, formData)` + `useActionState`. Varias exponen además una función "pelada" (ej. `crearTurno()`, `cancelarTurno()`, `actualizarTurnoStaff()` en `actions/turnos.ts`) que la Server Action web envuelve con validación Zod + auth de cookies, y que las rutas mobile importan directo pasando la identidad resuelta por bearer — es el mecanismo real de paridad de permisos entre web y mobile (ver más abajo).
-- **Datos**: Supabase Postgres, RLS en todas las tablas de negocio + triggers `BEFORE UPDATE` que bloquean auto-escalación (rol, turnos ajenos, respuestas de feedback falsificadas). Migraciones numeradas en `supabase/migrations/`, nunca editadas una vez aplicadas.
-- **Storage**: dos buckets privados (`planes`, `recursos`) + uno público (`sitio`), acceso a los privados solo vía signed URL generada en una Server Action que ya verificó permiso.
-- **Email**: Resend, dominio propio verificado (`vimetsalud.com.ar`) desde el 09/09 — antes corría en modo sandbox con hard-block 403 a cualquier destinatario que no fuera el email de la cuenta.
+- **Acciones web**: `actions/*.ts` exponen únicamente `*Action` delgadas: toman la identidad de la sesión, parsean el `FormData` y llaman a un servicio. **Todo export de un archivo `'use server'` es invocable desde el cliente**; por eso ahí nunca hay funciones que reciban un `userId`.
+- **Servicios**: `lib/services/*` (turnos, horarios, staff, recursos, ficha, mediciones, evaluaciones, evolución, objetivos, planes, plan-secciones, feedback, entrenamiento, wearable) — reglas de negocio, cifrado y auditoría, SIN `'use server'`. Los usan la web y la app mobile, así que la paridad de permisos es estructural, no manual.
+- **Datos**: Postgres con Drizzle (`db/schema.ts`, `drizzle/*.sql`), pool `pg` en `lib/db.ts`. **Sin RLS**: cada consulta filtra por la sesión y los permisos viven en `lib/data/*` y `lib/services/*` (ver `docs/migracion/AUTORIZACION.md`, con la tabla policy → guard → test). Exclusion constraints de turnos/horarios y triggers de `updated_at`/auditoría en `drizzle/0001`.
+- **Auth**: Better Auth (`lib/auth.ts`): email+password, confirmación de email que activa la cuenta, recuperación por código de 8 dígitos (emailOTP), plugin bearer para la app. Hashes bcrypt de Supabase verificables. `proxy.ts` es solo un redirect optimista por cookie.
+- **Storage**: MinIO vía S3 (`lib/storage/s3.ts`): `planes` y `recursos` privados (URL firmada tras verificar permiso), `sitio` y `ejercicios-media` públicos.
+- **Email**: Resend, dominio verificado (`vimetsalud.com.ar`), política por entorno en `lib/email/sandbox.ts` (`APP_ENV`, `MAIL_SANDBOX_TO`). Los de autenticación (`lib/email/auth.ts`) lanzan si fallan; los de turnos son best-effort.
 
-## Superficie dual: web (cookies) vs mobile (bearer)
+## Superficie dual: web (cookie) vs mobile (bearer)
 
-Dos formas de llegar a la misma lógica de negocio:
+1. **Web**: páginas y acciones resuelven la sesión con `lib/auth/session.ts` (cookie) y llaman a servicios/consultas.
+2. **Mobile**: `POST /api/mobile/data` recibe `{op, args}` (JSON o multipart con archivos) y despacha a un **catálogo cerrado** (`lib/mobile/registry.ts`, `ops-lectura.ts`, `ops-escritura.ts`). Cada operación declara `acceso: usuario|staff|admin`, valida argumentos con Zod y delega en los mismos servicios que la web. Auth: `lib/auth/mobile.ts` (`requireMobileUser/Staff/Admin`, chequea `profiles.activo` en el servidor). Lo que necesita lógica propia (slots, turnos, horarios, staff, recursos con sharp) sigue en rutas `app/api/mobile/*`.
 
-1. **Web**: componentes de `app/` invocan Server Actions que usan `lib/supabase/server.ts` (cliente con cookies, sujeto a RLS) o `lib/supabase/admin.ts` (service role, bypassea RLS — usado para operaciones cross-tabla como eliminar un paciente).
-2. **Mobile**: 15 rutas en `app/api/mobile/*`, auth vía `Authorization: Bearer <token>` validado en `lib/supabase/bearer.ts` (`requireMobileUser`/`requireMobileStaff`/`requireMobileAdmin`). Consumidas por `../vimet-app`.
+No hay acceso genérico a tablas desde el cliente: lo que no está en el catálogo no existe.
 
-**Patrón de paridad por diseño**: cuando una ruta mobile llama a la misma función exportada que usa la Server Action web (ej. `turnos/cancelar` → `cancelarTurno()`, igual que `cancelarTurnoAction`), el chequeo de rol/ownership vive una sola vez dentro de esa función y ambas superficies quedan sincronizadas automáticamente. Cuando la ruta mobile **reimplementa** su propio chequeo en vez de reusar la función compartida, la paridad depende de que alguien la mantenga sincronizada a mano — y ahí es donde ya hubo al menos un bug real (`toggleActivoAction` se relajó de admin-only a cualquier staff sin actualizar el endpoint mobile al mismo tiempo) y donde una auditoría reciente encontró más gaps (ver `KNOWN_ISSUES.md`).
+## Cifrado de datos clínicos + audit log
 
-`lib/supabase/bearer.ts` valida el token contra Supabase Auth y resuelve el `profile`, pero — igual que su equivalente web `requireAuth`/`requireStaff` — **no** chequea `profile.activo`. Ese gate vive hoy solo en `actions/auth.ts` (`loginAction`, servidor) y, del lado mobile, solo dentro de la app `../vimet-app` (`store/session.ts`, client-side) — ningún punto server-side de la superficie mobile lo re-verifica. Detalle y severidad en `KNOWN_ISSUES.md`.
+`lib/crypto/clinical.ts` (AES-256-GCM, `v1.<iv>.<tag>.<ciphertext>`, clave `CLINICAL_DATA_ENCRYPTION_KEY`) cifra `fichas_paciente` (5 campos), `evolucion_entradas.contenido` y `planes.notas`. Se cifra en `lib/services/*`; el cliente (web o app) nunca manda ni recibe columnas `_enc`. El audit log de escrituras es un trigger (`log_audit_change`) que lee el actor de `app.user_id` (`conActor`); las lecturas se registran con `logAuditView` solo en la ficha de admin. `audit_log` no tiene FK a `profiles`. Gaps conocidos y severidad: `KNOWN_ISSUES.md`.
 
-## Cifrado de datos clínicos + audit log (`lib/crypto/clinical.ts`, migraciones `0038`/`0039`)
-
-Introducido para cifrar campos sensibles de `fichas_paciente`, `evolucion_entradas.contenido` y `planes.notas` con AES-256-GCM (IV random por registro, autenticado, columna versionada `v1.<iv>.<tag>.<ciphertext>`). La implementación en sí es sólida — pero el commit que lo introdujo (`6af5db6`) se documentó a sí mismo como "sin verificar end-to-end", y una auditoría posterior confirmó por qué: el scope de qué se cifra quedó incompleto y el audit log de lecturas está wireado en un solo lugar de ocho. Detalle completo, con archivo:línea, en `KNOWN_ISSUES.md`.
-
-## Deploy real — Coolify, no Vercel
+## Deploy real — Coolify, no Vercel (histórico verificado 2026-09-22; aplica a `main`)
 
 **Verificado de forma independiente en esta sesión** (no solo tomado de la documentación existente):
 - `nslookup`/`curl -I https://vimetsalud.com.ar` → resuelve, responde `200`, headers `Server: cloudflare` + `x-powered-by: Next.js` — el dominio real está en pie y corre esta app.
@@ -38,4 +36,4 @@ Introducido para cifrar campos sensibles de `fichas_paciente`, `evolucion_entrad
 
 ## Mobile app cliente (`../vimet-app`)
 
-Expo Router (React Native), consume este backend de dos formas: SDK de Supabase directo (`@supabase/supabase-js`, sesión persistida con un wrapper de cifrado propio sobre `AsyncStorage`+`expo-secure-store`) para la mayoría de las lecturas/escrituras sujetas a RLS, y `apiFetch()` hacia `app/api/mobile/*` solo para lo que necesita lógica de servidor (slots, turnos combo, uploads con `sharp`, acciones con service role). El login mobile **no pasa por ninguna ruta de este repo** — llama a `supabase.auth.signInWithPassword` directo desde la app. Ver `.ai/context/ARCHITECTURE.md` de `vimet-app` para el detalle de esa app.
+Expo Router (React Native). En la rama `feature/dev1-backend-propio` **no usa supabase-js**: login/logout/recuperación por HTTP plano contra `/api/auth/*` de este repo con token bearer guardado en SecureStore (`lib/auth.ts`, `lib/secure-store.ts`), y datos por `datos(op, args, archivos?)` de `lib/api.ts`. Variables: solo `EXPO_PUBLIC_API_URL`. **No probada en dispositivo.** En `main` (producción) sigue con Supabase directo hasta el corte.

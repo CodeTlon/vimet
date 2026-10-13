@@ -1,6 +1,36 @@
 # CURRENT_STATE — VIMET (web)
 
-Al 2026-09-22, HEAD `dcdb7bf` (`origin/main`, recién sincronizado).
+Al **2026-10-13**. Ramas: `main` = producción (Supabase, `186829d`); `dev` y `test` = `feature/dev1-backend-propio` (`d047bb3`, backend propio); `archive/dev-dokku-2026-07` = la `dev` vieja.
+
+## Backend propio (rama `feature/dev1-backend-propio`, en `dev`/`test`, SIN desplegar a producción)
+
+**Verificado (con evidencia, sandbox sin Docker):**
+- `npx tsc --noEmit` y `npm run build` limpios; `npm test`: 43 tests verdes (Vitest + PGlite con las migraciones reales): flujo de auth (registro → confirmar activa → login; hash bcrypt de Supabase; recuperación por código; bearer), invitaciones, IDOR de turnos, matriz de autorización de toda la capa mobile, borrado de paciente, importador con checksum.
+- `npm run db:paridad`: esquema Drizzle == esquema final de `supabase/migrations` (columnas, defaults, constraints, índices, enums, triggers), con la única diferencia deliberada de `audit_log` sin FK a `profiles`.
+- `npm run lint`: 20 errores preexistentes (`react-hooks/set-state-in-effect`) y 4 warnings; ninguno nuevo.
+- La web ya no importa nada de Supabase (`lib/supabase` eliminado, dependencias `@supabase/*` quitadas). Los scripts de mantenimiento usan `pg`.
+- `vimet-app` (rama `feature/dev1-backend-propio`, en `dev`/`test` del repo de la app): sin supabase-js; `tsc` con solo 2 errores preexistentes de `components/ui.tsx`.
+
+**NO verificado (requiere infra real):**
+- Ejecución contra un Postgres y un MinIO reales (el daemon de Docker no es accesible desde la cuenta dev1); `drizzle-kit migrate` real.
+- El importador contra el Supabase de producción (probado solo contra una réplica PGlite del esquema legado), y `copiar-storage.mjs` (no hay objetos hoy).
+- Correo real (Resend) de confirmación/recuperación; cookies de Better Auth tras el proxy de Coolify.
+- La app mobile en dispositivo (login, recuperación, subida de PDF/imágenes, sesión de entrenamiento).
+- Backups a B2 y simulacro de restauración (`scripts/backup/*` solo con `bash -n`).
+- Ensayo completo en `test`; el runbook está en `docs/migracion/CORTE.md`.
+
+**Datos de producción medidos (2026-10-13, solo lectura):** 8 usuarios (5 bcrypt, 3 sin contraseña), 28 filas en `public`, 0 datos clínicos, 0 objetos de Storage; faltan en prod las tablas de `0037` (`plan_secciones*`). El corte es barato hoy; conviene antes de que carguen pacientes reales.
+
+## Pendiente (lo ejecuta Mateo o requiere infra)
+1. Postgres + MinIO de `test`/`prod` en Coolify; variables de `docs/migracion/ENTORNO.md`.
+2. `db:migrate` + `importar.mjs` + pruebas manuales en `test`; luego PR `test` → `main` (lo mergea Mateo).
+3. Copiar `docs/workflows/*.yml` a `.github/workflows/` (token de dev1 sin scope `workflow`); reducir `.env.example`.
+4. Build de la app en dispositivo contra `test`; forzar update de la app publicada tras el corte.
+5. Revocar el token de Supabase compartido en el chat (vencía a las 24 h).
+
+---
+
+# Histórico — 2026-09-22 (producción con Supabase; sigue vigente para `main` hasta el corte)
 
 ## Verificado end-to-end (FACT, con evidencia)
 
