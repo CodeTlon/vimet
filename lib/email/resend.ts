@@ -2,6 +2,7 @@ import { Resend } from 'resend'
 import type { ReactElement } from 'react'
 
 import { brand } from '@/lib/config/team'
+import { aplicarSandboxEmail, limpiarValorEnv } from '@/lib/email/sandbox'
 
 type EnviarEmailTurno = {
   to: string
@@ -14,13 +15,19 @@ type EnviarEmailTurno = {
 // loguea y sigue — ninguna notificación de turnos debe bloquear el flujo
 // que la origina (reservar, confirmar, cancelar, reprogramar).
 export async function enviarEmailTurno({ to, subject, react }: EnviarEmailTurno): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY
-  const from = process.env.RESEND_FROM_EMAIL
+  const apiKey = limpiarValorEnv(process.env.RESEND_API_KEY)
+  const from = limpiarValorEnv(process.env.RESEND_FROM_EMAIL)
   if (!apiKey || !from) return
 
   try {
+    const destino = aplicarSandboxEmail({ from, to: [to], subject })
     const resend = new Resend(apiKey)
-    await resend.emails.send({ from: `${brand.name} <${from}>`, to: [to], subject, react })
+    await resend.emails.send({
+      from: `${brand.name} <${from}>`,
+      to: destino.to,
+      subject: destino.subject,
+      react,
+    })
   } catch (err) {
     console.error(`No se pudo enviar el email "${subject}" a ${to}`, err)
   }

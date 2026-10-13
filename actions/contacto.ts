@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import ContactoEmail from '@/emails/contacto'
 import { brand } from '@/lib/config/team'
+import { aplicarSandboxEmail } from '@/lib/email/sandbox'
 import { ipDeLaRequest, rateLimit } from '@/lib/rate-limit'
 
 export type ContactoState = {
@@ -50,12 +51,17 @@ export async function contactoAction(
   }
 
   try {
+    const destino = aplicarSandboxEmail({
+      from,
+      to: [to],
+      subject: `Nuevo mensaje de contacto · ${parsed.data.nombre}`,
+    })
     const resend = new Resend(apiKey)
     const { error } = await resend.emails.send({
       from: `${brand.name} <${from}>`,
-      to: [to],
+      to: destino.to,
       replyTo: parsed.data.email,
-      subject: `Nuevo mensaje de contacto · ${parsed.data.nombre}`,
+      subject: destino.subject,
       react: ContactoEmail({
         nombre: parsed.data.nombre,
         email: parsed.data.email,
