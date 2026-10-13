@@ -1,6 +1,6 @@
 // Definición del dataset demo — 10 pacientes con 3-6 meses de historial.
 // Este archivo es solo datos (sin llamadas a Supabase): revisalo/editalo acá
-// antes de correr scripts/seed-demo-pacientes.mjs, que es el que lo aplica.
+// antes de correr scripts/seed-demo-pacientes.ts, que es el que lo aplica.
 //
 // Todas las fechas van como offsets en días relativos a "hoy" (negativo =
 // pasado, positivo = futuro), resueltos recién al ejecutar el seed — así el

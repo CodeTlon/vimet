@@ -11,10 +11,10 @@
 // esperar a que un profesional las edite a mano una por una.
 //
 // REQUISITOS ANTES DE CORRER (léase con atención, esto toca datos de salud reales):
-//   1. La migración supabase/migrations/0038_cifrado_datos_clinicos.sql debe
+//   1. La migración drizzle/0000_esquema_base.sql (columnas `_enc`) debe
 //      estar YA aplicada contra el proyecto Supabase de destino (las columnas
 //      `_enc` tienen que existir) — si no, este script va a fallar al primer
-//      update. Confirmar con supabase/scripts/verificar_migraciones_aplicadas.sql.
+//      update.
 //   2. CLINICAL_DATA_ENCRYPTION_KEY tiene que ser la MISMA clave que va a usar
 //      la app en ESE entorno (dev o prod) — si se cifra acá con una clave y la
 //      app en prod tiene otra distinta seteada, nadie va a poder descifrar
@@ -27,12 +27,11 @@
 // CÓMO CORRERLO
 //   Primero SIEMPRE en modo dry-run (no escribe nada, solo reporta cuántas
 //   filas migraría por tabla):
-//     NEXT_PUBLIC_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... CLINICAL_DATA_ENCRYPTION_KEY=... \
+//     DATABASE_URL=... CLINICAL_DATA_ENCRYPTION_KEY=... \
 //       node scripts/migrar-cifrado-clinico.mjs
 //
 //   Recién después, para aplicar de verdad:
-//     NEXT_PUBLIC_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... CLINICAL_DATA_ENCRYPTION_KEY=... \
-//       node scripts/migrar-cifrado-clinico.mjs --apply
+//     DATABASE_URL=... CLINICAL_DATA_ENCRYPTION_KEY=... node scripts/migrar-cifrado-clinico.mjs --apply
 //
 //   Es idempotente: solo toca filas donde la columna `_enc` todavía es null
 //   y la columna vieja tiene datos — correrlo dos veces no rompe nada, la
@@ -41,7 +40,7 @@
 //   No corre en runtime de la app — es un script de mantenimiento de una
 //   sola corrida por entorno (una vez en dev para probar, una vez en prod).
 
-import { createClient } from '@supabase/supabase-js'
+import pg from 'pg'
 import { createCipheriv, randomBytes } from 'node:crypto'
 
 const APPLY = process.argv.includes('--apply')
@@ -74,39 +73,29 @@ function encryptClinical(plaintext, key) {
   return [FORMAT_VERSION, iv.toString('base64'), authTag.toString('base64'), ciphertext.toString('base64')].join('.')
 }
 
-function admin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) throw new Error('Faltan NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY')
-  return createClient(url, key)
-}
+const ident = (n) => `"${String(n).replace(/"/g, '""')}"`
 
 /**
- * Migra una tabla: para cada fila donde `encCol` es null y al menos una de
- * `plainCols` tiene dato, cifra esas columnas hacia sus `_enc` y limpia la
- * vieja. `plainCols` es un array porque fichas_paciente tiene 5 columnas a
- * migrar juntas por fila (una sola query de update por fila, no una por
- * columna).
+ * Migra una tabla: para cada fila donde `encCol` es null y al menos una de `plainCols` tiene dato,
+ * cifra esas columnas hacia sus `_enc` y limpia la vieja. `columnas` es un array porque
+ * fichas_paciente tiene 5 columnas a migrar juntas por fila (un update por fila, no por columna).
+ * Los nombres de tabla/columna salen de este archivo, nunca de input externo.
  */
-async function migrarTabla(supabase, { tabla, idCol, columnas, filtroExtra }) {
+async function migrarTabla(client, { tabla, idCol, columnas }) {
   const key = getKey()
   let migradas = 0
   let revisadas = 0
   let offset = 0
+  const cols = [idCol, ...columnas.map((c) => c.plain), ...columnas.map((c) => c.enc)].map(ident).join(', ')
 
   for (;;) {
-    let query = supabase
-      .from(tabla)
-      .select([idCol, ...columnas.map((c) => c.plain), ...columnas.map((c) => c.enc)].join(', '))
-      .range(offset, offset + BATCH_SIZE - 1)
-      .order(idCol, { ascending: true })
-    if (filtroExtra) query = filtroExtra(query)
+    const { rows } = await client.query(
+      `select ${cols} from ${ident(tabla)} order by ${ident(idCol)} asc limit $1 offset $2`,
+      [BATCH_SIZE, offset],
+    )
+    if (rows.length === 0) break
 
-    const { data, error } = await query
-    if (error) throw new Error(`${tabla}: error leyendo batch — ${error.message}`)
-    if (!data || data.length === 0) break
-
-    for (const row of data) {
+    for (const row of rows) {
       revisadas++
       const necesitaMigrar = columnas.some((c) => row[c.enc] == null && row[c.plain] != null && row[c.plain] !== '')
       if (!necesitaMigrar) continue
@@ -121,9 +110,15 @@ async function migrarTabla(supabase, { tabla, idCol, columnas, filtroExtra }) {
 
       migradas++
       if (APPLY) {
-        const { error: updErr } = await supabase.from(tabla).update(update).eq(idCol, row[idCol])
-        if (updErr) {
-          console.error(`  ✗ ${tabla} ${idCol}=${row[idCol]}: ${updErr.message}`)
+        const nombres = Object.keys(update)
+        const sets = nombres.map((n, i) => `${ident(n)} = $${i + 1}`).join(', ')
+        try {
+          await client.query(
+            `update ${ident(tabla)} set ${sets} where ${ident(idCol)} = $${nombres.length + 1}`,
+            [...nombres.map((n) => update[n]), row[idCol]],
+          )
+        } catch (e) {
+          console.error(`  x ${tabla} ${idCol}=${row[idCol]}: ${e.message}`)
           migradas--
         }
       }
@@ -144,9 +139,12 @@ async function main() {
     console.log('── APLICANDO — esto va a escribir sobre datos clínicos reales. ──\n')
   }
 
-  const supabase = admin()
+  if (!process.env.DATABASE_URL) throw new Error('Falta DATABASE_URL')
+  const client = new pg.Client({ connectionString: process.env.DATABASE_URL })
+  await client.connect()
 
-  await migrarTabla(supabase, {
+  try {
+    await migrarTabla(client, {
     tabla: 'fichas_paciente',
     idCol: 'paciente_id',
     columnas: [
@@ -158,17 +156,21 @@ async function main() {
     ],
   })
 
-  await migrarTabla(supabase, {
+    await migrarTabla(client, {
     tabla: 'evolucion_entradas',
     idCol: 'id',
     columnas: [{ plain: 'contenido', enc: 'contenido_enc' }],
   })
 
-  await migrarTabla(supabase, {
+    await migrarTabla(client, {
     tabla: 'planes',
     idCol: 'id',
     columnas: [{ plain: 'notas', enc: 'notas_enc' }],
   })
+
+  } finally {
+    await client.end()
+  }
 
   console.log(APPLY ? '\nListo.' : '\nDry-run terminado — correr de nuevo con --apply para aplicar.')
 }
