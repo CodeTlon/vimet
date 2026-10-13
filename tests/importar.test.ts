@@ -4,9 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { audit_log, fichas_paciente, profiles, servicios, turnos, user } from '@/db/schema'
 import { crearAuth } from '@/lib/auth'
-// @ts-expect-error -- scripts .mjs sin tipos
 import { crearBaseLegada } from '../scripts/migracion/legado.mjs'
-// @ts-expect-error -- scripts .mjs sin tipos
 import { importarDatos } from '../scripts/migracion/importar.mjs'
 import { crearDbDePrueba } from './helpers/db'
 

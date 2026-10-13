@@ -1,6 +1,7 @@
 // Alta de recursos multimedia del paciente (link / pdf / imagen / video). SIN 'use server':
 // lo comparten actions/recursos.ts (web) y app/api/mobile/recursos (bearer); ambos validan que el
 // actor sea staff ANTES de llamar (policy `recursos staff all`).
+import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { recursos_paciente } from '@/db/schema'
@@ -120,4 +121,31 @@ export async function crearRecurso(
     return { ok: false, error: 'No se pudo guardar el recurso.' }
   }
   return { ok: true }
+}
+
+/** Elimina un recurso (y su archivo). `pacienteId` acota: el recurso tiene que ser de ese paciente. */
+export async function recursoEliminar(id: number, pacienteId: string, db: Db = dbGlobal): Promise<RecursoResultado> {
+  const [r] = await db
+    .select({ storage_path: recursos_paciente.storage_path })
+    .from(recursos_paciente)
+    .where(and(eq(recursos_paciente.id, id), eq(recursos_paciente.paciente_id, pacienteId)))
+    .limit(1)
+  if (!r) return { ok: false, error: 'El recurso ya no existe.' }
+  if (r.storage_path) await borrarArchivos('recursos', [r.storage_path]).catch(() => {})
+  await db.delete(recursos_paciente).where(eq(recursos_paciente.id, id))
+  return { ok: true }
+}
+
+export async function recursoVisibilidad(
+  id: number,
+  pacienteId: string,
+  visible: boolean,
+  db: Db = dbGlobal,
+): Promise<RecursoResultado> {
+  const r = await db
+    .update(recursos_paciente)
+    .set({ visible_paciente: visible })
+    .where(and(eq(recursos_paciente.id, id), eq(recursos_paciente.paciente_id, pacienteId)))
+    .returning({ id: recursos_paciente.id })
+  return r.length ? { ok: true } : { ok: false, error: 'El recurso ya no existe.' }
 }

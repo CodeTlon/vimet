@@ -1,14 +1,10 @@
 'use server'
 
-import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-import { recursos_paciente } from '@/db/schema'
 import { authStaff } from '@/lib/auth/session'
-import { db } from '@/lib/db'
-import { crearRecurso } from '@/lib/services/recursos'
-import { borrarArchivos } from '@/lib/storage/s3'
+import { crearRecurso, recursoEliminar, recursoVisibilidad } from '@/lib/services/recursos'
 
 export type RecursoState = { ok?: boolean; error?: string }
 
@@ -48,17 +44,7 @@ export async function eliminarRecursoAction(formData: FormData) {
   const ctx = await requireStaff()
   if ('error' in ctx) return
 
-  const [recurso] = await db
-    .select({ storage_path: recursos_paciente.storage_path })
-    .from(recursos_paciente)
-    .where(eq(recursos_paciente.id, id))
-    .limit(1)
-
-  if (recurso?.storage_path) {
-    await borrarArchivos('recursos', [recurso.storage_path]).catch(() => {})
-  }
-
-  await db.delete(recursos_paciente).where(eq(recursos_paciente.id, id))
+  await recursoEliminar(id, paciente_id)
   revalidatePath(`/admin/pacientes/${paciente_id}/recursos`)
   revalidatePath('/mis-recursos')
 }
@@ -76,10 +62,7 @@ export async function toggleVisibilidadRecursoAction(formData: FormData) {
   const ctx = await requireStaff()
   if ('error' in ctx) return
 
-  await db
-    .update(recursos_paciente)
-    .set({ visible_paciente: parsed.data.visible_paciente === 'true' })
-    .where(eq(recursos_paciente.id, parsed.data.id))
+  await recursoVisibilidad(parsed.data.id, parsed.data.paciente_id, parsed.data.visible_paciente === 'true')
 
   revalidatePath(`/admin/pacientes/${parsed.data.paciente_id}/recursos`)
   revalidatePath('/mis-recursos')

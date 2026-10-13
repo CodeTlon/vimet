@@ -1,151 +1,38 @@
 'use server'
 
-import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
-import { z } from 'zod'
 
-import { evaluaciones_funcionales } from '@/db/schema'
 import { authStaff } from '@/lib/auth/session'
-import { haceDiasArgentina, hoyArgentina } from '@/lib/datetime'
-import { conActor } from '@/lib/db'
+import {
+  actualizarEvaluacion,
+  crearEvaluacion,
+  eliminarEvaluacion,
+  type EvalState,
+} from '@/lib/services/evaluaciones'
 
-export type EvalState = { ok?: boolean; error?: string }
+export type { EvalState }
 
-const intInRange = (max: number) =>
-  z
-    .string()
-    .optional()
-    .transform((v) => (v && v.trim() !== '' ? Number(v) : null))
-    .refine((v) => v === null || (Number.isInteger(v) && v >= 0 && v <= max), 'Fuera de rango')
-
-const schema = z.object({
-  id: z.coerce.number().int().positive().optional(),
-  paciente_id: z.string().uuid(),
-  fecha: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .refine(
-      (v) => v >= haceDiasArgentina(14) && v <= hoyArgentina(),
-      'La fecha debe estar dentro de las últimas 2 semanas',
-    ),
-  test_wells_adams: intInRange(10),
-  test_thomas: intInRange(10),
-  test_dorsiflexion: intInRange(10),
-  test_sentadilla: intInRange(10),
-  test_estabilidad: intInRange(10),
-  fuerza_inferior: intInRange(15),
-  fuerza_superior: intInRange(15),
-  resistencia_metabolica: intInRange(20),
-  observaciones: z.string().max(2000).optional().or(z.literal('')),
-}).refine(
-  (d) =>
-    [
-      d.test_wells_adams,
-      d.test_thomas,
-      d.test_dorsiflexion,
-      d.test_sentadilla,
-      d.test_estabilidad,
-      d.fuerza_inferior,
-      d.fuerza_superior,
-      d.resistencia_metabolica,
-    ].some((v) => v != null),
-  { message: 'Cargá al menos un test.', path: ['test_wells_adams'] },
-)
-
-// Solo staff escribe evaluaciones (policy `evals staff write`).
-const getStaff = authStaff
-
-export async function crearEvaluacionAction(
-  _prev: unknown,
-  formData: FormData,
-): Promise<EvalState> {
-  const parsed = schema.safeParse(Object.fromEntries(formData))
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
-
-  const ctx = await getStaff()
+// Solo staff escribe evaluaciones (policy `evals staff write`). La logica vive en lib/services.
+export async function crearEvaluacionAction(_prev: unknown, formData: FormData): Promise<EvalState> {
+  const ctx = await authStaff()
   if ('error' in ctx) return { error: ctx.error }
-
-  const d = parsed.data
-  try {
-    await conActor(ctx.user.id, (tx) =>
-      tx.insert(evaluaciones_funcionales).values({
-    paciente_id: d.paciente_id,
-    fecha: d.fecha,
-    test_wells_adams: d.test_wells_adams,
-    test_thomas: d.test_thomas,
-    test_dorsiflexion: d.test_dorsiflexion,
-    test_sentadilla: d.test_sentadilla,
-    test_estabilidad: d.test_estabilidad,
-    fuerza_inferior: d.fuerza_inferior,
-    fuerza_superior: d.fuerza_superior,
-    resistencia_metabolica: d.resistencia_metabolica,
-    observaciones: d.observaciones && d.observaciones.trim() !== '' ? d.observaciones.trim() : null,
-    registrado_por: ctx.user.id,
-      }),
-    )
-  } catch (err) {
-    console.error('crearEvaluacionAction:', err)
-    return { error: 'No se pudo guardar la evaluación.' }
-  }
-
-  revalidatePath(`/admin/pacientes/${d.paciente_id}/evaluacion-funcional`)
-  return { ok: true }
+  const res = await crearEvaluacion(ctx.user.id, Object.fromEntries(formData))
+  if (res.paciente_id) revalidatePath(`/admin/pacientes/${res.paciente_id}/evaluacion-funcional`)
+  return { ok: res.ok, error: res.error }
 }
 
-export async function actualizarEvaluacionAction(
-  _prev: unknown,
-  formData: FormData,
-): Promise<EvalState> {
-  const parsed = schema.safeParse(Object.fromEntries(formData))
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
-  if (!parsed.data.id) return { error: 'Falta el id de la evaluación.' }
-
-  const ctx = await getStaff()
+export async function actualizarEvaluacionAction(_prev: unknown, formData: FormData): Promise<EvalState> {
+  const ctx = await authStaff()
   if ('error' in ctx) return { error: ctx.error }
-
-  const d = parsed.data
-  try {
-    await conActor(ctx.user.id, (tx) =>
-      tx
-        .update(evaluaciones_funcionales)
-        .set({
-      fecha: d.fecha,
-      test_wells_adams: d.test_wells_adams,
-      test_thomas: d.test_thomas,
-      test_dorsiflexion: d.test_dorsiflexion,
-      test_sentadilla: d.test_sentadilla,
-      test_estabilidad: d.test_estabilidad,
-      fuerza_inferior: d.fuerza_inferior,
-      fuerza_superior: d.fuerza_superior,
-      resistencia_metabolica: d.resistencia_metabolica,
-      observaciones: d.observaciones && d.observaciones.trim() !== '' ? d.observaciones.trim() : null,
-        })
-        .where(eq(evaluaciones_funcionales.id, d.id!)),
-    )
-  } catch (err) {
-    console.error('actualizarEvaluacionAction:', err)
-    return { error: 'No se pudo actualizar la evaluación.' }
-  }
-
-  revalidatePath(`/admin/pacientes/${d.paciente_id}/evaluacion-funcional`)
-  return { ok: true }
+  const res = await actualizarEvaluacion(ctx.user.id, Object.fromEntries(formData))
+  if (res.paciente_id) revalidatePath(`/admin/pacientes/${res.paciente_id}/evaluacion-funcional`)
+  return { ok: res.ok, error: res.error }
 }
 
-export async function eliminarEvaluacionAction(
-  _prev: unknown,
-  formData: FormData,
-): Promise<EvalState> {
-  const id = Number(formData.get('id'))
-  const paciente_id = String(formData.get('paciente_id') ?? '')
-  if (!id) return { error: 'Datos inválidos' }
-  const ctx = await getStaff()
+export async function eliminarEvaluacionAction(_prev: unknown, formData: FormData): Promise<EvalState> {
+  const ctx = await authStaff()
   if ('error' in ctx) return { error: ctx.error }
-  try {
-    await conActor(ctx.user.id, (tx) => tx.delete(evaluaciones_funcionales).where(eq(evaluaciones_funcionales.id, id)))
-  } catch (err) {
-    console.error('eliminarEvaluacionAction:', err)
-    return { error: 'No se pudo eliminar la evaluación.' }
-  }
-  revalidatePath(`/admin/pacientes/${paciente_id}/evaluacion-funcional`)
-  return { ok: true }
+  const res = await eliminarEvaluacion(ctx.user.id, Number(formData.get('id')))
+  if (res.ok) revalidatePath(`/admin/pacientes/${String(formData.get('paciente_id') ?? '')}/evaluacion-funcional`)
+  return res
 }
