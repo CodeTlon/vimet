@@ -1,10 +1,13 @@
 'use server'
 
+import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-import { createClient } from '@/lib/supabase/server'
+import { evolucion_entradas } from '@/db/schema'
+import { authStaff } from '@/lib/auth/session'
 import { encryptClinical } from '@/lib/crypto/clinical'
+import { conActor } from '@/lib/db'
 
 export type EvolucionState = { ok?: boolean; error?: string }
 
@@ -16,22 +19,8 @@ const schema = z.object({
   visible_paciente: z.enum(['true', 'false']).default('false'),
 })
 
-async function getStaff() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' as const }
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('rol')
-    .eq('id', user.id)
-    .maybeSingle()
-  if (!profile || !['nutricionista', 'entrenador', 'admin'].includes(profile.rol)) {
-    return { error: 'No autorizado' as const }
-  }
-  return { user, supabase }
-}
+// Solo staff escribe evolucion (policy `evolucion staff all`).
+const getStaff = authStaff
 
 export async function crearEntradaEvolucionAction(
   _prev: unknown,
@@ -51,19 +40,24 @@ export async function crearEntradaEvolucionAction(
     console.error('crearEntradaEvolucionAction: fallo al cifrar contenido', e)
     return { error: 'No se pudo guardar la entrada (falló el cifrado — revisar CLINICAL_DATA_ENCRYPTION_KEY del entorno).' }
   }
-  const { error } = await ctx.supabase.from('evolucion_entradas').insert({
-    paciente_id: d.paciente_id,
-    origen: d.origen,
-    tipo: d.tipo,
-    // Cifrado en Node antes de escribir (ver lib/crypto/clinical.ts) — la
-    // columna vieja `contenido` queda en null para las entradas nuevas.
-    contenido: null,
-    contenido_enc,
-    visible_paciente: d.visible_paciente === 'true',
-    registrado_por: ctx.user.id,
-  })
-
-  if (error) return { error: 'No se pudo guardar la entrada.' }
+  try {
+    await conActor(ctx.user.id, (tx) =>
+      tx.insert(evolucion_entradas).values({
+        paciente_id: d.paciente_id,
+        origen: d.origen,
+        tipo: d.tipo,
+        // Cifrado en Node antes de escribir (ver lib/crypto/clinical.ts) — la columna vieja
+        // `contenido` queda en null para las entradas nuevas.
+        contenido: null,
+        contenido_enc,
+        visible_paciente: d.visible_paciente === 'true',
+        registrado_por: ctx.user.id,
+      }),
+    )
+  } catch (err) {
+    console.error('crearEntradaEvolucionAction:', err)
+    return { error: 'No se pudo guardar la entrada.' }
+  }
 
   revalidatePath(`/admin/pacientes/${d.paciente_id}/evolucion`)
   revalidatePath('/mi-progreso')
@@ -90,18 +84,23 @@ export async function actualizarEntradaEvolucionAction(
     console.error('actualizarEntradaEvolucionAction: fallo al cifrar contenido', e)
     return { error: 'No se pudo actualizar la entrada (falló el cifrado — revisar CLINICAL_DATA_ENCRYPTION_KEY del entorno).' }
   }
-  const { error } = await ctx.supabase
-    .from('evolucion_entradas')
-    .update({
-      origen: d.origen,
-      tipo: d.tipo,
-      contenido: null,
-      contenido_enc,
-      visible_paciente: d.visible_paciente === 'true',
-    })
-    .eq('id', d.id)
-
-  if (error) return { error: 'No se pudo actualizar la entrada.' }
+  try {
+    await conActor(ctx.user.id, (tx) =>
+      tx
+        .update(evolucion_entradas)
+        .set({
+          origen: d.origen,
+          tipo: d.tipo,
+          contenido: null,
+          contenido_enc,
+          visible_paciente: d.visible_paciente === 'true',
+        })
+        .where(eq(evolucion_entradas.id, d.id)),
+    )
+  } catch (err) {
+    console.error('actualizarEntradaEvolucionAction:', err)
+    return { error: 'No se pudo actualizar la entrada.' }
+  }
 
   revalidatePath(`/admin/pacientes/${d.paciente_id}/evolucion`)
   revalidatePath('/mi-progreso')
@@ -114,6 +113,6 @@ export async function eliminarEntradaEvolucionAction(formData: FormData) {
   if (!id) return
   const ctx = await getStaff()
   if ('error' in ctx) return
-  await ctx.supabase.from('evolucion_entradas').delete().eq('id', id)
+  await conActor(ctx.user.id, (tx) => tx.delete(evolucion_entradas).where(eq(evolucion_entradas.id, id)))
   revalidatePath(`/admin/pacientes/${paciente_id}/evolucion`)
 }

@@ -1,11 +1,15 @@
 'use server'
 
+import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-import { pareceUnPdf } from '@/lib/file-sniff'
-import { createClient } from '@/lib/supabase/server'
+import { planes } from '@/db/schema'
+import { authStaff, authUsuario, esStaff } from '@/lib/auth/session'
 import { encryptClinical } from '@/lib/crypto/clinical'
+import { conActor, db } from '@/lib/db'
+import { pareceUnPdf } from '@/lib/file-sniff'
+import { borrarArchivos, subirArchivo, urlFirmada } from '@/lib/storage/s3'
 
 export type PlanState = { ok?: boolean; error?: string; planId?: number }
 
@@ -70,24 +74,10 @@ const baseSchema = planObjectSchema
 
 const toStr = (v: string | undefined) => (v && v.trim() !== '' ? v.trim() : null)
 
-async function getStaff() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' as const }
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('rol')
-    .eq('id', user.id)
-    .maybeSingle()
-  if (!profile || !['nutricionista', 'entrenador', 'admin'].includes(profile.rol)) {
-    return { error: 'No autorizado' as const }
-  }
-  return { user, supabase }
-}
+// Solo staff escribe planes (policy `planes staff write`).
+const getStaff = authStaff
 
-function buildPayload(d: z.infer<typeof baseSchema>, profesional_id: string) {
+function buildPayload(d: z.infer<typeof baseSchema>, profesional_id: string): typeof planes.$inferInsert {
   return {
     paciente_id: d.paciente_id,
     profesional_id,
@@ -127,7 +117,7 @@ export async function crearPlanAction(
   const d = parsed.data
   const file = formData.get('archivo') as File | null
 
-  let payload: Record<string, unknown>
+  let payload: typeof planes.$inferInsert
   try {
     payload = buildPayload(d, ctx.user.id)
   } catch (e) {
@@ -147,19 +137,24 @@ export async function crearPlanAction(
     archivo_path = `${d.paciente_id}/${Date.now()}_${safeName}`
     const buf = Buffer.from(await file.arrayBuffer())
     if (!pareceUnPdf(buf)) return { error: 'El archivo no es un PDF válido.' }
-    const { error: upErr } = await ctx.supabase.storage
-      .from('planes')
-      .upload(archivo_path, buf, { contentType: 'application/pdf', upsert: false })
-    if (upErr) return { error: 'No se pudo subir el PDF.' }
+    try {
+      await subirArchivo('planes', archivo_path, buf, 'application/pdf')
+    } catch (err) {
+      console.error('crearPlanAction (subida):', err)
+      return { error: 'No se pudo subir el PDF.' }
+    }
   }
 
-  const { data: created, error } = await ctx.supabase
-    .from('planes')
-    .insert({ ...payload, archivo_path })
-    .select('id')
-    .single()
-
-  if (error) return { error: 'No se pudo crear el plan.' }
+  let created: { id: number }
+  try {
+    ;[created] = await conActor(ctx.user.id, (tx) =>
+      tx.insert(planes).values({ ...payload, archivo_path }).returning({ id: planes.id }),
+    )
+  } catch (err) {
+    console.error('crearPlanAction:', err)
+    if (archivo_path) await borrarArchivos('planes', [archivo_path]).catch(() => {})
+    return { error: 'No se pudo crear el plan.' }
+  }
 
   revalidatePath(`/admin/pacientes/${d.paciente_id}/planes`)
   revalidatePath('/mis-planes')
@@ -187,14 +182,14 @@ export async function actualizarPlanAction(
 
   // El dueño real del plan sale de la DB, no del form: un paciente_id
   // hidden desactualizado o manipulado no debe poder reasignar el plan.
-  const { data: existente } = await ctx.supabase
-    .from('planes')
-    .select('paciente_id, archivo_path')
-    .eq('id', id)
-    .maybeSingle()
+  const [existente] = await db
+    .select({ paciente_id: planes.paciente_id, archivo_path: planes.archivo_path })
+    .from(planes)
+    .where(eq(planes.id, id))
+    .limit(1)
   if (!existente) return { error: 'Ese plan ya no existe.' }
 
-  let payload: Record<string, unknown>
+  let payload: typeof planes.$inferInsert
   try {
     payload = buildPayload({ ...d, paciente_id: existente.paciente_id }, ctx.user.id)
   } catch (e) {
@@ -212,21 +207,28 @@ export async function actualizarPlanAction(
     const archivo_path = `${existente.paciente_id}/${Date.now()}_${safeName}`
     const buf = Buffer.from(await file.arrayBuffer())
     if (!pareceUnPdf(buf)) return { error: 'El archivo no es un PDF válido.' }
-    const { error: upErr } = await ctx.supabase.storage
-      .from('planes')
-      .upload(archivo_path, buf, { contentType: 'application/pdf', upsert: false })
-    if (upErr) return { error: 'No se pudo subir el PDF.' }
+    try {
+      await subirArchivo('planes', archivo_path, buf, 'application/pdf')
+    } catch (err) {
+      console.error('actualizarPlanAction (subida):', err)
+      return { error: 'No se pudo subir el PDF.' }
+    }
     payload.archivo_path = archivo_path
 
-    // Si había un PDF previo, lo borramos del bucket recién después de subir el
-    // nuevo: así nunca quedan huérfanos y si falla el upload no perdemos el viejo.
+    // Si había un PDF previo, lo borramos del bucket recién después de subir el nuevo: así nunca
+    // quedan huérfanos y si falla el upload no perdemos el viejo.
     if (prev?.archivo_path && prev.archivo_path !== archivo_path) {
-      await ctx.supabase.storage.from('planes').remove([prev.archivo_path])
+      await borrarArchivos('planes', [prev.archivo_path]).catch(() => {})
     }
   }
 
-  const { error } = await ctx.supabase.from('planes').update(payload).eq('id', id)
-  if (error) return { error: 'No se pudo actualizar el plan.' }
+  try {
+    const { paciente_id: _p, ...cambios } = payload
+    await conActor(ctx.user.id, (tx) => tx.update(planes).set(cambios).where(eq(planes.id, id)))
+  } catch (err) {
+    console.error('actualizarPlanAction:', err)
+    return { error: 'No se pudo actualizar el plan.' }
+  }
 
   revalidatePath(`/admin/pacientes/${existente.paciente_id}/planes`)
   revalidatePath(`/admin/pacientes/${existente.paciente_id}/planes/${id}`)
@@ -241,15 +243,11 @@ export async function eliminarPlanAction(formData: FormData) {
   if (!id) return
   const ctx = await getStaff()
   if ('error' in ctx) return
-  const { data: plan } = await ctx.supabase
-    .from('planes')
-    .select('archivo_path')
-    .eq('id', id)
-    .maybeSingle()
+  const [plan] = await db.select({ archivo_path: planes.archivo_path }).from(planes).where(eq(planes.id, id)).limit(1)
   if (plan?.archivo_path) {
-    await ctx.supabase.storage.from('planes').remove([plan.archivo_path])
+    await borrarArchivos('planes', [plan.archivo_path]).catch(() => {})
   }
-  await ctx.supabase.from('planes').delete().eq('id', id)
+  await conActor(ctx.user.id, (tx) => tx.delete(planes).where(eq(planes.id, id)))
   revalidatePath(`/admin/pacientes/${paciente_id}/planes`)
   revalidatePath('/mis-planes')
 }
@@ -258,31 +256,20 @@ export async function eliminarPlanAction(formData: FormData) {
 export async function obtenerUrlPlanAction(formData: FormData): Promise<{ url?: string; error?: string }> {
   const id = Number(formData.get('id'))
   if (!id) return { error: 'Plan inválido' }
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
+  const ctx = await authUsuario()
+  if ('error' in ctx) return { error: ctx.error }
 
-  const { data: plan } = await supabase
-    .from('planes')
-    .select('paciente_id, archivo_path')
-    .eq('id', id)
-    .maybeSingle()
+  const [plan] = await db
+    .select({ paciente_id: planes.paciente_id, archivo_path: planes.archivo_path })
+    .from(planes)
+    .where(eq(planes.id, id))
+    .limit(1)
   if (!plan?.archivo_path) return { error: 'Plan sin archivo' }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('rol')
-    .eq('id', user.id)
-    .maybeSingle()
-  const isStaff =
-    profile && ['nutricionista', 'entrenador', 'admin'].includes(profile.rol)
-  if (!isStaff && plan.paciente_id !== user.id) return { error: 'No autorizado' }
+  // Reemplaza la policy de storage `planes storage paciente read own` (carpeta = id del paciente).
+  if (!esStaff(ctx.profile.rol) && plan.paciente_id !== ctx.user.id) return { error: 'No autorizado' }
 
-  const { data: signed, error } = await supabase.storage
-    .from('planes')
-    .createSignedUrl(plan.archivo_path, 60 * 5)
-  if (error || !signed) return { error: 'No se pudo generar el enlace' }
-  return { url: signed.signedUrl }
+  const url = await urlFirmada('planes', plan.archivo_path, 60 * 5)
+  if (!url) return { error: 'No se pudo generar el enlace' }
+  return { url }
 }

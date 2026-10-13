@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
-import { createAdminClient } from '@/lib/supabase/admin'
-import { requireMobileAdmin } from '@/lib/supabase/bearer'
+import { requireMobileAdmin } from '@/lib/auth/mobile'
+import { cambiarPasswordDe } from '@/lib/services/staff'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,12 +18,7 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 })
 
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('id').eq('email', parsed.data.email).maybeSingle()
-  if (!profile) return NextResponse.json({ error: 'No se encontró ningún usuario con ese email.' }, { status: 404 })
-
-  const { error } = await admin.auth.admin.updateUserById(profile.id, { password: parsed.data.password })
-  if (error) return NextResponse.json({ error: 'No se pudo cambiar la contraseña.' }, { status: 400 })
-
+  const res = await cambiarPasswordDe(parsed.data.email, parsed.data.password)
+  if (!res.ok) return NextResponse.json({ error: res.error }, { status: res.status ?? 400 })
   return NextResponse.json({ ok: true })
 }

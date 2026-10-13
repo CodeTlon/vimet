@@ -1,38 +1,35 @@
 'use server'
 
+import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { contenido_sitio, profiles, servicios } from '@/db/schema'
+import { esStaff, getUserAndProfile } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 import { optimizeImage } from '@/lib/storage/optimize-image'
-import { createClient } from '@/lib/supabase/server'
+import { borrarArchivos, subirArchivo, urlPublica } from '@/lib/storage/s3'
 
 export type ContenidoState = { ok?: boolean; error?: string }
 
-const STAFF_ROLES = ['nutricionista', 'entrenador', 'admin']
-
-// Todo el staff (no solo admin) administra el contenido del sitio: hoy los
-// únicos usuarios staff son Avril y Gero, y ambos cumplen ese rol.
+// Todo el staff (no solo admin) administra el contenido del sitio: hoy los únicos usuarios staff
+// son Avril y Gero, y ambos cumplen ese rol. Reemplaza la policy `is_staff()` de servicios y
+// contenido_sitio.
 async function requireStaffAction() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { user, profile } = await getUserAndProfile()
   if (!user) return { error: 'No autenticado' as const }
-  const { data: profile } = await supabase.from('profiles').select('rol').eq('id', user.id).maybeSingle()
-  if (!profile || !STAFF_ROLES.includes(profile.rol)) return { error: 'No autorizado' as const }
-  return { user, supabase }
+  if (!profile || !esStaff(profile.rol)) return { error: 'No autorizado' as const }
+  return { user, profile }
 }
 
-async function requireSelfOrAdmin(profileId: string) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+// Perfil público: cada uno edita el suyo; el staff puede editar el de cualquiera (policy
+// `profiles update own`: `auth.uid() = id or is_staff()`).
+async function requireSelfOrStaff(profileId: string) {
+  const { user, profile } = await getUserAndProfile()
   if (!user) return { error: 'No autenticado' as const }
-  const { data: profile } = await supabase.from('profiles').select('rol').eq('id', user.id).maybeSingle()
   if (!profile) return { error: 'No autorizado' as const }
-  if (!STAFF_ROLES.includes(profile.rol) && user.id !== profileId) return { error: 'No autorizado' as const }
-  return { user, supabase }
+  if (!esStaff(profile.rol) && user.id !== profileId) return { error: 'No autorizado' as const }
+  return { user, profile }
 }
 
 function extractRows(formData: FormData, prefix: string, count: number, fields: string[]) {
@@ -79,12 +76,15 @@ export async function actualizarUbicacionAction(
   const parsed = ubicacionSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
-  const { error } = await ctx.supabase
-    .from('contenido_sitio')
-    .update({ ...parsed.data, updated_at: new Date().toISOString() })
-    .eq('id', 1)
-
-  if (error) return { error: 'No se pudo guardar.' }
+  try {
+    await db
+      .update(contenido_sitio)
+      .set({ ...parsed.data, updated_at: new Date().toISOString() })
+      .where(eq(contenido_sitio.id, 1))
+  } catch (err) {
+    console.error('actualizarUbicacionAction:', err)
+    return { error: 'No se pudo guardar.' }
+  }
   revalidatePath('/')
   revalidatePath('/contacto')
   revalidatePath('/admin/contenido/ubicacion')
@@ -109,17 +109,20 @@ export async function actualizarMetodologiaAction(
     return { error: 'Completá todos los campos.' }
   }
 
-  const { error } = await ctx.supabase
-    .from('contenido_sitio')
-    .update({
-      metodologia_pasos: pasos,
-      metodologia_pilares: pilares,
-      metodologia_dirigido_a: dirigidoA,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', 1)
-
-  if (error) return { error: 'No se pudo guardar.' }
+  try {
+    await db
+      .update(contenido_sitio)
+      .set({
+        metodologia_pasos: pasos,
+        metodologia_pilares: pilares,
+        metodologia_dirigido_a: dirigidoA,
+        updated_at: new Date().toISOString(),
+      })
+      .where(eq(contenido_sitio.id, 1))
+  } catch (err) {
+    console.error('actualizarMetodologiaAction:', err)
+    return { error: 'No se pudo guardar.' }
+  }
   revalidatePath('/metodologia')
   revalidatePath('/admin/contenido/metodologia')
   return { ok: true }
@@ -148,16 +151,19 @@ export async function crearServicioAction(
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
   const d = parsed.data
 
-  const { error } = await ctx.supabase.from('servicios').insert({
-    nombre: d.nombre,
-    descripcion: d.descripcion || null,
-    duracion_minutos: d.duracion_minutos,
-    tipo: d.tipo,
-    icono: d.icono,
-    profesional_id: d.profesional_id || null,
-  })
-
-  if (error) return { error: 'No se pudo crear el servicio.' }
+  try {
+    await db.insert(servicios).values({
+      nombre: d.nombre,
+      descripcion: d.descripcion || null,
+      duracion_minutos: d.duracion_minutos,
+      tipo: d.tipo,
+      icono: d.icono,
+      profesional_id: d.profesional_id || null,
+    })
+  } catch (err) {
+    console.error('crearServicioAction:', err)
+    return { error: 'No se pudo crear el servicio.' }
+  }
   revalidatePath('/servicios')
   revalidatePath('/admin/contenido/servicios')
   return { ok: true }
@@ -177,19 +183,22 @@ export async function actualizarServicioAction(
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
   const d = parsed.data
 
-  const { error } = await ctx.supabase
-    .from('servicios')
-    .update({
-      nombre: d.nombre,
-      descripcion: d.descripcion || null,
-      duracion_minutos: d.duracion_minutos,
-      tipo: d.tipo,
-      icono: d.icono,
-      profesional_id: d.profesional_id || null,
-    })
-    .eq('id', id)
-
-  if (error) return { error: 'No se pudo guardar.' }
+  try {
+    await db
+      .update(servicios)
+      .set({
+        nombre: d.nombre,
+        descripcion: d.descripcion || null,
+        duracion_minutos: d.duracion_minutos,
+        tipo: d.tipo,
+        icono: d.icono,
+        profesional_id: d.profesional_id || null,
+      })
+      .where(eq(servicios.id, id))
+  } catch (err) {
+    console.error('actualizarServicioAction:', err)
+    return { error: 'No se pudo guardar.' }
+  }
   revalidatePath('/servicios')
   revalidatePath('/admin/contenido/servicios')
   return { ok: true }
@@ -203,7 +212,7 @@ export async function toggleServicioActivoAction(formData: FormData) {
   const activo = formData.get('activo') === 'true'
   if (!id) return
 
-  await ctx.supabase.from('servicios').update({ activo: !activo }).eq('id', id)
+  await db.update(servicios).set({ activo: !activo }).where(eq(servicios.id, id))
   revalidatePath('/servicios')
   revalidatePath('/admin/contenido/servicios')
 }
@@ -230,7 +239,7 @@ export async function actualizarPerfilPublicoAction(
   const profileId = String(formData.get('profile_id') ?? '')
   if (!profileId) return { error: 'Perfil inválido.' }
 
-  const ctx = await requireSelfOrAdmin(profileId)
+  const ctx = await requireSelfOrStaff(profileId)
   if ('error' in ctx) return { error: ctx.error }
 
   const parsed = perfilSchema.safeParse(Object.fromEntries(formData))
@@ -255,30 +264,34 @@ export async function actualizarPerfilPublicoAction(
     }
     if (file.size > 5 * 1024 * 1024) return { error: 'La foto no puede superar 5 MB.' }
 
-    const { data: prevProfile } = await ctx.supabase
-      .from('profiles')
-      .select('foto_url')
-      .eq('id', profileId)
-      .maybeSingle()
+    const [prevProfile] = await db
+      .select({ foto_url: profiles.foto_url })
+      .from(profiles)
+      .where(eq(profiles.id, profileId))
+      .limit(1)
 
     const buf = await optimizeImage(Buffer.from(await file.arrayBuffer()))
     const path = `staff/${profileId}/${Date.now()}.webp`
-    const { error: uploadError } = await ctx.supabase.storage.from('sitio').upload(path, buf, {
-      contentType: 'image/webp',
-      upsert: true,
-    })
-    if (uploadError) return { error: 'No se pudo subir la foto.' }
-    fotoUrl = ctx.supabase.storage.from('sitio').getPublicUrl(path).data.publicUrl
+    try {
+      await subirArchivo('sitio', path, buf, 'image/webp')
+    } catch (err) {
+      console.error('actualizarPerfilPublicoAction (subida):', err)
+      return { error: 'No se pudo subir la foto.' }
+    }
+    fotoUrl = urlPublica('sitio', path)
 
-    // Recién borramos la foto vieja después de subir la nueva con éxito, para
-    // no quedarnos sin ninguna si el upload hubiera fallado.
-    const prevPath = prevProfile?.foto_url?.split('/object/public/sitio/')[1]
-    if (prevPath) await ctx.supabase.storage.from('sitio').remove([prevPath])
+    // Recién borramos la foto vieja después de subir la nueva con éxito, para no quedarnos sin
+    // ninguna si el upload hubiera fallado. Solo se borra si cuelga del prefijo de ESTE perfil.
+    const idx = prevProfile?.foto_url?.indexOf(`staff/${profileId}/`) ?? -1
+    if (prevProfile?.foto_url && idx >= 0) {
+      await borrarArchivos('sitio', [prevProfile.foto_url.slice(idx)]).catch(() => {})
+    }
   }
 
-  const { error } = await ctx.supabase
-    .from('profiles')
-    .update({
+  try {
+    await db
+      .update(profiles)
+      .set({
       titulo: d.titulo || null,
       matricula: d.matricula || null,
       bio_corta: d.bio_corta || null,
@@ -295,9 +308,11 @@ export async function actualizarPerfilPublicoAction(
       areas_trabajo: areasTrabajo,
       ...(fotoUrl ? { foto_url: fotoUrl } : {}),
     })
-    .eq('id', profileId)
-
-  if (error) return { error: 'No se pudo guardar.' }
+      .where(eq(profiles.id, profileId))
+  } catch (err) {
+    console.error('actualizarPerfilPublicoAction:', err)
+    return { error: 'No se pudo guardar.' }
+  }
   revalidatePath('/nosotros')
   revalidatePath('/')
   revalidatePath('/admin/configuracion')

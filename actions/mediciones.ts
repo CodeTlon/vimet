@@ -4,7 +4,11 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 import { haceDiasArgentina, hoyArgentina } from '@/lib/datetime'
-import { createClient } from '@/lib/supabase/server'
+import { eq } from 'drizzle-orm'
+
+import { mediciones_antropometricas } from '@/db/schema'
+import { authStaff } from '@/lib/auth/session'
+import { conActor } from '@/lib/db'
 
 export type MedicionState = { ok?: boolean; error?: string }
 
@@ -116,22 +120,8 @@ const toNum = (v: string | undefined) => {
 }
 const toStr = (v: string | undefined) => (v && v.trim() !== '' ? v.trim() : null)
 
-async function getStaff() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' as const }
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('rol')
-    .eq('id', user.id)
-    .maybeSingle()
-  if (!profile || !['nutricionista', 'entrenador', 'admin'].includes(profile.rol)) {
-    return { error: 'No autorizado' as const }
-  }
-  return { user, supabase }
-}
+// Solo staff escribe mediciones (policy `mediciones staff write`).
+const getStaff = authStaff
 
 export async function crearMedicionAction(
   _prev: unknown,
@@ -151,7 +141,9 @@ export async function crearMedicionAction(
       ? Math.round((peso / Math.pow(talla / 100, 2)) * 100) / 100
       : null
 
-  const { error } = await ctx.supabase.from('mediciones_antropometricas').insert({
+  try {
+    await conActor(ctx.user.id, (tx) =>
+      tx.insert(mediciones_antropometricas).values({
     paciente_id: d.paciente_id,
     fecha_medicion: d.fecha_medicion,
     peso_kg: peso,
@@ -177,9 +169,12 @@ export async function crearMedicionAction(
     dx_antropometrico: toStr(d.dx_antropometrico),
     observaciones: toStr(d.observaciones),
     registrado_por: ctx.user.id,
-  })
-
-  if (error) return { error: 'No se pudo guardar la medición.' }
+      }),
+    )
+  } catch (err) {
+    console.error('crearMedicionAction:', err)
+    return { error: 'No se pudo guardar la medición.' }
+  }
 
   revalidatePath(`/admin/pacientes/${d.paciente_id}`)
   revalidatePath(`/admin/pacientes/${d.paciente_id}/antropometria`)
@@ -206,9 +201,11 @@ export async function actualizarMedicionAction(
       ? Math.round((peso / Math.pow(talla / 100, 2)) * 100) / 100
       : null
 
-  const { error } = await ctx.supabase
-    .from('mediciones_antropometricas')
-    .update({
+  try {
+    await conActor(ctx.user.id, (tx) =>
+      tx
+        .update(mediciones_antropometricas)
+        .set({
       fecha_medicion: d.fecha_medicion,
       peso_kg: peso,
       talla_cm: talla,
@@ -232,10 +229,13 @@ export async function actualizarMedicionAction(
       kg_tejido_oseo: toNum(d.kg_tejido_oseo),
       dx_antropometrico: toStr(d.dx_antropometrico),
       observaciones: toStr(d.observaciones),
-    })
-    .eq('id', d.id)
-
-  if (error) return { error: 'No se pudo actualizar la medición.' }
+        })
+        .where(eq(mediciones_antropometricas.id, d.id!)),
+    )
+  } catch (err) {
+    console.error('actualizarMedicionAction:', err)
+    return { error: 'No se pudo actualizar la medición.' }
+  }
 
   revalidatePath(`/admin/pacientes/${d.paciente_id}`)
   revalidatePath(`/admin/pacientes/${d.paciente_id}/antropometria`)
@@ -252,8 +252,12 @@ export async function eliminarMedicionAction(
   if (!id) return { error: 'Datos inválidos' }
   const ctx = await getStaff()
   if ('error' in ctx) return { error: ctx.error }
-  const { error } = await ctx.supabase.from('mediciones_antropometricas').delete().eq('id', id)
-  if (error) return { error: 'No se pudo eliminar la medición.' }
+  try {
+    await conActor(ctx.user.id, (tx) => tx.delete(mediciones_antropometricas).where(eq(mediciones_antropometricas.id, id)))
+  } catch (err) {
+    console.error('eliminarMedicionAction:', err)
+    return { error: 'No se pudo eliminar la medición.' }
+  }
   revalidatePath(`/admin/pacientes/${paciente_id}/antropometria`)
   revalidatePath('/mi-progreso')
   return { ok: true }

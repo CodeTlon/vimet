@@ -1,10 +1,15 @@
 'use server'
 
+import { and, eq, ilike } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { ejercicios } from '@/db/schema'
+import { esStaff, getUserAndProfile } from '@/lib/auth/session'
+import { db } from '@/lib/db'
+import { PG, pgCode } from '@/lib/db-errors'
 import { pareceUnGif } from '@/lib/file-sniff'
-import { createClient } from '@/lib/supabase/server'
+import { borrarArchivos, subirArchivo, urlPublica } from '@/lib/storage/s3'
 import { extraerYoutubeId } from '@/lib/youtube'
 
 export type EjercicioCustomState = { ok?: boolean; error?: string }
@@ -14,21 +19,12 @@ const MAX_BYTES = 8 * 1024 * 1024
 const CATEGORIAS = ['calentamiento', 'entrenamiento', 'enfriamiento', 'grupo_muscular'] as const
 const MODOS = ['fuerza', 'cardio'] as const
 
+// Escritura del catalogo: solo staff (policy `ejercicios staff write`).
 async function requireStaff() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { user, profile } = await getUserAndProfile()
   if (!user) return { error: 'No autenticado' as const }
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('rol')
-    .eq('id', user.id)
-    .maybeSingle()
-  if (!profile || !['nutricionista', 'entrenador', 'admin'].includes(profile.rol)) {
-    return { error: 'No autorizado' as const }
-  }
-  return { user, supabase }
+  if (!profile || !esStaff(profile.rol)) return { error: 'No autorizado' as const }
+  return { user, profile }
 }
 
 // La categoría (calentamiento/entrenamiento/enfriamiento/grupo_muscular) solo
@@ -60,11 +56,13 @@ export async function crearEjercicioCustomAction(
 
   // ponytail: dedup simple por nombre (case-insensitive). No chequea hash de
   // archivo — si hace falta detectar el mismo video con nombre distinto, sumarlo.
-  const { data: existente } = await ctx.supabase
-    .from('ejercicios')
-    .select('id')
-    .ilike('nombre', d.nombre.trim())
-    .maybeSingle()
+  // `ilike` sin comodines salvo que el nombre los traiga: se escapan para comparar literal.
+  const nombreLiteral = d.nombre.trim().replace(/[\\%_]/g, '\\$&')
+  const [existente] = await db
+    .select({ id: ejercicios.id })
+    .from(ejercicios)
+    .where(ilike(ejercicios.nombre, nombreLiteral))
+    .limit(1)
   if (existente) return { error: 'Ya existe un ejercicio con ese nombre.' }
 
   // Alternativa al GIF: un link de YouTube pegado por el staff. Se guarda
@@ -89,27 +87,31 @@ export async function crearEjercicioCustomAction(
     if (!pareceUnGif(buf)) return { error: 'El archivo generado no es un GIF.' }
     storagePath = `custom/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.gif`
 
-    const { error: upErr } = await ctx.supabase.storage
-      .from('ejercicios-media')
-      .upload(storagePath, buf, { contentType: 'image/gif', upsert: false })
-    if (upErr) return { error: 'No se pudo subir el GIF.' }
+    try {
+      await subirArchivo('ejercicios-media', storagePath, buf, 'image/gif')
+    } catch (err) {
+      console.error('crearEjercicioCustomAction (subida):', err)
+      return { error: 'No se pudo subir el GIF.' }
+    }
 
-    gif_url = ctx.supabase.storage.from('ejercicios-media').getPublicUrl(storagePath).data.publicUrl
+    gif_url = urlPublica('ejercicios-media', storagePath)
   }
 
-  const { error } = await ctx.supabase.from('ejercicios').insert({
-    nombre: d.nombre.trim(),
-    categoria: d.modo === 'cardio' ? null : d.categoria,
-    modo: d.modo,
-    parte_cuerpo: d.parte_cuerpo?.trim() || null,
-    instrucciones: d.instrucciones?.trim() || null,
-    gif_url,
-    youtube_url,
-    origen: 'staff',
-    creado_por: ctx.user.id,
-  })
-  if (error) {
-    if (storagePath) await ctx.supabase.storage.from('ejercicios-media').remove([storagePath])
+  try {
+    await db.insert(ejercicios).values({
+      nombre: d.nombre.trim(),
+      categoria: d.modo === 'cardio' ? null : d.categoria,
+      modo: d.modo,
+      parte_cuerpo: d.parte_cuerpo?.trim() || null,
+      instrucciones: d.instrucciones?.trim() || null,
+      gif_url,
+      youtube_url,
+      origen: 'staff',
+      creado_por: ctx.user.id,
+    })
+  } catch (err) {
+    console.error('crearEjercicioCustomAction:', err)
+    if (storagePath) await borrarArchivos('ejercicios-media', [storagePath]).catch(() => {})
     return { error: 'No se pudo guardar el ejercicio.' }
   }
 
@@ -127,27 +129,29 @@ export async function eliminarEjercicioCustomAction(
   const ctx = await requireStaff()
   if ('error' in ctx) return { error: ctx.error }
 
-  const { data: ejercicio } = await ctx.supabase
-    .from('ejercicios')
-    .select('gif_url, origen')
-    .eq('id', id)
-    .eq('origen', 'staff')
-    .maybeSingle()
+  const [ejercicio] = await db
+    .select({ gif_url: ejercicios.gif_url })
+    .from(ejercicios)
+    .where(and(eq(ejercicios.id, id), eq(ejercicios.origen, 'staff')))
+    .limit(1)
   if (!ejercicio) return { error: 'Ejercicio no encontrado.' }
 
-  // Borrar primero la fila: si la FK `plan_ejercicios.ejercicio_id` (on delete
-  // restrict) rechaza el delete porque el ejercicio está en uso, el GIF del
-  // storage queda intacto (antes se borraba el storage primero y quedaba huérfano).
-  const { error } = await ctx.supabase.from('ejercicios').delete().eq('id', id).eq('origen', 'staff')
-  if (error) {
-    if (error.code === '23503') {
+  // Borrar primero la fila: si la FK `plan_ejercicios.ejercicio_id` (on delete restrict) rechaza el
+  // delete porque el ejercicio está en uso, el GIF del storage queda intacto.
+  try {
+    await db.delete(ejercicios).where(and(eq(ejercicios.id, id), eq(ejercicios.origen, 'staff')))
+  } catch (err) {
+    if (pgCode(err) === PG.FOREIGN_KEY_VIOLATION) {
       return { error: 'No se puede borrar: este ejercicio está siendo usado en un plan. Quitalo del plan primero.' }
     }
+    console.error('eliminarEjercicioCustomAction:', err)
     return { error: 'No se pudo eliminar el ejercicio.' }
   }
 
-  const path = ejercicio.gif_url?.split('/ejercicios-media/')[1]
-  if (path) await ctx.supabase.storage.from('ejercicios-media').remove([path])
+  const idx = ejercicio.gif_url?.indexOf('custom/') ?? -1
+  if (ejercicio.gif_url && idx >= 0) {
+    await borrarArchivos('ejercicios-media', [ejercicio.gif_url.slice(idx)]).catch(() => {})
+  }
 
   revalidatePath('/admin/ejercicios')
   return { ok: true }

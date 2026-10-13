@@ -56,3 +56,21 @@ export async function requireAdmin() {
   if (profile.rol !== 'admin') redirect('/mis-turnos')
   return { user, profile }
 }
+
+// Variantes "sin redirect" para Server Actions que devuelven `{ error }` en vez de navegar.
+export type AuthError = { error: 'No autenticado' | 'No autorizado' }
+
+/** Cualquier usuario con sesion y perfil. */
+export async function authUsuario(): Promise<{ user: SessionUser; profile: Profile } | AuthError> {
+  const { user, profile } = await getUserAndProfile()
+  if (!user) return { error: 'No autenticado' }
+  if (!profile) return { error: 'No autorizado' }
+  return { user, profile }
+}
+
+/** Solo staff (nutricionista, entrenador, admin). */
+export async function authStaff(): Promise<{ user: SessionUser; profile: Profile } | AuthError> {
+  const ctx = await authUsuario()
+  if ('error' in ctx) return ctx
+  return esStaff(ctx.profile.rol) ? ctx : { error: 'No autorizado' }
+}

@@ -1,12 +1,16 @@
 'use server'
 
+import { and, desc, eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { feedback_mensajes, feedback_semanal, fichas_paciente, planes } from '@/db/schema'
+import { authUsuario, esStaff } from '@/lib/auth/session'
 import { lunesDeSemanaArgentina } from '@/lib/datetime'
+import { db } from '@/lib/db'
 import { pareceUnPdf } from '@/lib/file-sniff'
 import { optimizeImage } from '@/lib/storage/optimize-image'
-import { createClient } from '@/lib/supabase/server'
+import { borrarArchivos, subirArchivo } from '@/lib/storage/s3'
 
 export type FeedbackState = { ok?: boolean; error?: string }
 
@@ -64,21 +68,19 @@ export async function enviarFeedbackAction(
   const parsed = schema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
+  // El feedback es siempre del usuario logueado (policy `feedback paciente own insert`).
+  const ctx = await authUsuario()
+  if ('error' in ctx) return { error: ctx.error }
+  const user = ctx.user
 
-  const [{ data: ficha }, { count: planesVigentes }] = await Promise.all([
-    supabase.from('fichas_paciente').select('paciente_id').eq('paciente_id', user.id).maybeSingle(),
-    supabase
-      .from('planes')
-      .select('id', { count: 'exact', head: true })
-      .eq('paciente_id', user.id)
-      .eq('estado', 'vigente'),
+  const [[ficha], [{ planesVigentes }]] = await Promise.all([
+    db.select({ paciente_id: fichas_paciente.paciente_id }).from(fichas_paciente).where(eq(fichas_paciente.paciente_id, user.id)).limit(1),
+    db
+      .select({ planesVigentes: sql<number>`count(*)::int` })
+      .from(planes)
+      .where(and(eq(planes.paciente_id, user.id), eq(planes.estado, 'vigente'))),
   ])
-  if (!ficha || (planesVigentes ?? 0) === 0) {
+  if (!ficha || planesVigentes === 0) {
     return {
       error:
         'Para enviar feedback necesitás tener tu ficha clínica cargada y al menos un plan vigente.',
@@ -89,12 +91,11 @@ export async function enviarFeedbackAction(
 
   // Defensa en profundidad: la UI ya no muestra el form una vez enviada la
   // semana, pero una pestaña vieja reabierta no debería poder pisar el envío.
-  const { data: yaEnviado } = await supabase
-    .from('feedback_semanal')
-    .select('id')
-    .eq('paciente_id', user.id)
-    .eq('semana_inicio', d.semana_inicio)
-    .maybeSingle()
+  const [yaEnviado] = await db
+    .select({ id: feedback_semanal.id })
+    .from(feedback_semanal)
+    .where(and(eq(feedback_semanal.paciente_id, user.id), eq(feedback_semanal.semana_inicio, d.semana_inicio)))
+    .limit(1)
   if (yaEnviado) {
     return { error: 'Ya enviaste tu feedback de esta semana.' }
   }
@@ -111,12 +112,11 @@ export async function enviarFeedbackAction(
     }
 
     // Buscar el registro actual para borrar el adjunto previo si existe
-    const { data: existing } = await supabase
-      .from('feedback_semanal')
-      .select('adjunto_path')
-      .eq('paciente_id', user.id)
-      .eq('semana_inicio', d.semana_inicio)
-      .maybeSingle()
+    const [existing] = await db
+      .select({ adjunto_path: feedback_semanal.adjunto_path })
+      .from(feedback_semanal)
+      .where(and(eq(feedback_semanal.paciente_id, user.id), eq(feedback_semanal.semana_inicio, d.semana_inicio)))
+      .limit(1)
 
     const esImagen = file.type.startsWith('image/')
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
@@ -132,43 +132,40 @@ export async function enviarFeedbackAction(
       return { error: 'El archivo no es un PDF válido.' }
     }
 
-    const { error: upErr } = await supabase.storage
-      .from('recursos')
-      .upload(adjunto_path, Buffer.from(buf), { contentType, upsert: false })
-    if (upErr) return { error: 'No se pudo subir el adjunto.' }
+    try {
+      await subirArchivo('recursos', adjunto_path, buf, contentType)
+    } catch (err) {
+      console.error('enviarFeedbackAction (subida):', err)
+      return { error: 'No se pudo subir el adjunto.' }
+    }
 
     // Borrar el adjunto previo después de subir el nuevo con éxito
     if (existing?.adjunto_path && existing.adjunto_path !== adjunto_path) {
-      await supabase.storage.from('recursos').remove([existing.adjunto_path])
+      await borrarArchivos('recursos', [existing.adjunto_path]).catch(() => {})
     }
   }
 
-  const upsertData: Record<string, unknown> = {
-    paciente_id:              user.id,
-    semana_inicio:            d.semana_inicio,
-    estado_fisico:            d.estado_fisico,
-    animo:                    d.animo,
-    energia:                  d.energia,
+  const datos = {
+    estado_fisico: d.estado_fisico,
+    animo: d.animo,
+    energia: d.energia,
     adherencia_entrenamiento: d.adherencia_entrenamiento,
-    adherencia_alimentacion:  d.adherencia_alimentacion,
-    peso_autoreporte_kg:      d.peso_autoreporte_kg,
-    observaciones:            toStr(d.observaciones),
+    adherencia_alimentacion: d.adherencia_alimentacion,
+    peso_autoreporte_kg: d.peso_autoreporte_kg,
+    observaciones: toStr(d.observaciones),
+    // Solo se incluye el adjunto cuando hay un archivo nuevo (undefined = no tocar la columna).
+    ...(adjunto_path !== undefined ? { adjunto_path } : {}),
   }
 
-  // Solo incluir adjunto_path en el upsert cuando hay un archivo nuevo
-  if (adjunto_path !== undefined) {
-    upsertData.adjunto_path = adjunto_path
-  }
-
-  const { error } = await supabase
-    .from('feedback_semanal')
-    .upsert(upsertData, { onConflict: 'paciente_id,semana_inicio' })
-
-  if (error) {
+  try {
+    await db
+      .insert(feedback_semanal)
+      .values({ paciente_id: user.id, semana_inicio: d.semana_inicio, ...datos })
+      .onConflictDoUpdate({ target: [feedback_semanal.paciente_id, feedback_semanal.semana_inicio], set: datos })
+  } catch (err) {
+    console.error('enviarFeedbackAction:', err)
     // Si el upsert falló, limpiar el archivo recién subido para evitar huérfanos
-    if (adjunto_path) {
-      await supabase.storage.from('recursos').remove([adjunto_path])
-    }
+    if (adjunto_path) await borrarArchivos('recursos', [adjunto_path]).catch(() => {})
     return { error: 'No se pudo guardar tu feedback.' }
   }
 
@@ -193,33 +190,34 @@ export async function enviarMensajeFeedbackAction(
   const parsed = mensajeSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
+  const ctx = await authUsuario()
+  if ('error' in ctx) return { error: ctx.error }
+  const user = ctx.user
 
-  const { data: feedback } = await supabase
-    .from('feedback_semanal')
-    .select('paciente_id, semana_inicio')
-    .eq('id', parsed.data.feedback_id)
-    .maybeSingle()
+  const [feedback] = await db
+    .select({ paciente_id: feedback_semanal.paciente_id, semana_inicio: feedback_semanal.semana_inicio })
+    .from(feedback_semanal)
+    .where(eq(feedback_semanal.id, parsed.data.feedback_id))
+    .limit(1)
   if (!feedback) return { error: 'No se encontró el feedback de esa semana.' }
 
-  const { data: profile } = await supabase.from('profiles').select('rol').eq('id', user.id).maybeSingle()
-  const esStaff = Boolean(profile && ['nutricionista', 'entrenador', 'admin'].includes(profile.rol))
-  if (feedback.paciente_id !== user.id && !esStaff) return { error: 'No autorizado' }
+  // Policy `feedback_mensajes insert propio o staff`: el paciente dueño del hilo o el staff.
+  if (feedback.paciente_id !== user.id && !esStaff(ctx.profile.rol)) return { error: 'No autorizado' }
 
   if (feedback.semana_inicio !== lunesDeSemanaArgentina()) {
     return { error: 'Esta conversación ya se cerró, fue de una semana anterior.' }
   }
 
-  const { error } = await supabase.from('feedback_mensajes').insert({
-    feedback_id: parsed.data.feedback_id,
-    autor_id:    user.id,
-    contenido:   parsed.data.contenido,
-  })
-  if (error) return { error: 'No se pudo enviar el mensaje.' }
+  try {
+    await db.insert(feedback_mensajes).values({
+      feedback_id: parsed.data.feedback_id,
+      autor_id: user.id,
+      contenido: parsed.data.contenido,
+    })
+  } catch (err) {
+    console.error('enviarMensajeFeedbackAction:', err)
+    return { error: 'No se pudo enviar el mensaje.' }
+  }
 
   revalidatePath('/feedback-semanal')
   revalidatePath(`/admin/pacientes/${feedback.paciente_id}/feedback`)
@@ -240,45 +238,46 @@ export async function editarMensajeFeedbackAction(
   const parsed = editarMensajeSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
+  const ctx = await authUsuario()
+  if ('error' in ctx) return { error: ctx.error }
+  const user = ctx.user
 
-  const { data: mensaje } = await supabase
-    .from('feedback_mensajes')
-    .select('id, feedback_id, autor_id')
-    .eq('id', parsed.data.id)
-    .maybeSingle()
+  const [mensaje] = await db
+    .select({ id: feedback_mensajes.id, feedback_id: feedback_mensajes.feedback_id, autor_id: feedback_mensajes.autor_id })
+    .from(feedback_mensajes)
+    .where(eq(feedback_mensajes.id, parsed.data.id))
+    .limit(1)
   if (!mensaje) return { error: 'Mensaje no encontrado.' }
   if (mensaje.autor_id !== user.id) return { error: 'Solo podés editar tus propios mensajes.' }
 
-  const { data: ultimo } = await supabase
-    .from('feedback_mensajes')
-    .select('id')
-    .eq('feedback_id', mensaje.feedback_id)
-    .order('id', { ascending: false })
+  const [ultimo] = await db
+    .select({ id: feedback_mensajes.id })
+    .from(feedback_mensajes)
+    .where(eq(feedback_mensajes.feedback_id, mensaje.feedback_id))
+    .orderBy(desc(feedback_mensajes.id))
     .limit(1)
-    .maybeSingle()
   if (ultimo?.id !== mensaje.id) {
     return { error: 'Solo se puede editar el último mensaje de la conversación.' }
   }
 
-  const { data: feedback } = await supabase
-    .from('feedback_semanal')
-    .select('paciente_id, semana_inicio')
-    .eq('id', mensaje.feedback_id)
-    .maybeSingle()
-  if (feedback?.semana_inicio !== lunesDeSemanaArgentina()) {
+  const [feedback] = await db
+    .select({ paciente_id: feedback_semanal.paciente_id, semana_inicio: feedback_semanal.semana_inicio })
+    .from(feedback_semanal)
+    .where(eq(feedback_semanal.id, mensaje.feedback_id))
+    .limit(1)
+  if (!feedback || feedback.semana_inicio !== lunesDeSemanaArgentina()) {
     return { error: 'Esta conversación ya se cerró.' }
   }
 
-  const { error } = await supabase
-    .from('feedback_mensajes')
-    .update({ contenido: parsed.data.contenido, edited_at: new Date().toISOString() })
-    .eq('id', mensaje.id)
-  if (error) return { error: 'No se pudo editar el mensaje.' }
+  try {
+    await db
+      .update(feedback_mensajes)
+      .set({ contenido: parsed.data.contenido, edited_at: new Date().toISOString() })
+      .where(eq(feedback_mensajes.id, mensaje.id))
+  } catch (err) {
+    console.error('editarMensajeFeedbackAction:', err)
+    return { error: 'No se pudo editar el mensaje.' }
+  }
 
   revalidatePath('/feedback-semanal')
   revalidatePath(`/admin/pacientes/${feedback.paciente_id}/feedback`)

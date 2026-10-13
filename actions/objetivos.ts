@@ -1,10 +1,13 @@
 'use server'
 
+import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-import { createClient } from '@/lib/supabase/server'
+import { objetivos } from '@/db/schema'
+import { authStaff } from '@/lib/auth/session'
 import { hoyArgentina } from '@/lib/datetime'
+import { db } from '@/lib/db'
 
 export type ObjetivoState = { ok?: boolean; error?: string }
 
@@ -20,22 +23,8 @@ const schema = z.object({
     .refine((v) => !v || v >= hoyArgentina(), 'La fecha objetivo no puede ser pasada'),
 })
 
-async function getStaff() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' as const }
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('rol')
-    .eq('id', user.id)
-    .maybeSingle()
-  if (!profile || !['nutricionista', 'entrenador', 'admin'].includes(profile.rol)) {
-    return { error: 'No autorizado' as const }
-  }
-  return { user, supabase }
-}
+// Solo staff escribe objetivos (policy `objetivos staff write`).
+const getStaff = authStaff
 
 export async function crearObjetivoAction(
   _prev: unknown,
@@ -48,16 +37,19 @@ export async function crearObjetivoAction(
   if ('error' in ctx) return { error: ctx.error }
 
   const d = parsed.data
-  const { error } = await ctx.supabase.from('objetivos').insert({
-    paciente_id: d.paciente_id,
-    categoria: d.categoria,
-    descripcion: d.descripcion,
-    estado: d.estado,
-    fecha_objetivo: d.fecha_objetivo && d.fecha_objetivo !== '' ? d.fecha_objetivo : null,
-    registrado_por: ctx.user.id,
-  })
-
-  if (error) return { error: 'No se pudo crear el objetivo.' }
+  try {
+    await db.insert(objetivos).values({
+      paciente_id: d.paciente_id,
+      categoria: d.categoria,
+      descripcion: d.descripcion,
+      estado: d.estado,
+      fecha_objetivo: d.fecha_objetivo && d.fecha_objetivo !== '' ? d.fecha_objetivo : null,
+      registrado_por: ctx.user.id,
+    })
+  } catch (err) {
+    console.error('crearObjetivoAction:', err)
+    return { error: 'No se pudo crear el objetivo.' }
+  }
 
   revalidatePath(`/admin/pacientes/${d.paciente_id}/objetivos`)
   revalidatePath('/mis-objetivos')
@@ -75,10 +67,7 @@ export async function cambiarEstadoObjetivoAction(formData: FormData) {
   if (!parsed.success) return
   const ctx = await getStaff()
   if ('error' in ctx) return
-  await ctx.supabase
-    .from('objetivos')
-    .update({ estado: parsed.data.estado })
-    .eq('id', parsed.data.id)
+  await db.update(objetivos).set({ estado: parsed.data.estado }).where(eq(objetivos.id, parsed.data.id))
   revalidatePath(`/admin/pacientes/${parsed.data.paciente_id}/objetivos`)
   revalidatePath('/mis-objetivos')
 }
@@ -89,7 +78,7 @@ export async function eliminarObjetivoAction(formData: FormData) {
   if (!id) return
   const ctx = await getStaff()
   if ('error' in ctx) return
-  await ctx.supabase.from('objetivos').delete().eq('id', id)
+  await db.delete(objetivos).where(eq(objetivos.id, id))
   revalidatePath(`/admin/pacientes/${paciente_id}/objetivos`)
   revalidatePath('/mis-objetivos')
 }

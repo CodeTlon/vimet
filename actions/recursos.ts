@@ -1,147 +1,39 @@
 'use server'
 
+import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-import { pareceUnPdf, pareceUnVideo } from '@/lib/file-sniff'
-import { optimizeImage } from '@/lib/storage/optimize-image'
-import { createClient } from '@/lib/supabase/server'
+import { recursos_paciente } from '@/db/schema'
+import { authStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
+import { crearRecurso } from '@/lib/services/recursos'
+import { borrarArchivos } from '@/lib/storage/s3'
 
 export type RecursoState = { ok?: boolean; error?: string }
 
-const ALLOWED_MIME = {
-  pdf:    ['application/pdf'],
-  imagen: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
-  video:  ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'],
-} as const
+// Solo staff gestiona recursos (policy `recursos staff all`).
+const requireStaff = authStaff
 
-const MAX_BYTES = {
-  pdf:    20 * 1024 * 1024,
-  imagen: 10 * 1024 * 1024,
-  // ponytail: sin transcodificación server-side (requeriría ffmpeg + infra
-  // serverless que este proyecto no tiene). Techo: si el tamaño sigue siendo
-  // un problema, la solución real es un servicio externo (Mux/Cloudinary) o
-  // un worker con ffmpeg aparte.
-  video: 40 * 1024 * 1024,
-} as const
-
-async function requireStaff() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' as const }
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('rol')
-    .eq('id', user.id)
-    .maybeSingle()
-  if (!profile || !['nutricionista', 'entrenador', 'admin'].includes(profile.rol)) {
-    return { error: 'No autorizado' as const }
-  }
-  return { user, supabase }
-}
-
-const commonFields = {
-  paciente_id:      z.string().uuid(),
-  categoria:        z.enum(['ejercicio', 'nutricion', 'progreso', 'educativo', 'otro']),
-  titulo:           z.string().min(1, 'El título es requerido').max(200),
-  descripcion:      z.string().max(1000).optional().or(z.literal('')),
-  visible_paciente: z.string().transform((v) => v === 'true'),
-  plan_id:          z.string().optional().or(z.literal('')),
-}
-
-const linkSchema = z.object({
-  ...commonFields,
-  tipo: z.literal('link'),
-  url:  z.string().url('Ingresá una URL válida'),
-})
-
-const fileSchema = z.object({
-  ...commonFields,
-  tipo: z.enum(['pdf', 'imagen', 'video']),
-})
-
-export async function crearRecursoAction(
-  _prev: unknown,
-  formData: FormData,
-): Promise<RecursoState> {
+export async function crearRecursoAction(_prev: unknown, formData: FormData): Promise<RecursoState> {
   const ctx = await requireStaff()
   if ('error' in ctx) return { error: ctx.error }
 
-  const tipo       = formData.get('tipo') as string
-  const paciente_id = formData.get('paciente_id') as string
-  const plan_id_raw = (formData.get('plan_id') as string | null) ?? ''
+  const paciente_id = String(formData.get('paciente_id') ?? '')
+  const planIdRaw = String(formData.get('plan_id') ?? '')
 
-  if (tipo === 'link') {
-    const parsed = linkSchema.safeParse(Object.fromEntries(formData))
-    if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
-    const d = parsed.data
-
-    const { error } = await ctx.supabase.from('recursos_paciente').insert({
-      paciente_id:      d.paciente_id,
-      tipo:             'link',
-      categoria:        d.categoria,
-      titulo:           d.titulo.trim(),
-      descripcion:      d.descripcion?.trim() || null,
-      url:              d.url,
-      visible_paciente: d.visible_paciente,
-      plan_id:          plan_id_raw ? (Number(plan_id_raw) || null) : null,
-      creado_por:       ctx.user.id,
-    })
-    if (error) return { error: 'No se pudo guardar el recurso.' }
-  } else {
-    const parsed = fileSchema.safeParse(Object.fromEntries(formData))
-    if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
-    const d = parsed.data
-
-    const file = formData.get('archivo') as File | null
-    if (!file || file.size === 0) return { error: 'Seleccioná un archivo.' }
-
-    const t = d.tipo as 'pdf' | 'imagen' | 'video'
-    if (!(ALLOWED_MIME[t] as readonly string[]).includes(file.type)) {
-      return { error: `Tipo de archivo no permitido para ${d.tipo}.` }
-    }
-    if (file.size > MAX_BYTES[t]) {
-      return { error: `El archivo supera el límite de ${MAX_BYTES[t] / 1024 / 1024} MB.` }
-    }
-
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-    let buf: Buffer<ArrayBufferLike> = Buffer.from(await file.arrayBuffer())
-    let contentType = file.type
-    let storage_path = `${d.paciente_id}/r/${Date.now()}_${safeName}`
-
-    if (t === 'imagen') {
-      buf = await optimizeImage(buf)
-      contentType = 'image/webp'
-      storage_path = storage_path.replace(/\.\w+$/, '') + '.webp'
-    } else if (t === 'pdf' && !pareceUnPdf(buf)) {
-      return { error: 'El archivo no es un PDF válido.' }
-    } else if (t === 'video' && !pareceUnVideo(buf, file.type)) {
-      return { error: 'El archivo no es un video válido.' }
-    }
-
-    const { error: upErr } = await ctx.supabase.storage
-      .from('recursos')
-      .upload(storage_path, Buffer.from(buf), { contentType, upsert: false })
-    if (upErr) return { error: 'No se pudo subir el archivo.' }
-
-    const { error } = await ctx.supabase.from('recursos_paciente').insert({
-      paciente_id:      d.paciente_id,
-      tipo:             d.tipo,
-      categoria:        d.categoria,
-      titulo:           d.titulo.trim(),
-      descripcion:      d.descripcion?.trim() || null,
-      storage_path,
-      visible_paciente: d.visible_paciente,
-      plan_id:          plan_id_raw ? (Number(plan_id_raw) || null) : null,
-      creado_por:       ctx.user.id,
-    })
-    if (error) {
-      await ctx.supabase.storage.from('recursos').remove([storage_path])
-      return { error: 'No se pudo guardar el recurso.' }
-    }
-  }
+  const res = await crearRecurso(ctx.user.id, {
+    tipo: String(formData.get('tipo') ?? ''),
+    paciente_id,
+    categoria: String(formData.get('categoria') ?? ''),
+    titulo: String(formData.get('titulo') ?? ''),
+    descripcion: String(formData.get('descripcion') ?? ''),
+    visible_paciente: formData.get('visible_paciente') === 'true',
+    plan_id: planIdRaw ? Number(planIdRaw) || null : null,
+    url: String(formData.get('url') ?? ''),
+    archivo: formData.get('archivo') as File | null,
+  })
+  if (!res.ok) return { error: res.error }
 
   revalidatePath(`/admin/pacientes/${paciente_id}/recursos`)
   revalidatePath('/mis-recursos')
@@ -149,31 +41,31 @@ export async function crearRecursoAction(
 }
 
 export async function eliminarRecursoAction(formData: FormData) {
-  const id          = Number(formData.get('id'))
+  const id = Number(formData.get('id'))
   const paciente_id = String(formData.get('paciente_id') ?? '')
   if (!id) return
 
   const ctx = await requireStaff()
   if ('error' in ctx) return
 
-  const { data: recurso } = await ctx.supabase
-    .from('recursos_paciente')
-    .select('storage_path')
-    .eq('id', id)
-    .maybeSingle()
+  const [recurso] = await db
+    .select({ storage_path: recursos_paciente.storage_path })
+    .from(recursos_paciente)
+    .where(eq(recursos_paciente.id, id))
+    .limit(1)
 
   if (recurso?.storage_path) {
-    await ctx.supabase.storage.from('recursos').remove([recurso.storage_path])
+    await borrarArchivos('recursos', [recurso.storage_path]).catch(() => {})
   }
 
-  await ctx.supabase.from('recursos_paciente').delete().eq('id', id)
+  await db.delete(recursos_paciente).where(eq(recursos_paciente.id, id))
   revalidatePath(`/admin/pacientes/${paciente_id}/recursos`)
   revalidatePath('/mis-recursos')
 }
 
 const toggleSchema = z.object({
-  id:               z.coerce.number().int().positive(),
-  paciente_id:      z.string().uuid(),
+  id: z.coerce.number().int().positive(),
+  paciente_id: z.string().uuid(),
   visible_paciente: z.enum(['true', 'false']),
 })
 
@@ -184,10 +76,10 @@ export async function toggleVisibilidadRecursoAction(formData: FormData) {
   const ctx = await requireStaff()
   if ('error' in ctx) return
 
-  await ctx.supabase
-    .from('recursos_paciente')
-    .update({ visible_paciente: parsed.data.visible_paciente === 'true' })
-    .eq('id', parsed.data.id)
+  await db
+    .update(recursos_paciente)
+    .set({ visible_paciente: parsed.data.visible_paciente === 'true' })
+    .where(eq(recursos_paciente.id, parsed.data.id))
 
   revalidatePath(`/admin/pacientes/${parsed.data.paciente_id}/recursos`)
   revalidatePath('/mis-recursos')

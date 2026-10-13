@@ -3,9 +3,11 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-import { createClient } from '@/lib/supabase/server'
-import { hoyArgentina } from '@/lib/datetime'
+import { fichas_paciente } from '@/db/schema'
+import { authStaff } from '@/lib/auth/session'
 import { encryptClinical } from '@/lib/crypto/clinical'
+import { hoyArgentina } from '@/lib/datetime'
+import { conActor } from '@/lib/db'
 
 export type FichaState = { ok?: boolean; error?: string }
 
@@ -59,28 +61,18 @@ export async function guardarFichaAction(
   const parsed = fichaSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: 'Datos inválidos' }
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('rol')
-    .eq('id', user.id)
-    .maybeSingle()
-  if (!profile || !['nutricionista', 'entrenador', 'admin'].includes(profile.rol)) {
-    return { error: 'No autorizado' }
-  }
+  // Solo staff escribe fichas (policy `fichas staff write`).
+  const ctx = await authStaff()
+  if ('error' in ctx) return { error: ctx.error }
+  const { user } = ctx
 
   const d = parsed.data
-  let payload: Record<string, unknown>
+  let payload: typeof fichas_paciente.$inferInsert
   try {
     payload = {
       paciente_id: d.paciente_id,
       fecha_nacimiento: toNullableString(d.fecha_nacimiento),
-      sexo: toNullableString(d.sexo),
+      sexo: toNullableString(d.sexo) as typeof fichas_paciente.$inferInsert['sexo'],
       ocupacion: toNullableString(d.ocupacion),
       fecha_primera_consulta: toNullableString(d.fecha_primera_consulta),
       fuma: toBool(d.fuma),
@@ -116,11 +108,18 @@ export async function guardarFichaAction(
     return { error: 'No se pudo guardar la ficha (falló el cifrado — revisar CLINICAL_DATA_ENCRYPTION_KEY del entorno).' }
   }
 
-  const { error } = await supabase
-    .from('fichas_paciente')
-    .upsert(payload, { onConflict: 'paciente_id' })
-
-  if (error) return { error: 'No se pudo guardar la ficha.' }
+  try {
+    const { paciente_id, ...cambios } = payload
+    await conActor(user.id, (tx) =>
+      tx
+        .insert(fichas_paciente)
+        .values(payload)
+        .onConflictDoUpdate({ target: fichas_paciente.paciente_id, set: cambios }),
+    )
+  } catch (err) {
+    console.error('guardarFichaAction:', err)
+    return { error: 'No se pudo guardar la ficha.' }
+  }
 
   revalidatePath(`/admin/pacientes/${d.paciente_id}`)
   revalidatePath(`/admin/pacientes/${d.paciente_id}/ficha`)

@@ -1,10 +1,13 @@
 'use server'
 
+import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
+import { evaluaciones_funcionales } from '@/db/schema'
+import { authStaff } from '@/lib/auth/session'
 import { haceDiasArgentina, hoyArgentina } from '@/lib/datetime'
-import { createClient } from '@/lib/supabase/server'
+import { conActor } from '@/lib/db'
 
 export type EvalState = { ok?: boolean; error?: string }
 
@@ -49,22 +52,8 @@ const schema = z.object({
   { message: 'Cargá al menos un test.', path: ['test_wells_adams'] },
 )
 
-async function getStaff() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' as const }
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('rol')
-    .eq('id', user.id)
-    .maybeSingle()
-  if (!profile || !['nutricionista', 'entrenador', 'admin'].includes(profile.rol)) {
-    return { error: 'No autorizado' as const }
-  }
-  return { user, supabase }
-}
+// Solo staff escribe evaluaciones (policy `evals staff write`).
+const getStaff = authStaff
 
 export async function crearEvaluacionAction(
   _prev: unknown,
@@ -77,7 +66,9 @@ export async function crearEvaluacionAction(
   if ('error' in ctx) return { error: ctx.error }
 
   const d = parsed.data
-  const { error } = await ctx.supabase.from('evaluaciones_funcionales').insert({
+  try {
+    await conActor(ctx.user.id, (tx) =>
+      tx.insert(evaluaciones_funcionales).values({
     paciente_id: d.paciente_id,
     fecha: d.fecha,
     test_wells_adams: d.test_wells_adams,
@@ -90,9 +81,12 @@ export async function crearEvaluacionAction(
     resistencia_metabolica: d.resistencia_metabolica,
     observaciones: d.observaciones && d.observaciones.trim() !== '' ? d.observaciones.trim() : null,
     registrado_por: ctx.user.id,
-  })
-
-  if (error) return { error: 'No se pudo guardar la evaluación.' }
+      }),
+    )
+  } catch (err) {
+    console.error('crearEvaluacionAction:', err)
+    return { error: 'No se pudo guardar la evaluación.' }
+  }
 
   revalidatePath(`/admin/pacientes/${d.paciente_id}/evaluacion-funcional`)
   return { ok: true }
@@ -110,9 +104,11 @@ export async function actualizarEvaluacionAction(
   if ('error' in ctx) return { error: ctx.error }
 
   const d = parsed.data
-  const { error } = await ctx.supabase
-    .from('evaluaciones_funcionales')
-    .update({
+  try {
+    await conActor(ctx.user.id, (tx) =>
+      tx
+        .update(evaluaciones_funcionales)
+        .set({
       fecha: d.fecha,
       test_wells_adams: d.test_wells_adams,
       test_thomas: d.test_thomas,
@@ -123,10 +119,13 @@ export async function actualizarEvaluacionAction(
       fuerza_superior: d.fuerza_superior,
       resistencia_metabolica: d.resistencia_metabolica,
       observaciones: d.observaciones && d.observaciones.trim() !== '' ? d.observaciones.trim() : null,
-    })
-    .eq('id', d.id)
-
-  if (error) return { error: 'No se pudo actualizar la evaluación.' }
+        })
+        .where(eq(evaluaciones_funcionales.id, d.id!)),
+    )
+  } catch (err) {
+    console.error('actualizarEvaluacionAction:', err)
+    return { error: 'No se pudo actualizar la evaluación.' }
+  }
 
   revalidatePath(`/admin/pacientes/${d.paciente_id}/evaluacion-funcional`)
   return { ok: true }
@@ -141,8 +140,12 @@ export async function eliminarEvaluacionAction(
   if (!id) return { error: 'Datos inválidos' }
   const ctx = await getStaff()
   if ('error' in ctx) return { error: ctx.error }
-  const { error } = await ctx.supabase.from('evaluaciones_funcionales').delete().eq('id', id)
-  if (error) return { error: 'No se pudo eliminar la evaluación.' }
+  try {
+    await conActor(ctx.user.id, (tx) => tx.delete(evaluaciones_funcionales).where(eq(evaluaciones_funcionales.id, id)))
+  } catch (err) {
+    console.error('eliminarEvaluacionAction:', err)
+    return { error: 'No se pudo eliminar la evaluación.' }
+  }
   revalidatePath(`/admin/pacientes/${paciente_id}/evaluacion-funcional`)
   return { ok: true }
 }
