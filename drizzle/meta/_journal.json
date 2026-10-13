@@ -15,6 +15,13 @@
       "when": 1791908465409,
       "tag": "0001_extras_manuales",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791908720053,
+      "tag": "0002_auth_better_auth",
+      "breakpoints": true
     }
   ]
 }
