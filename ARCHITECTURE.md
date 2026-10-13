@@ -56,3 +56,15 @@ Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio 
 - Headers de seguridad (`X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS) van centralizados en `next.config.mjs` → `headers()`, no por ruta.
 - Redirects post-auth con `next`/`token` en query: siempre pasar por un allowlist de paths relativos (ver `safeNextPath` en `app/auth/callback/route.ts`) — nunca `new URL(paramCrudo, origin)`.
 - `error.tsx` (dentro del layout) vs `global-error.tsx` (reemplaza el layout raíz, trae su propio `<html>/<body>`) — ambos con fallback de marca VIMET.
+
+
+## Backend propio (rama `feature/dev1-backend-propio`)
+Sin Supabase en runtime. Capas:
+- **Datos:** `db/schema.ts` (Drizzle) + `drizzle/*.sql`; `lib/db.ts` (pool `pg`, `conActor` fija el actor del audit log).
+- **Auth:** `lib/auth.ts` (Better Auth: email+password, emailOTP, bearer), `lib/auth/session.ts` (`requireAuth/Staff/Admin`, `authStaff`), `lib/auth/mobile.ts`.
+- **Servicios:** `lib/services/*` — reglas de negocio SIN `'use server'`, compartidas por `actions/*` (web) y `lib/mobile/*` (app).
+  Todo export de un archivo `'use server'` es invocable desde el cliente: nunca exportar funciones que reciban un `userId`.
+- **Acceso a datos con autorizacion explicita:** `lib/data/*` (turnos, rutina, feedback). No hay RLS: cada consulta filtra por la sesion.
+- **Archivos:** `lib/storage/s3.ts` (MinIO), URLs firmadas tras verificar permiso.
+- **App mobile:** `POST /api/mobile/data` + `lib/mobile/registry.ts` (catalogo cerrado, `acceso: usuario|staff|admin`).
+- **Tests:** `npm test` (Vitest + PGlite con las migraciones reales).

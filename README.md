@@ -2,7 +2,10 @@
 
 Plataforma web para VIMET — Nutrición y entrenamiento especializado en alteraciones metabólicas (Córdoba, Argentina).
 
-**Stack:** Next.js 16 · TypeScript · Tailwind CSS · Shadcn/UI · Supabase · Resend
+**Stack:** Next.js 16 · TypeScript · Tailwind CSS · Shadcn/UI · Postgres + Drizzle · Better Auth · MinIO (S3) · Resend
+
+> **Migracion en curso (rama `feature/dev1-backend-propio`, sin desplegar):** el codigo ya no usa Supabase. Produccion sigue
+> corriendo la version anterior hasta el corte. Ver `docs/migracion/` (`CORTE.md`, `ENTORNO.md`, `AUTORIZACION.md`).
 
 ## Setup
 
@@ -20,20 +23,15 @@ npm run dev
 | `npm run build` | Build producción |
 | `npm start` | Serve producción |
 | `npx playwright test` | Tests E2E |
+| `npm test` | Vitest (autorizacion, auth, importador) sobre PGlite, sin Docker |
+| `npm run db:generate` / `db:migrate` | Migraciones de Drizzle (`drizzle/`) |
+| `npm run db:paridad` | Esquema Drizzle == `supabase/migrations` |
+| `docker compose up -d` | Postgres + MinIO locales |
 
 ## Variables de entorno
 
-Ver `.env.example` para el listado completo. Obligatorias:
-
-```
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY
-RESEND_API_KEY
-RESEND_FROM_EMAIL
-COMPANY_EMAIL
-NEXT_PUBLIC_SITE_URL
-```
+Listado completo y notas en `docs/migracion/ENTORNO.md`. Obligatorias: `DATABASE_URL`, `BETTER_AUTH_SECRET`,
+`NEXT_PUBLIC_SITE_URL`, `S3_*`, `CLINICAL_DATA_ENCRYPTION_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `COMPANY_EMAIL`.
 
 ## Deploy
 
@@ -45,6 +43,7 @@ NEXT_PUBLIC_SITE_URL
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| v0.27.0 | 2026-10-13 | Backend propio (rama `feature/dev1-backend-propio`, **no desplegado**): se reemplaza Supabase por Postgres + Drizzle (`db/schema.ts`, `drizzle/`, paridad verificada con las 39 migraciones), Better Auth (sesion por cookie y bearer, confirmacion de email que activa la cuenta, recuperacion por codigo de 8 digitos, hashes bcrypt de Supabase importables, invitaciones propias) y MinIO/S3 (`lib/storage/s3.ts`). La autorizacion que hacia la RLS pasa a guards del servidor con tests IDOR (`docs/migracion/AUTORIZACION.md`); la logica de escritura se extrae a `lib/services/*` compartida por web y app. App mobile: catalogo cerrado de operaciones en `POST /api/mobile/data`. Incluye importador con verificacion por checksum, copia de storage, scripts de backup (B2) y guias de corte. **Pendiente de verificar fuera del sandbox:** ejecucion contra Postgres/MinIO reales, build de la app en dispositivo, correo real y el ensayo completo en `test`. Ver `docs/migracion/HALLAZGOS.md` para los bugs encontrados en el camino. |
 | v0.26.1 | 2026-09-23 | Fix de seguridad chico: `js-yaml` 4.3.1→4.3.2 (transitivo vía `eslint`/`@eslint/eslintrc`, devDependency) — GHSA-2883-xcg3-v3hh, `maxTotalMergeKeys` no limita el uso de CPU con merge sources vacíos (alto). Destapado por Dependabot recién después de pushear v0.26.0 (mi `npm audit --omit=dev` de esa sesión no lo veía por estar en dev). Solo lockfile, sin `--force`. `npm audit` → 0 vulnerabilidades. |
 | v0.26.0 | 2026-09-22 | Sesión de Context Engineering (`AGENTS.md` + `.ai/context/`, coexiste con `.claude/CLAUDE.md` sin duplicar) que destapó y resolvió el hallazgo de mayor severidad del proyecto hasta la fecha. **Identidad de producción confirmada con evidencia dura** (no por inferencia): vía la API de Coolify (`GET /api/v1/applications/{uuid}/envs` sobre la app `vimet`, `fqdn=vimetsalud.com.ar`) se confirmó `NEXT_PUBLIC_SUPABASE_URL=https://ayjzcxvtylvsjacgjxgh.supabase.co` — un proyecto Supabase separado de `vimet-dev`, nunca documentado como tal hasta ahora. **Hallazgo crítico resuelto**: ese proyecto de producción real tenía un gap de **14 migraciones** (`0019`, `0024`-`0028`, `0029`-`0036`) que el código ya deployado asumía aplicadas — la tabla de tracking de Supabase solo cubre hasta `0018`, y de ahí en más cada migración se había aplicado (o no) de forma irregular vía SQL directo, sin registrar en ningún lado cuáles corrieron. Confirmación de rompía en silencio: confirmación de email → activación automática de cuenta, alta de paciente gestionado por staff, ejercicios con YouTube/cardio, **cualquier staff editando el perfil público de OTRO profesional** (la policy que lo habilita, `0032`, era una de las faltantes), antropometría ISAK, y los motivos de cancelación/reprogramación de turnos — todo eso rompía con 500 apenas alguien real lo tocara. Las 14 se aplicaron en orden contra producción real, con autorización explícita del cliente, vía la Management API de Supabase (scripteado, no SQL Editor a mano) — cada una verificada antes de la siguiente, sin ningún error, y con verificación funcional posterior replicando las queries exactas del código real (no datos de prueba nuevos). El backfill de `0033_profiles_slot_publico.sql` se corrigió en el camino: buscaba los emails de **dev**, no los reales de producción (`avriljerushalmi@`/`geronimogallardo@vimetsalud.com.ar`) — ahora matchea ambos. **Otros fixes de seguridad de la misma sesión**: `next` 16.3.0→16.3.5 + `sharp` →`^0.35.4` (RCE crítico no autenticado + vulnerabilidad alta de libheif, `npm audit` a 0); chequeo de `profiles.activo` agregado **server-side** en `requireMobileUser()` (antes solo existía client-side en la app mobile, bypasseable con un bearer token obtenido fuera de la app — verificado end-to-end contra un Supabase de dev real, no solo build); rate limiting agregado a `app/api/mobile/auth/registro` (no lo tenía, a diferencia del registro web); validación de formato agregada a `app/api/mobile/turnos/crear` (`crearSchema` movido a `lib/validation/turnos.ts`, mismo patrón que `crearPacienteSchema`, porque un archivo `'use server'` no puede exportar un valor no-función). Cifrado clínico (`lib/crypto/clinical.ts`) y el gap de `plan_secciones` sin cifrar quedan documentados en `.ai/context/KNOWN_ISSUES.md` como de prioridad baja **por ahora, con la razón**: 0 filas de dato clínico real en producción hoy, no porque el backfill haya corrido. **Pendiente real**: el código de esta sesión (los fixes de seguridad) todavía no se redeployó a Coolify — las migraciones sí quedaron aplicadas contra la DB real, pero el código sigue esperando su próximo deploy tras el merge a `main`. |
 | v0.25.0 | 2026-09-09 | Registro de paciente: confirmar el email alcanza para activar la cuenta, ya no hace falta que el staff la active a mano — `registerAction` deja `activo:false` tras el `signUp`, y al confirmar en `/auth/confirmar` (`type==='signup'`), `confirmarRegistroPacienteAction` activa el perfil y deja al paciente logueado directo en `/mis-turnos` (antes cerraba la sesión y mandaba a `/login`). Fail-closed a propósito: si Supabase ya devuelve sesión en el mismo `signUp` (proyecto con "Confirm email" apagado), NO se auto-activa — queda igual que el camino normal, a la espera de `toggleActivoAction` (que se deja intacto como red manual). Mismo fix en el endpoint mobile (`emailRedirectTo` que le faltaba). **Hallazgo que motivó sacar el paso manual**: `profiles.activo` no se chequea en ningún otro lado más que el login web — ni RLS, ni `proxy.ts`, ni el bearer auth de mobile — así que sacarlo no abre ninguna puerta que no estuviera ya abierta. De paso, sesión larga de diagnóstico y fix de **todo** el sistema de mails del proyecto (8 flujos: confirmar cuenta, recuperar contraseña, invitación de staff, y turno nuevo/confirmado/cancelado al profesional + cancelado/reprogramado/sin-agenda al paciente) — verificados uno por uno en dev después de corregir tres cosas: (1) el proyecto de Supabase tenía "Confirm email" apagado (sin mail de confirmación posible) y su mailer default fallaba con 500 al prendarlo, solucionado con SMTP custom vía Resend; (2) las plantillas de Supabase seguían con el HTML default sin marca — rediseñadas las 3 (Confirm signup, Reset Password, Invite) con la identidad de VIMET; (3) `RESEND_FROM_EMAIL` seguía en `onboarding@resend.dev` (remitente de sandbox) pese al dominio `vimetsalud.com.ar` ya verificado desde hace un mes — corregido en `.env.local`, con los mails de turnos confirmados llegando después del fix. **Hallazgo de infraestructura sin relación directa pero relevante**: la producción real corre en **Coolify**, no en Vercel como decía `.claude/CLAUDE.md` desde el inicio del proyecto — Vercel es solo preview/pruebas. Pendiente: repetir en Coolify (y en el proyecto de Supabase de producción, si es distinto al de dev) toda la config de mail que se corrigió hoy — nada de esto viajó solo, `.env.local` no está en git y la config de Supabase vive en su dashboard. |
