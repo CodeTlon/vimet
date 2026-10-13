@@ -1,5 +1,10 @@
 const isDev = process.env.NODE_ENV === 'development'
 
+// Host publico de los archivos (MinIO detras de Coolify): fotos de perfil, GIFs de ejercicios y
+// miniaturas se sirven de aca. Los buckets privados se acceden por URL firmada del mismo host.
+const s3PublicUrl = process.env.S3_PUBLIC_URL ? new URL(process.env.S3_PUBLIC_URL) : null
+const s3Origin = s3PublicUrl ? s3PublicUrl.origin : null
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -7,9 +12,9 @@ const nextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     qualities: [75, 80],
     minimumCacheTTL: 60 * 60 * 24 * 60,
-    remotePatterns: [
-      { protocol: 'https', hostname: '*.supabase.co' },
-    ],
+    remotePatterns: s3PublicUrl
+      ? [{ protocol: s3PublicUrl.protocol.replace(':', ''), hostname: s3PublicUrl.hostname, port: s3PublicUrl.port }]
+      : [],
   },
   experimental: {
     optimizePackageImports: ['lucide-react'],
@@ -58,10 +63,11 @@ const nextConfig = {
               // blob: hace falta para los preview de "Subir ejercicio propio"
               // (video elegido y GIF generado se muestran vía
               // URL.createObjectURL, nunca se suben a ningún lado hasta guardar).
-              "img-src 'self' data: blob: https://*.supabase.co",
+              ['img-src', "'self'", 'data:', 'blob:', s3Origin].filter(Boolean).join(' '),
               "font-src 'self' data:",
-              "media-src 'self' blob:",
-              "connect-src 'self' https://*.supabase.co",
+              ['media-src', "'self'", 'blob:', s3Origin].filter(Boolean).join(' '),
+              // Las subidas y descargas por URL firmada van directo al host de archivos.
+              ['connect-src', "'self'", s3Origin].filter(Boolean).join(' '),
               // Sin esto, default-src 'self' bloquea el iframe de Google Maps
               // embebido en contacto/home (LazyMap, admin-configurable) — CSP
               // sin frame-src cae al default, que no incluye orígenes externos.

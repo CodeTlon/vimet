@@ -12,7 +12,12 @@ import {
 
 import { eliminarRecursoAction, toggleVisibilidadRecursoAction } from '@/actions/recursos'
 import { RecursoForm } from '@/components/seguimiento/recurso-form'
-import { createClient } from '@/lib/supabase/server'
+import { desc, eq } from 'drizzle-orm'
+
+import { profiles, recursos_paciente as tabla } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
+import { urlFirmada } from '@/lib/storage/s3'
 export const dynamic = 'force-dynamic'
 
 type Recurso = {
@@ -55,27 +60,32 @@ function TipoIcon({ tipo, className }: { tipo: string; className?: string }) {
 
 export default async function RecursosPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const supabase = await createClient()
+  await requireStaff()
 
-  const { data } = await supabase
-    .from('recursos_paciente')
-    .select(
-      'id, tipo, categoria, titulo, descripcion, url, storage_path, visible_paciente, created_at, creador:profiles!recursos_paciente_creado_por_fkey(nombre, apellido)',
-    )
-    .eq('paciente_id', params.id)
-    .order('created_at', { ascending: false })
+  const recursos = (await db
+    .select({
+      id: tabla.id,
+      tipo: tabla.tipo,
+      categoria: tabla.categoria,
+      titulo: tabla.titulo,
+      descripcion: tabla.descripcion,
+      url: tabla.url,
+      storage_path: tabla.storage_path,
+      visible_paciente: tabla.visible_paciente,
+      created_at: tabla.created_at,
+      creador: { nombre: profiles.nombre, apellido: profiles.apellido },
+    })
+    .from(tabla)
+    .leftJoin(profiles, eq(profiles.id, tabla.creado_por))
+    .where(eq(tabla.paciente_id, params.id))
+    .orderBy(desc(tabla.created_at))) as Recurso[]
 
-  const recursos = (data ?? []) as unknown as Recurso[]
-
-  // Generar URLs firmadas para archivos (1 hora de vigencia)
+  // URLs firmadas para archivos (1 hora de vigencia)
   const recursosConUrl: RecursoConUrl[] = await Promise.all(
-    recursos.map(async (r) => {
-      if (!r.storage_path) return { ...r, signedUrl: null }
-      const { data: signed } = await supabase.storage
-        .from('recursos')
-        .createSignedUrl(r.storage_path, 3600)
-      return { ...r, signedUrl: signed?.signedUrl ?? null }
-    }),
+    recursos.map(async (r) => ({
+      ...r,
+      signedUrl: r.storage_path ? await urlFirmada('recursos', r.storage_path, 3600) : null,
+    })),
   )
 
   return (

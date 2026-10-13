@@ -2,12 +2,17 @@ import { ArrowLeft, Building2, Mail, MessageCircle, Phone, UserRound, Video } fr
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-import { cancelarPendientesSinConfirmar, marcarNoAsistioVencidos } from '@/actions/turnos'
+import { eq } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
+
+import { profiles, servicios, turnos } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { puedeGestionarTurno } from '@/lib/data/turnos'
+import { db } from '@/lib/db'
+import { cancelarPendientesSinConfirmar, marcarNoAsistioVencidos } from '@/lib/services/turnos'
 import { ReprogramarTurnoForm } from '@/components/reprogramar-turno-form'
 import { TurnoDetalleForm } from '@/components/turno-detalle-form'
 import { ESTADO_TURNO_BADGE, ESTADO_TURNO_LABEL } from '@/lib/seguimiento'
-import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
 export const metadata = { title: 'Detalle de turno' }
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +41,7 @@ type TurnoDetail = {
 }
 
 export default async function TurnoDetallePage(props: { params: Promise<{ id: string }> }) {
+  const { profile } = await requireStaff()
   const params = await props.params;
   const id = Number(params.id)
   if (!Number.isFinite(id) || id <= 0) notFound()
@@ -43,34 +49,50 @@ export default async function TurnoDetallePage(props: { params: Promise<{ id: st
   await marcarNoAsistioVencidos()
   await cancelarPendientesSinConfirmar()
 
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('turnos')
-    .select(
-      'id, fecha, hora_inicio, hora_fin, modalidad, estado, notas_paciente, notas_profesional, motivo_cancelacion, motivo_reprogramacion, servicio_id, profesional_id, turno_par_id, servicios(nombre), paciente:profiles!turnos_paciente_id_fkey(nombre, apellido, email, telefono), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
-    )
-    .eq('id', id)
-    .maybeSingle()
+  const paciente = alias(profiles, 'paciente')
+  const profesional = alias(profiles, 'profesional')
+  const [data] = await db
+    .select({
+      id: turnos.id,
+      fecha: turnos.fecha,
+      hora_inicio: turnos.hora_inicio,
+      hora_fin: turnos.hora_fin,
+      modalidad: turnos.modalidad,
+      estado: turnos.estado,
+      notas_paciente: turnos.notas_paciente,
+      notas_profesional: turnos.notas_profesional,
+      motivo_cancelacion: turnos.motivo_cancelacion,
+      motivo_reprogramacion: turnos.motivo_reprogramacion,
+      servicio_id: turnos.servicio_id,
+      profesional_id: turnos.profesional_id,
+      paciente_id: turnos.paciente_id,
+      turno_par_id: turnos.turno_par_id,
+      servicios: { nombre: servicios.nombre },
+      paciente: { nombre: paciente.nombre, apellido: paciente.apellido, email: paciente.email, telefono: paciente.telefono },
+      profesional: { nombre: profesional.nombre, apellido: profesional.apellido },
+    })
+    .from(turnos)
+    .leftJoin(servicios, eq(servicios.id, turnos.servicio_id))
+    .leftJoin(paciente, eq(paciente.id, turnos.paciente_id))
+    .leftJoin(profesional, eq(profesional.id, turnos.profesional_id))
+    .where(eq(turnos.id, id))
+    .limit(1)
+  // Un staff no-admin solo ve sus turnos (reemplaza la policy de select de `turnos`).
+  if (!data || !puedeGestionarTurno(profile, data)) notFound()
 
-  if (!data) {
-    if (error) console.error('turno detalle: select falló', error)
-    notFound()
-  }
   const turno = data as unknown as TurnoDetail
 
-  // El turno vinculado (plan integral) pertenece al otro profesional — se
-  // lee con el cliente admin porque RLS no deja ver turnos ajenos entre
-  // staff no-admin, y acá es una lectura intencional para mostrar con quién
-  // más tiene turno el paciente.
+  // El turno vinculado (plan integral) pertenece al otro profesional: se lee a proposito para
+  // mostrar con quién más tiene turno el paciente.
   let otroProfesional: { nombre: string; apellido: string } | null = null
   if (turno.turno_par_id) {
-    const admin = createAdminClient()
-    const { data: par } = await admin
-      .from('turnos')
-      .select('profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)')
-      .eq('id', turno.turno_par_id)
-      .maybeSingle()
-    otroProfesional = (par as unknown as { profesional: { nombre: string; apellido: string } } | null)?.profesional ?? null
+    const [par] = await db
+      .select({ nombre: profiles.nombre, apellido: profiles.apellido })
+      .from(turnos)
+      .innerJoin(profiles, eq(profiles.id, turnos.profesional_id))
+      .where(eq(turnos.id, turno.turno_par_id))
+      .limit(1)
+    otroProfesional = par ?? null
   }
 
   const ModalidadIcon = turno.modalidad === 'virtual' ? Video : Building2

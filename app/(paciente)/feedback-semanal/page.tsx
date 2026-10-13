@@ -2,7 +2,7 @@ import { CheckCheck, ClipboardList, FileText, Lock, Paperclip } from 'lucide-rea
 import Link from 'next/link'
 import { getSessionUser } from '@/lib/auth/session'
 
-import { FeedbackChat, type MensajeFeedback } from '@/components/seguimiento/feedback-chat'
+import { FeedbackChat } from '@/components/seguimiento/feedback-chat'
 import { FeedbackForm } from '@/components/seguimiento/feedback-form'
 import { and, desc, eq, ne, sql } from 'drizzle-orm'
 

@@ -7,7 +7,11 @@ import { PlanPrintButton } from '@/components/seguimiento/plan-print-button'
 import { PlanSeccionesPanel } from '@/components/seguimiento/plan-secciones-panel'
 import { RutinaPanel, type RutinaItem } from '@/components/seguimiento/rutina-panel'
 import { obtenerSeccionesPlan } from '@/lib/plan-secciones'
-import { createClient } from '@/lib/supabase/server'
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
+
+import { ejercicios, plan_ejercicios, planes, sesiones_entrenamiento, sets_completados } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 import { readClinicalField } from '@/lib/crypto/clinical'
 export const dynamic = 'force-dynamic'
 
@@ -37,14 +41,13 @@ export default async function EditarPlanPage(
   }
 ) {
   const params = await props.params;
+  await requireStaff()
   const planId = Number(params.planId)
-  const supabase = await createClient()
-  const { data: planRaw } = await supabase
-    .from('planes')
-    .select('*')
-    .eq('id', planId)
-    .eq('paciente_id', params.id)
-    .maybeSingle()
+  const [planRaw] = await db
+    .select()
+    .from(planes)
+    .where(and(eq(planes.id, planId), eq(planes.paciente_id, params.id)))
+    .limit(1)
   if (!planRaw) notFound()
 
   // Ver lib/crypto/clinical.ts — `_enc` si el plan ya está cifrado, si no
@@ -52,52 +55,88 @@ export default async function EditarPlanPage(
   const plan = { ...planRaw, notas: readClinicalField(planRaw.notas_enc, planRaw.notas) }
 
   const tieneRutina = plan.tipo === 'entrenamiento' || plan.tipo === 'combo'
-  const secciones = await obtenerSeccionesPlan(supabase, planId)
+  const secciones = await obtenerSeccionesPlan(planId)
 
-  // Solo 2 columnas angostas de las 1324 filas (para armar los <select> de filtro),
-  // no el catálogo completo con nombres/thumbnails — eso se busca on-demand vía /api/ejercicios.
-  const [{ data: valoresFiltro }, { data: rutina }, { data: sesiones }] = tieneRutina
+  // Solo 2 columnas angostas (para armar los <select> de filtro), no el catálogo completo con
+  // nombres/thumbnails — eso se busca on-demand vía /api/ejercicios.
+  const [valoresFiltro, rutina, sesiones] = tieneRutina
     ? await Promise.all([
-        supabase.from('ejercicios').select('parte_cuerpo, equipo'),
-        supabase
-          .from('plan_ejercicios')
-          .select(
-            'id, ejercicio_id, dia_semana, orden, series, repeticiones, descanso_seg, notas, ' +
-              'cardio_entrada_calor_valor, cardio_entrada_calor_unidad, ' +
-              'cardio_trabajo_principal_valor, cardio_trabajo_principal_unidad, ' +
-              'cardio_vuelta_calma_valor, cardio_vuelta_calma_unidad, ' +
-              'ejercicio:ejercicios(id, nombre, imagen_url, gif_url, youtube_url, instrucciones, modo)',
-          )
-          .eq('plan_id', planId),
-        supabase
-          .from('sesiones_entrenamiento')
-          .select('id, dia_semana, iniciada_at, finalizada_at, sets_completados(count)')
-          .eq('plan_id', planId)
-          .order('iniciada_at', { ascending: false })
-          .limit(10),
+        db.select({ parte_cuerpo: ejercicios.parte_cuerpo, equipo: ejercicios.equipo }).from(ejercicios),
+        db
+          .select({
+            id: plan_ejercicios.id,
+            ejercicio_id: plan_ejercicios.ejercicio_id,
+            dia_semana: plan_ejercicios.dia_semana,
+            orden: plan_ejercicios.orden,
+            series: plan_ejercicios.series,
+            repeticiones: plan_ejercicios.repeticiones,
+            descanso_seg: plan_ejercicios.descanso_seg,
+            notas: plan_ejercicios.notas,
+            cardio_entrada_calor_valor: plan_ejercicios.cardio_entrada_calor_valor,
+            cardio_entrada_calor_unidad: plan_ejercicios.cardio_entrada_calor_unidad,
+            cardio_trabajo_principal_valor: plan_ejercicios.cardio_trabajo_principal_valor,
+            cardio_trabajo_principal_unidad: plan_ejercicios.cardio_trabajo_principal_unidad,
+            cardio_vuelta_calma_valor: plan_ejercicios.cardio_vuelta_calma_valor,
+            cardio_vuelta_calma_unidad: plan_ejercicios.cardio_vuelta_calma_unidad,
+            ejercicio: {
+              id: ejercicios.id,
+              nombre: ejercicios.nombre,
+              imagen_url: ejercicios.imagen_url,
+              gif_url: ejercicios.gif_url,
+              youtube_url: ejercicios.youtube_url,
+              instrucciones: ejercicios.instrucciones,
+              modo: ejercicios.modo,
+            },
+          })
+          .from(plan_ejercicios)
+          .leftJoin(ejercicios, eq(ejercicios.id, plan_ejercicios.ejercicio_id))
+          .where(eq(plan_ejercicios.plan_id, planId)),
+        db
+          .select({
+            id: sesiones_entrenamiento.id,
+            dia_semana: sesiones_entrenamiento.dia_semana,
+            iniciada_at: sesiones_entrenamiento.iniciada_at,
+            finalizada_at: sesiones_entrenamiento.finalizada_at,
+            n_sets: sql<number>`(select count(*)::int from ${sets_completados} where ${sets_completados.sesion_id} = ${sesiones_entrenamiento.id})`,
+          })
+          .from(sesiones_entrenamiento)
+          .where(eq(sesiones_entrenamiento.plan_id, planId))
+          .orderBy(desc(sesiones_entrenamiento.iniciada_at))
+          .limit(10)
+          .then((rows) => rows.map(({ n_sets, ...r }) => ({ ...r, sets_completados: [{ count: n_sets }] }))),
       ])
-    : [{ data: [] }, { data: [] }, { data: [] }]
+    : [[], [], []]
 
-  const partes = Array.from(
-    new Set((valoresFiltro ?? []).map((v) => v.parte_cuerpo).filter(Boolean)),
-  ).sort() as string[]
-  const equipos = Array.from(
-    new Set((valoresFiltro ?? []).map((v) => v.equipo).filter(Boolean)),
-  ).sort() as string[]
+  const partes = Array.from(new Set(valoresFiltro.map((v) => v.parte_cuerpo).filter(Boolean))).sort() as string[]
+  const equipos = Array.from(new Set(valoresFiltro.map((v) => v.equipo).filter(Boolean))).sort() as string[]
 
-  // Detalle por serie (peso/reps/descanso real vs. planificado) para cada sesión,
-  // se pide aparte porque necesita los ids de sesiones ya resueltos.
-  const sesionIds = (sesiones ?? []).map((s) => s.id)
-  const { data: setsDetalleRaw } = sesionIds.length
-    ? await supabase
-        .from('sets_completados')
-        .select(
-          'sesion_id, plan_ejercicio_id, numero_set, peso_kg, repeticiones, duracion_seg, descanso_seg, plan_ejercicio:plan_ejercicios(descanso_seg, ejercicio:ejercicios(nombre))',
-        )
-        .in('sesion_id', sesionIds)
-        .order('id')
-    : { data: [] }
-  const setsDetalle = setsDetalleRaw as unknown as SetDetalle[] | null
+  // Detalle por serie (peso/reps/descanso real vs. planificado) para cada sesión, aparte porque
+  // necesita los ids de sesiones ya resueltos.
+  const sesionIds = sesiones.map((s) => s.id)
+  const setsDetalle: SetDetalle[] = sesionIds.length
+    ? (
+        await db
+          .select({
+            sesion_id: sets_completados.sesion_id,
+            plan_ejercicio_id: sets_completados.plan_ejercicio_id,
+            numero_set: sets_completados.numero_set,
+            peso_kg: sets_completados.peso_kg,
+            repeticiones: sets_completados.repeticiones,
+            duracion_seg: sets_completados.duracion_seg,
+            descanso_seg: sets_completados.descanso_seg,
+            pe_descanso: plan_ejercicios.descanso_seg,
+            ej_nombre: ejercicios.nombre,
+          })
+          .from(sets_completados)
+          .leftJoin(plan_ejercicios, eq(plan_ejercicios.id, sets_completados.plan_ejercicio_id))
+          .leftJoin(ejercicios, eq(ejercicios.id, plan_ejercicios.ejercicio_id))
+          .where(inArray(sets_completados.sesion_id, sesionIds))
+          .orderBy(asc(sets_completados.id))
+      ).map(({ pe_descanso, ej_nombre, ...r }) => ({
+        ...r,
+        plan_ejercicio: { descanso_seg: pe_descanso, ejercicio: ej_nombre != null ? { nombre: ej_nombre } : null },
+      }))
+    : []
 
   return (
     <div className="space-y-4">

@@ -5,7 +5,11 @@ import { eliminarPlanAction } from '@/actions/planes'
 import { Pagination } from '@/components/pagination'
 import { PlanDownloadButton } from '@/components/seguimiento/plan-download'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
-import { createClient } from '@/lib/supabase/server'
+import { desc, eq, sql } from 'drizzle-orm'
+
+import { planes as tabla } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 import {
   ESTADO_PLAN_BADGE,
   ESTADO_PLAN_LABEL,
@@ -32,21 +36,30 @@ export default async function PlanesPage(
   }
 ) {
   const params = await props.params;
+  await requireStaff()
   const searchParams = await props.searchParams;
-  const supabase = await createClient()
   const page = parsePage(searchParams?.page)
   const [from, to] = pageRange(page)
-  const { data, count } = await supabase
-    .from('planes')
-    .select('id, tipo, titulo, estado, fecha_desde, fecha_hasta, archivo_path, updated_at', {
-      count: 'exact',
-    })
-    .eq('paciente_id', params.id)
-    .order('fecha_desde', { ascending: false })
-    .range(from, to)
-
-  const planes = (data ?? []) as Plan[]
-  const pages = calcTotalPages(count)
+  const [planes, [{ total }]] = await Promise.all([
+    db
+      .select({
+        id: tabla.id,
+        tipo: tabla.tipo,
+        titulo: tabla.titulo,
+        estado: tabla.estado,
+        fecha_desde: tabla.fecha_desde,
+        fecha_hasta: tabla.fecha_hasta,
+        archivo_path: tabla.archivo_path,
+        updated_at: tabla.updated_at,
+      })
+      .from(tabla)
+      .where(eq(tabla.paciente_id, params.id))
+      .orderBy(desc(tabla.fecha_desde))
+      .limit(to - from + 1)
+      .offset(from),
+    db.select({ total: sql<number>`count(*)::int` }).from(tabla).where(eq(tabla.paciente_id, params.id)),
+  ]) as [Plan[], { total: number }[]]
+  const pages = calcTotalPages(total)
 
   return (
     <div className="space-y-5">

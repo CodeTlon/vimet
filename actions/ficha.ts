@@ -109,7 +109,8 @@ export async function guardarFichaAction(
   }
 
   try {
-    const { paciente_id, ...cambios } = payload
+    const cambios: Partial<typeof payload> = { ...payload }
+    delete cambios.paciente_id
     await conActor(user.id, (tx) =>
       tx
         .insert(fichas_paciente)

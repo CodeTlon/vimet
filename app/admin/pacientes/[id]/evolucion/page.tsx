@@ -2,7 +2,11 @@ import { Pagination } from '@/components/pagination'
 import { EvolucionEntryItem } from '@/components/seguimiento/evolucion-entry-item'
 import { EvolucionForm } from '@/components/seguimiento/evolucion-form'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
-import { createClient } from '@/lib/supabase/server'
+import { desc, eq, sql } from 'drizzle-orm'
+
+import { evolucion_entradas as tabla, profiles } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 import { readClinicalField } from '@/lib/crypto/clinical'
 export const dynamic = 'force-dynamic'
 
@@ -24,26 +28,39 @@ export default async function EvolucionPage(
   }
 ) {
   const params = await props.params;
+  await requireStaff()
   const searchParams = await props.searchParams;
-  const supabase = await createClient()
   const page = parsePage(searchParams?.page)
   const [from, to] = pageRange(page)
-  const { data, count } = await supabase
-    .from('evolucion_entradas')
-    .select(
-      'id, origen, tipo, contenido, contenido_enc, visible_paciente, created_at, registrado_por, registrante:profiles!evolucion_entradas_registrado_por_fkey(nombre, apellido)',
-      { count: 'exact' },
-    )
-    .eq('paciente_id', params.id)
-    .order('created_at', { ascending: false })
-    .range(from, to)
+  const [data, [{ total }]] = await Promise.all([
+    db
+      .select({
+        id: tabla.id,
+        origen: tabla.origen,
+        tipo: tabla.tipo,
+        contenido: tabla.contenido,
+        contenido_enc: tabla.contenido_enc,
+        visible_paciente: tabla.visible_paciente,
+        created_at: tabla.created_at,
+        registrado_por: tabla.registrado_por,
+        registrante: { nombre: profiles.nombre, apellido: profiles.apellido },
+      })
+      .from(tabla)
+      .leftJoin(profiles, eq(profiles.id, tabla.registrado_por))
+      .where(eq(tabla.paciente_id, params.id))
+      .orderBy(desc(tabla.created_at))
+      .limit(to - from + 1)
+      .offset(from),
+    db.select({ total: sql<number>`count(*)::int` }).from(tabla).where(eq(tabla.paciente_id, params.id)),
+  ])
 
-  // Ver lib/crypto/clinical.ts — `_enc` si la entrada ya está cifrada, si
-  // no cae al texto plano viejo (histórico sin backfillear).
-  const entries = ((data ?? []) as unknown as (Entry & { contenido_enc: string | null })[]).map(
-    (e) => ({ ...e, contenido: readClinicalField(e.contenido_enc, e.contenido) ?? '' }),
-  )
-  const pages = calcTotalPages(count)
+  // Ver lib/crypto/clinical.ts — `_enc` si la entrada ya está cifrada, si no cae al texto plano
+  // viejo (histórico sin backfillear).
+  const entries = (data as unknown as (Entry & { contenido_enc: string | null })[]).map((e) => ({
+    ...e,
+    contenido: readClinicalField(e.contenido_enc, e.contenido) ?? '',
+  }))
+  const pages = calcTotalPages(total)
 
   return (
     <div className="space-y-5">

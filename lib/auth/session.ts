@@ -26,7 +26,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   return session ? { id: session.user.id, email: session.user.email } : null
 })
 
-// Mismos nombres y firmas que lib/supabase/auth-helpers.ts: los ~50 call sites cambian solo el import.
+// Mismos nombres y firmas que tenia el helper de Supabase, para que los call sites cambien solo el import.
 export async function getUserAndProfile(): Promise<
   { user: SessionUser; profile: Profile | null } | { user: null; profile: null }
 > {

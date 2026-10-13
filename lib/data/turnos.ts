@@ -241,3 +241,12 @@ export async function nombreDePerfil(id: string, db: Db = dbGlobal): Promise<{ n
 }
 
 export { esStaff }
+
+/**
+ * Filtro de turnos visibles para un miembro del staff: el admin ve todos; el resto, solo los
+ * suyos (`profesional_id = yo`). Reemplaza la policy `turnos paciente own select`, que para staff
+ * no-admin se limitaba a sus propios turnos. Devuelve `undefined` (sin filtro) para admin.
+ */
+export function condicionTurnosVisibles(actor: Actor) {
+  return actor.rol === 'admin' ? undefined : eq(turnos.profesional_id, actor.id)
+}

@@ -2,7 +2,11 @@ import { ExpandableChart } from '@/components/expandable-chart'
 import { Pagination } from '@/components/pagination'
 import { EvaluacionesPanel } from '@/components/seguimiento/evaluaciones-panel'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
-import { createClient } from '@/lib/supabase/server'
+import { asc, desc, eq, sql } from 'drizzle-orm'
+
+import { evaluaciones_funcionales as tabla } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 import { PUNTAJE_MAX_FUNCIONAL } from '@/lib/seguimiento'
 export const dynamic = 'force-dynamic'
 
@@ -28,29 +32,30 @@ export default async function EvalFuncionalPage(
   }
 ) {
   const params = await props.params;
+  await requireStaff()
   const searchParams = await props.searchParams;
-  const supabase = await createClient()
   const page = parsePage(searchParams?.page)
   const [from, to] = pageRange(page)
 
   // El gráfico necesita la serie completa; el listado de abajo se pagina aparte.
-  const [{ data: serie }, { data: pagina, count }] = await Promise.all([
-    supabase
-      .from('evaluaciones_funcionales')
-      .select('fecha, puntaje_total')
-      .eq('paciente_id', params.id)
-      .order('fecha', { ascending: true }),
-    supabase
-      .from('evaluaciones_funcionales')
-      .select('*', { count: 'exact' })
-      .eq('paciente_id', params.id)
-      .order('fecha', { ascending: false })
-      .range(from, to),
+  const [serieCompleta, pagina, [{ total }]] = await Promise.all([
+    db
+      .select({ fecha: tabla.fecha, puntaje_total: tabla.puntaje_total })
+      .from(tabla)
+      .where(eq(tabla.paciente_id, params.id))
+      .orderBy(asc(tabla.fecha)),
+    db
+      .select()
+      .from(tabla)
+      .where(eq(tabla.paciente_id, params.id))
+      .orderBy(desc(tabla.fecha))
+      .limit(to - from + 1)
+      .offset(from),
+    db.select({ total: sql<number>`count(*)::int` }).from(tabla).where(eq(tabla.paciente_id, params.id)),
   ])
 
-  const serieCompleta = serie ?? []
-  const evals = (pagina ?? []) as Eval[]
-  const pages = calcTotalPages(count)
+  const evals = pagina as unknown as Eval[]
+  const pages = calcTotalPages(total)
 
   return (
     <div className="space-y-6">

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 import { Tabs } from '@/components/tabs'
-import { requireStaff } from '@/lib/supabase/auth-helpers'
+import { requireStaff } from '@/lib/auth/session'
 const tabs = [
   { href: '/admin/contenido/servicios', label: 'Servicios' },
   { href: '/admin/contenido/metodologia', label: 'Metodología' },

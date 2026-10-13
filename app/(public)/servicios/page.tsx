@@ -13,7 +13,10 @@ import {
   type TipoServicio,
 } from '@/lib/config/servicios'
 import { team } from '@/lib/config/team'
-import { createClient } from '@/lib/supabase/server'
+import { eq, inArray } from 'drizzle-orm'
+
+import { profiles, servicios as tabla } from '@/db/schema'
+import { db } from '@/lib/db'
 
 export const metadata: Metadata = {
   title: 'Servicios de nutrición y entrenamiento en Córdoba',
@@ -48,13 +51,23 @@ type ServicioView = {
 }
 
 async function loadServicios(): Promise<ServicioView[]> {
-  const supabase = await createClient()
-  const [{ data: servicios }, { data: profiles }] = await Promise.all([
-    supabase.from('servicios').select('*').eq('activo', true),
-    supabase.from('profiles').select('id, email').in('email', ['avril@vimet.com', 'gero@vimet.com']),
-  ])
+  // `slot_publico` identifica a Avril/Gero en la fila del perfil, independiente del email de login.
+  // Si la base no responde (o no hay filas) se muestra el catalogo estatico de SERVICIOS_FALLBACK.
+  let servicios: (typeof tabla.$inferSelect)[] = []
+  let profiles_: { id: string; slot_publico: string | null }[] = []
+  try {
+    ;[servicios, profiles_] = await Promise.all([
+      db.select().from(tabla).where(eq(tabla.activo, true)),
+      db
+        .select({ id: profiles.id, slot_publico: profiles.slot_publico })
+        .from(profiles)
+        .where(inArray(profiles.slot_publico, ['avril', 'gero'])),
+    ])
+  } catch (err) {
+    console.error('loadServicios: usando catalogo estatico:', err instanceof Error ? err.message : err)
+  }
 
-  if (!servicios?.length) {
+  if (!servicios.length) {
     return SERVICIOS_FALLBACK.map((s, i) => ({
       id: `fallback-${i}`,
       nombre: s.nombre,
@@ -66,14 +79,10 @@ async function loadServicios(): Promise<ServicioView[]> {
     }))
   }
 
-  const profMap = new Map(profiles?.map((p) => [p.id, p.email] as const) ?? [])
+  const slotById = new Map(profiles_.map((p) => [p.id, p.slot_publico] as const))
   return (servicios as ServicioRow[]).map((s) => {
-    const email = s.profesional_id ? profMap.get(s.profesional_id) : null
-    const profesional: 'avril' | 'gero' | null = email === 'avril@vimet.com'
-      ? 'avril'
-      : email === 'gero@vimet.com'
-        ? 'gero'
-        : null
+    const slot = s.profesional_id ? slotById.get(s.profesional_id) : null
+    const profesional: 'avril' | 'gero' | null = slot === 'avril' || slot === 'gero' ? slot : null
     return {
       id: String(s.id),
       nombre: s.nombre,

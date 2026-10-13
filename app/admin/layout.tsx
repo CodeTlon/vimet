@@ -1,27 +1,20 @@
 import { redirect } from 'next/navigation'
 import { type ReactNode } from 'react'
-import { getSessionUser } from '@/lib/auth/session'
+import { esStaff, getUserAndProfile } from '@/lib/auth/session'
 
 import { AdminSidebar } from '@/components/admin-sidebar'
-import { createClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const user = await getSessionUser()
+  const { user, profile } = await getUserAndProfile()
   if (!user) redirect('/login?next=/admin/dashboard')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('rol, nombre, apellido, debe_cambiar_password')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (!profile || !['nutricionista', 'entrenador', 'admin'].includes(profile.rol)) {
+  if (!profile || !esStaff(profile.rol)) {
     redirect('/mis-turnos')
   }
 
   if (profile.debe_cambiar_password) {
-    redirect('/auth/nueva-contrasena?flow=recovery')
+    redirect('/auth/nueva-contrasena')
   }
 
   return (

@@ -223,7 +223,9 @@ export async function actualizarPlanAction(
   }
 
   try {
-    const { paciente_id: _p, ...cambios } = payload
+    // El dueño del plan no se reasigna al actualizar.
+    const cambios: Partial<typeof payload> = { ...payload }
+    delete cambios.paciente_id
     await conActor(ctx.user.id, (tx) => tx.update(planes).set(cambios).where(eq(planes.id, id)))
   } catch (err) {
     console.error('actualizarPlanAction:', err)

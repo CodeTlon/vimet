@@ -14,7 +14,11 @@ import {
   isakCompleto,
   type MedicionIsakRaw,
 } from '@/lib/seguimiento'
-import { createClient } from '@/lib/supabase/server'
+import { asc, desc, eq, sql } from 'drizzle-orm'
+
+import { mediciones_antropometricas as tabla } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 
 type Medicion = {
@@ -53,37 +57,66 @@ export default async function AntropometriaPage(
   }
 ) {
   const params = await props.params;
+  await requireStaff()
   const searchParams = await props.searchParams;
-  const supabase = await createClient()
   const page = parsePage(searchParams?.page)
   const [from, to] = pageRange(page)
 
   // El gráfico necesita la serie completa; la tabla de abajo se pagina aparte.
-  const ISAK_FIELDS =
-    'pliegue_triceps_mm, pliegue_subescapular_mm, pliegue_supraespinal_mm, pliegue_abdominal_mm, pliegue_muslo_mm, pliegue_pierna_mm, pliegue_biceps_mm, pliegue_cresta_iliaca_mm, perimetro_brazo_cm, perimetro_muslo_cm, perimetro_pierna_cm, kg_tejido_muscular, kg_tejido_oseo'
+  const isak = {
+    pliegue_triceps_mm: tabla.pliegue_triceps_mm,
+    pliegue_subescapular_mm: tabla.pliegue_subescapular_mm,
+    pliegue_supraespinal_mm: tabla.pliegue_supraespinal_mm,
+    pliegue_abdominal_mm: tabla.pliegue_abdominal_mm,
+    pliegue_muslo_mm: tabla.pliegue_muslo_mm,
+    pliegue_pierna_mm: tabla.pliegue_pierna_mm,
+    pliegue_biceps_mm: tabla.pliegue_biceps_mm,
+    pliegue_cresta_iliaca_mm: tabla.pliegue_cresta_iliaca_mm,
+    perimetro_brazo_cm: tabla.perimetro_brazo_cm,
+    perimetro_muslo_cm: tabla.perimetro_muslo_cm,
+    perimetro_pierna_cm: tabla.perimetro_pierna_cm,
+    kg_tejido_muscular: tabla.kg_tejido_muscular,
+    kg_tejido_oseo: tabla.kg_tejido_oseo,
+  }
 
-  const [{ data: serie }, { data: pagina, count }] = await Promise.all([
-    supabase
-      .from('mediciones_antropometricas')
-      .select(`fecha_medicion, peso_kg, porc_grasa, porc_masa_muscular, ${ISAK_FIELDS}`)
-      .eq('paciente_id', params.id)
-      .order('fecha_medicion', { ascending: true })
-      .order('id', { ascending: true }),
-    supabase
-      .from('mediciones_antropometricas')
-      .select(
-        `id, fecha_medicion, peso_kg, talla_cm, imc, porc_grasa, porc_masa_muscular, kg_grasa, kg_musculo, ${ISAK_FIELDS}, dx_antropometrico, observaciones`,
-        { count: 'exact' },
-      )
-      .eq('paciente_id', params.id)
-      .order('fecha_medicion', { ascending: false })
-      .order('id', { ascending: false })
-      .range(from, to),
+  const [serie, pagina, [{ total }]] = await Promise.all([
+    db
+      .select({
+        fecha_medicion: tabla.fecha_medicion,
+        peso_kg: tabla.peso_kg,
+        porc_grasa: tabla.porc_grasa,
+        porc_masa_muscular: tabla.porc_masa_muscular,
+        ...isak,
+      })
+      .from(tabla)
+      .where(eq(tabla.paciente_id, params.id))
+      .orderBy(asc(tabla.fecha_medicion), asc(tabla.id)),
+    db
+      .select({
+        id: tabla.id,
+        fecha_medicion: tabla.fecha_medicion,
+        peso_kg: tabla.peso_kg,
+        talla_cm: tabla.talla_cm,
+        imc: tabla.imc,
+        porc_grasa: tabla.porc_grasa,
+        porc_masa_muscular: tabla.porc_masa_muscular,
+        kg_grasa: tabla.kg_grasa,
+        kg_musculo: tabla.kg_musculo,
+        ...isak,
+        dx_antropometrico: tabla.dx_antropometrico,
+        observaciones: tabla.observaciones,
+      })
+      .from(tabla)
+      .where(eq(tabla.paciente_id, params.id))
+      .orderBy(desc(tabla.fecha_medicion), desc(tabla.id))
+      .limit(to - from + 1)
+      .offset(from),
+    db.select({ total: sql<number>`count(*)::int` }).from(tabla).where(eq(tabla.paciente_id, params.id)),
   ])
 
-  const serieCompleta = (serie ?? []) as SerieIsak[]
-  const mediciones = (pagina ?? []) as Medicion[]
-  const pages = calcTotalPages(count)
+  const serieCompleta = serie as SerieIsak[]
+  const mediciones = pagina as Medicion[]
+  const pages = calcTotalPages(total)
 
   const hayDatosIsak = serieCompleta.some(isakCompleto)
   const ultimaIsak = [...serieCompleta].reverse().find(isakCompleto) ?? null

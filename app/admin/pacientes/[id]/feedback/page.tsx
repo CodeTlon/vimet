@@ -1,10 +1,15 @@
 import { Paperclip } from 'lucide-react'
 
 import { Pagination } from '@/components/pagination'
-import { getSessionUser } from '@/lib/auth/session'
-import { FeedbackChat, type MensajeFeedback } from '@/components/seguimiento/feedback-chat'
+import { requireStaff } from '@/lib/auth/session'
+import { FeedbackChat } from '@/components/seguimiento/feedback-chat'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
-import { createClient } from '@/lib/supabase/server'
+import { desc, eq, sql } from 'drizzle-orm'
+
+import { feedback_semanal as tabla } from '@/db/schema'
+import { mensajesDeFeedback } from '@/lib/data/feedback'
+import { db } from '@/lib/db'
+import { urlFirmada } from '@/lib/storage/s3'
 import { formatearFechaCorta, lunesDeSemana } from '@/lib/seguimiento'
 export const dynamic = 'force-dynamic'
 
@@ -32,50 +37,45 @@ export default async function FeedbackPacientePage(
 ) {
   const params = await props.params;
   const searchParams = await props.searchParams;
-  const user = await getSessionUser()
+  const { user } = await requireStaff()
 
   const page = parsePage(searchParams?.page)
   const [from, to] = pageRange(page)
-  const { data, count } = await supabase
-    .from('feedback_semanal')
-    .select(
-      'id, semana_inicio, estado_fisico, animo, energia, adherencia_entrenamiento, adherencia_alimentacion, peso_autoreporte_kg, observaciones, dudas, respuesta_profesional, respondido_at, adjunto_path',
-      { count: 'exact' },
-    )
-    .eq('paciente_id', params.id)
-    .order('semana_inicio', { ascending: false })
-    .range(from, to)
-
-  const feedback = (data ?? []) as Feedback[]
-  const pages = calcTotalPages(count)
+  const [feedback, [{ total }]] = await Promise.all([
+    db
+      .select({
+        id: tabla.id,
+        semana_inicio: tabla.semana_inicio,
+        estado_fisico: tabla.estado_fisico,
+        animo: tabla.animo,
+        energia: tabla.energia,
+        adherencia_entrenamiento: tabla.adherencia_entrenamiento,
+        adherencia_alimentacion: tabla.adherencia_alimentacion,
+        peso_autoreporte_kg: tabla.peso_autoreporte_kg,
+        observaciones: tabla.observaciones,
+        dudas: tabla.dudas,
+        respuesta_profesional: tabla.respuesta_profesional,
+        respondido_at: tabla.respondido_at,
+        adjunto_path: tabla.adjunto_path,
+      })
+      .from(tabla)
+      .where(eq(tabla.paciente_id, params.id))
+      .orderBy(desc(tabla.semana_inicio))
+      .limit(to - from + 1)
+      .offset(from),
+    db.select({ total: sql<number>`count(*)::int` }).from(tabla).where(eq(tabla.paciente_id, params.id)),
+  ]) as [Feedback[], { total: number }[]]
+  const pages = calcTotalPages(total)
   const semanaActual = lunesDeSemana()
 
-  const { data: mensajesData } = feedback.length
-    ? await supabase
-        .from('feedback_mensajes')
-        .select(
-          'id, feedback_id, autor_id, contenido, created_at, edited_at, autor:profiles!feedback_mensajes_autor_id_fkey(nombre, apellido)',
-        )
-        .in('feedback_id', feedback.map((f) => f.id))
-        .order('id', { ascending: true })
-    : { data: [] }
-
-  const mensajesPorFeedback = new Map<number, MensajeFeedback[]>()
-  for (const m of (mensajesData ?? []) as unknown as (MensajeFeedback & { feedback_id: number })[]) {
-    const arr = mensajesPorFeedback.get(m.feedback_id) ?? []
-    arr.push(m)
-    mensajesPorFeedback.set(m.feedback_id, arr)
-  }
+  const mensajesPorFeedback = await mensajesDeFeedback(feedback.map((f) => f.id))
 
   // URLs firmadas para adjuntos de feedback (1 hora de vigencia)
   const feedbackConUrl = await Promise.all(
-    feedback.map(async (f) => {
-      if (!f.adjunto_path) return { ...f, adjuntoUrl: null }
-      const { data: signed } = await supabase.storage
-        .from('recursos')
-        .createSignedUrl(f.adjunto_path, 3600)
-      return { ...f, adjuntoUrl: signed?.signedUrl ?? null }
-    }),
+    feedback.map(async (f) => ({
+      ...f,
+      adjuntoUrl: f.adjunto_path ? await urlFirmada('recursos', f.adjunto_path, 3600) : null,
+    })),
   )
 
   return (

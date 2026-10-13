@@ -1,6 +1,9 @@
 import { FichaForm } from '@/components/seguimiento/ficha-form'
-import { createClient } from '@/lib/supabase/server'
-import { getSessionUser } from '@/lib/auth/session'
+import { eq } from 'drizzle-orm'
+
+import { fichas_paciente } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 import { readClinicalField } from '@/lib/crypto/clinical'
 import { logAuditView } from '@/lib/audit'
 export const dynamic = 'force-dynamic'
@@ -11,19 +14,11 @@ export default async function PacienteFichaPage(
   }
 ) {
   const params = await props.params;
-  const user = await getSessionUser()
-  // Best-effort: si por lo que sea no hay user acá (no debería pasar, el
-  // layout de /admin ya lo exige), simplemente no se loguea el acceso —
-  // no vale la pena romper la página por esto.
-  if (user) {
-    await logAuditView(supabase, { pacienteId: params.id, actorId: user.id, tabla: 'fichas_paciente' })
-  }
+  const { user } = await requireStaff()
+  // La lectura de la ficha clínica queda registrada (acción 'ver' del audit_log).
+  await logAuditView({ pacienteId: params.id, actorId: user.id, tabla: 'fichas_paciente' })
 
-  const { data: fichaRaw } = await supabase
-    .from('fichas_paciente')
-    .select('*')
-    .eq('paciente_id', params.id)
-    .maybeSingle()
+  const [fichaRaw] = await db.select().from(fichas_paciente).where(eq(fichas_paciente.paciente_id, params.id)).limit(1)
 
   // Ver lib/crypto/clinical.ts — `_enc` si la fila ya está cifrada, si no
   // cae a la columna vieja en texto plano (histórico sin backfillear).

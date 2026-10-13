@@ -135,7 +135,7 @@ export const contenido_sitio = pgTable("contenido_sitio", {
 	metodologia_pilares: jsonb().$type<unknown[]>().default([]).notNull(),
 	metodologia_dirigido_a: jsonb().$type<unknown[]>().default([]).notNull(),
 	updated_at: timestamp({ withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
+}, () => [
 	check("contenido_sitio_singleton", sql`id = 1`),
 ]);
 
@@ -326,7 +326,7 @@ export const ejercicios = pgTable("ejercicios", {
 	origen: text().default('dataset').notNull(),
 	creado_por: uuid(),
 	youtube_url: text(),
-	modo: text().default('fuerza').notNull(),
+	modo: text().$type<'fuerza' | 'cardio'>().default('fuerza').notNull(),
 }, (table) => [
 	index("ejercicios_equipo_idx").using("btree", table.equipo.asc().nullsLast()),
 	index("ejercicios_modo_idx").using("btree", table.modo.asc().nullsLast()),

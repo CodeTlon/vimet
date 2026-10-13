@@ -5,7 +5,6 @@ import { requireMobileStaff } from '@/lib/auth/mobile'
 import {
   actualizarFranja,
   cancelarYNotificar,
-  eliminarFranja,
   franjaPropia,
   franjaSeSolapa,
   turnosSinCobertura,

@@ -1,9 +1,15 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
-import { cancelarPendientesSinConfirmar, marcarNoAsistioVencidos } from '@/actions/turnos'
+import { and, asc, eq, gte, lte } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
+
+import { profiles, turnos } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { condicionTurnosVisibles } from '@/lib/data/turnos'
 import { hoyArgentina } from '@/lib/datetime'
-import { createClient } from '@/lib/supabase/server'
+import { db } from '@/lib/db'
+import { cancelarPendientesSinConfirmar, marcarNoAsistioVencidos } from '@/lib/services/turnos'
 export const metadata = { title: 'Calendario' }
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +40,7 @@ export default async function AdminCalendario(
     searchParams: Promise<{ year?: string; month?: string }>
   }
 ) {
+  const { profile } = await requireStaff()
   const searchParams = await props.searchParams;
   const [hoyY, hoyM] = hoyArgentina().split('-').map(Number)
   const year = Number(searchParams?.year) || hoyY
@@ -63,19 +70,22 @@ export default async function AdminCalendario(
   await marcarNoAsistioVencidos()
   await cancelarPendientesSinConfirmar()
 
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('turnos')
-    .select(
-      'id, fecha, hora_inicio, estado, paciente:profiles!turnos_paciente_id_fkey(nombre, apellido)',
-    )
-    .gte('fecha', monthStart)
-    .lte('fecha', monthEnd)
-    .order('hora_inicio')
+  const paciente = alias(profiles, 'paciente')
+  const turnos_ = (await db
+    .select({
+      id: turnos.id,
+      fecha: turnos.fecha,
+      hora_inicio: turnos.hora_inicio,
+      estado: turnos.estado,
+      paciente: { nombre: paciente.nombre, apellido: paciente.apellido },
+    })
+    .from(turnos)
+    .leftJoin(paciente, eq(paciente.id, turnos.paciente_id))
+    .where(and(gte(turnos.fecha, monthStart), lte(turnos.fecha, monthEnd), condicionTurnosVisibles(profile)))
+    .orderBy(asc(turnos.hora_inicio))) as TurnoRow[]
 
-  const turnos = (data ?? []) as unknown as TurnoRow[]
   const porFecha = new Map<string, TurnoRow[]>()
-  for (const t of turnos) {
+  for (const t of turnos_) {
     const arr = porFecha.get(t.fecha) ?? []
     arr.push(t)
     porFecha.set(t.fecha, arr)
