@@ -5,22 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1791908464107,
+      "when": 1791909641184,
       "tag": "0000_esquema_base",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1791908465409,
+      "when": 1791909642444,
       "tag": "0001_extras_manuales",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1791908720053,
-      "tag": "0002_auth_better_auth",
       "breakpoints": true
     }
   ]

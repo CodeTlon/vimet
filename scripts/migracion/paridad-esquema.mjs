@@ -47,6 +47,9 @@ drop trigger if exists feedback_restrict_patient_update on public.feedback_seman
 drop trigger if exists profiles_block_privilege_self_update on public.profiles;
 drop trigger if exists turnos_restrict_patient_update on public.turnos;
 alter table public.profiles drop constraint profiles_id_fkey;
+-- Diferencia deliberada: audit_log sin FK a profiles (el rastro sobrevive al borrado del paciente).
+alter table public.audit_log drop constraint audit_log_paciente_id_fkey;
+alter table public.audit_log drop constraint audit_log_actor_id_fkey;
 alter table public.ejercicios drop constraint ejercicios_creado_por_fkey;
 alter table public.ejercicios add constraint ejercicios_creado_por_fkey foreign key (creado_por) references public.profiles(id) on delete set null;
 `)
@@ -64,7 +67,7 @@ await nuevo.exec('drop table session, account, verification, "user" cascade')
 const snap = async (db) => {
   const q = async (s) => (await db.query(s)).rows.map((r) => Object.values(r).join(' | '))
   return {
-    columnas: await q(`select table_name, column_name, udt_name, is_nullable, coalesce(column_default,''), is_identity, coalesce(generation_expression,''), coalesce(character_maximum_length::text,''), coalesce(numeric_precision::text,''), coalesce(numeric_scale::text,'') from information_schema.columns where table_schema='public' order by 1,2`),
+    columnas: await q(`select table_name, column_name, udt_name, is_nullable, coalesce(column_default,'') as def, is_identity, coalesce(generation_expression,'') as gen, coalesce(character_maximum_length::text,'') as len, coalesce(numeric_precision::text,'') as prec, coalesce(numeric_scale::text,'') as scale from information_schema.columns where table_schema='public' order by 1,2`),
     constraints: await q(`select conrelid::regclass, contype, pg_get_constraintdef(oid) from pg_constraint where connamespace='public'::regnamespace order by 1,3`),
     indices: await q(`select tablename, regexp_replace(indexdef, 'INDEX \\S+ ON', 'INDEX ON') from pg_indexes where schemaname='public' order by 1,2`),
     enums: await q(`select t.typname, string_agg(e.enumlabel, ',' order by e.enumsortorder) from pg_type t join pg_enum e on e.enumtypid=t.oid group by 1 order by 1`),

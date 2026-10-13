@@ -12,6 +12,22 @@ CREATE TYPE "public"."tipo_plan" AS ENUM('nutricion', 'entrenamiento', 'combo');
 CREATE TYPE "public"."tipo_recurso" AS ENUM('link', 'pdf', 'imagen', 'video');--> statement-breakpoint
 CREATE TYPE "public"."tipo_seccion_plan" AS ENUM('pautas_generales', 'receta', 'comidas_dia', 'imagenes');--> statement-breakpoint
 CREATE TYPE "public"."tipo_servicio" AS ENUM('nutricion', 'entrenamiento', 'combo');--> statement-breakpoint
+CREATE TABLE "account" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"account_id" text NOT NULL,
+	"provider_id" text NOT NULL,
+	"user_id" uuid NOT NULL,
+	"access_token" text,
+	"refresh_token" text,
+	"id_token" text,
+	"access_token_expires_at" timestamp with time zone,
+	"refresh_token_expires_at" timestamp with time zone,
+	"scope" text,
+	"password" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "audit_log" (
 	"id" bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "audit_log_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 1 CACHE 1),
 	"paciente_id" uuid,
@@ -56,7 +72,7 @@ CREATE TABLE "ejercicios" (
 	"parte_cuerpo" text,
 	"equipo" text,
 	"musculo_principal" text,
-	"musculos_secundarios" text[] DEFAULT '{""}' NOT NULL,
+	"musculos_secundarios" text[] DEFAULT '{}' NOT NULL,
 	"instrucciones" text,
 	"imagen_url" text,
 	"gif_url" text,
@@ -317,7 +333,7 @@ CREATE TABLE "planes" (
 	"notas" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"dias_descanso" text[] DEFAULT '{""}' NOT NULL,
+	"dias_descanso" text[] DEFAULT '{}' NOT NULL,
 	"notas_enc" text,
 	CONSTRAINT "planes_dias_descanso_check" CHECK (dias_descanso <@ ARRAY['lunes'::text, 'martes'::text, 'miercoles'::text, 'jueves'::text, 'viernes'::text, 'sabado'::text, 'domingo'::text])
 );
@@ -340,7 +356,7 @@ CREATE TABLE "profiles" (
 	"whatsapp_url" text,
 	"bio_corta" text,
 	"bio" text,
-	"especialidades" text[] DEFAULT '{""}' NOT NULL,
+	"especialidades" text[] DEFAULT '{}' NOT NULL,
 	"areas_trabajo" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"debe_cambiar_password" boolean DEFAULT false NOT NULL,
 	"activado_en" timestamp with time zone,
@@ -390,6 +406,18 @@ CREATE TABLE "sesiones_entrenamiento" (
 	CONSTRAINT "sesiones_entrenamiento_fuente_valida" CHECK (fuente = ANY (ARRAY['manual'::text, 'health_connect'::text, 'apple_health'::text]))
 );
 --> statement-breakpoint
+CREATE TABLE "session" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
+	"token" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"ip_address" text,
+	"user_agent" text,
+	"user_id" uuid NOT NULL,
+	CONSTRAINT "session_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
 CREATE TABLE "sets_completados" (
 	"id" bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "sets_completados_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 1 CACHE 1),
 	"sesion_id" bigint NOT NULL,
@@ -421,8 +449,27 @@ CREATE TABLE "turnos" (
 	"motivo_reprogramacion" text
 );
 --> statement-breakpoint
-ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_paciente_id_fkey" FOREIGN KEY ("paciente_id") REFERENCES "public"."profiles"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_actor_id_fkey" FOREIGN KEY ("actor_id") REFERENCES "public"."profiles"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE TABLE "user" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" text NOT NULL,
+	"email" text NOT NULL,
+	"email_verified" boolean DEFAULT false NOT NULL,
+	"image" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "user_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "verification" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"identifier" text NOT NULL,
+	"value" text NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "bloqueos_horario" ADD CONSTRAINT "bloqueos_horario_profesional_id_fkey" FOREIGN KEY ("profesional_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "ejercicios" ADD CONSTRAINT "ejercicios_creado_por_fkey" FOREIGN KEY ("creado_por") REFERENCES "public"."profiles"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "evaluaciones_funcionales" ADD CONSTRAINT "evaluaciones_funcionales_paciente_id_fkey" FOREIGN KEY ("paciente_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -454,12 +501,14 @@ ALTER TABLE "recursos_paciente" ADD CONSTRAINT "recursos_paciente_creado_por_fke
 ALTER TABLE "servicios" ADD CONSTRAINT "servicios_profesional_id_fkey" FOREIGN KEY ("profesional_id") REFERENCES "public"."profiles"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sesiones_entrenamiento" ADD CONSTRAINT "sesiones_entrenamiento_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "public"."planes"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sesiones_entrenamiento" ADD CONSTRAINT "sesiones_entrenamiento_paciente_id_fkey" FOREIGN KEY ("paciente_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sets_completados" ADD CONSTRAINT "sets_completados_sesion_id_fkey" FOREIGN KEY ("sesion_id") REFERENCES "public"."sesiones_entrenamiento"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sets_completados" ADD CONSTRAINT "sets_completados_plan_ejercicio_id_fkey" FOREIGN KEY ("plan_ejercicio_id") REFERENCES "public"."plan_ejercicios"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "turnos" ADD CONSTRAINT "turnos_paciente_id_fkey" FOREIGN KEY ("paciente_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "turnos" ADD CONSTRAINT "turnos_profesional_id_fkey" FOREIGN KEY ("profesional_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "turnos" ADD CONSTRAINT "turnos_servicio_id_fkey" FOREIGN KEY ("servicio_id") REFERENCES "public"."servicios"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "turnos" ADD CONSTRAINT "turnos_turno_par_id_fkey" FOREIGN KEY ("turno_par_id") REFERENCES "public"."turnos"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "account_user_id_idx" ON "account" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "audit_log_actor_idx" ON "audit_log" USING btree ("actor_id","created_at" DESC NULLS FIRST);--> statement-breakpoint
 CREATE INDEX "audit_log_paciente_idx" ON "audit_log" USING btree ("paciente_id","created_at" DESC NULLS FIRST);--> statement-breakpoint
 CREATE INDEX "audit_log_tabla_idx" ON "audit_log" USING btree ("tabla","created_at" DESC NULLS FIRST);--> statement-breakpoint
@@ -489,8 +538,10 @@ CREATE INDEX "recursos_paciente_idx" ON "recursos_paciente" USING btree ("pacien
 CREATE INDEX "servicios_profesional_idx" ON "servicios" USING btree ("profesional_id");--> statement-breakpoint
 CREATE INDEX "servicios_tipo_idx" ON "servicios" USING btree ("tipo");--> statement-breakpoint
 CREATE INDEX "sesiones_entrenamiento_paciente_idx" ON "sesiones_entrenamiento" USING btree ("paciente_id","iniciada_at" DESC NULLS FIRST);--> statement-breakpoint
+CREATE INDEX "session_user_id_idx" ON "session" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "sets_completados_sesion_idx" ON "sets_completados" USING btree ("sesion_id");--> statement-breakpoint
 CREATE INDEX "turnos_estado_idx" ON "turnos" USING btree ("estado");--> statement-breakpoint
 CREATE INDEX "turnos_paciente_idx" ON "turnos" USING btree ("paciente_id");--> statement-breakpoint
 CREATE INDEX "turnos_profesional_fecha_idx" ON "turnos" USING btree ("profesional_id","fecha");--> statement-breakpoint
-CREATE INDEX "turnos_turno_par_idx" ON "turnos" USING btree ("turno_par_id");
+CREATE INDEX "turnos_turno_par_idx" ON "turnos" USING btree ("turno_par_id");--> statement-breakpoint
+CREATE INDEX "verification_identifier_idx" ON "verification" USING btree ("identifier");

@@ -250,7 +250,7 @@ export const profiles = pgTable("profiles", {
 	whatsapp_url: text(),
 	bio_corta: text(),
 	bio: text(),
-	especialidades: text().array().default([""]).notNull(),
+	especialidades: text().array().default([]).notNull(),
 	areas_trabajo: jsonb().$type<unknown[]>().default([]).notNull(),
 	debe_cambiar_password: boolean().default(false).notNull(),
 	activado_en: timestamp({ withTimezone: true, mode: 'string' }),
@@ -317,7 +317,7 @@ export const ejercicios = pgTable("ejercicios", {
 	parte_cuerpo: text(),
 	equipo: text(),
 	musculo_principal: text(),
-	musculos_secundarios: text().array().default([""]).notNull(),
+	musculos_secundarios: text().array().default([]).notNull(),
 	instrucciones: text(),
 	imagen_url: text(),
 	gif_url: text(),
@@ -640,7 +640,7 @@ export const planes = pgTable("planes", {
 	notas: text(),
 	created_at: timestamp({ withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updated_at: timestamp({ withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	dias_descanso: text().array().default([""]).notNull(),
+	dias_descanso: text().array().default([]).notNull(),
 	notas_enc: text(),
 }, (table) => [
 	index("planes_paciente_tipo_idx").using("btree", table.paciente_id.asc().nullsLast(), table.tipo.asc().nullsLast(), table.estado.asc().nullsLast()),
@@ -670,16 +670,10 @@ export const audit_log = pgTable("audit_log", {
 	index("audit_log_actor_idx").using("btree", table.actor_id.asc().nullsLast(), table.created_at.desc().nullsFirst()),
 	index("audit_log_paciente_idx").using("btree", table.paciente_id.asc().nullsLast(), table.created_at.desc().nullsFirst()),
 	index("audit_log_tabla_idx").using("btree", table.tabla.asc().nullsLast(), table.created_at.desc().nullsFirst()),
-	foreignKey({
-			columns: [table.paciente_id],
-			foreignColumns: [profiles.id],
-			name: "audit_log_paciente_id_fkey"
-		}).onDelete("set null"),
-	foreignKey({
-			columns: [table.actor_id],
-			foreignColumns: [profiles.id],
-			name: "audit_log_actor_id_fkey"
-		}).onDelete("set null"),
+	// Sin FK a `profiles` a proposito (diferencia con Supabase): el rastro de auditoria debe
+	// sobrevivir al borrado del paciente o del actor. Con FK, el trigger de borrado en cascada
+	// intentaba insertar una fila que apuntaba al perfil que se estaba eliminando y abortaba
+	// el DELETE (ver tests/eliminar-paciente.test.ts).
 	check("audit_log_accion_check", sql`accion = ANY (ARRAY['insert'::text, 'update'::text, 'delete'::text, 'ver'::text])`),
 ]);
 
