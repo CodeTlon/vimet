@@ -1,0 +1,3945 @@
+{
+  "id": "e95e80f9-7249-46a2-8853-68853cb0cafd",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.audit_log": {
+      "name": "audit_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "audit_log_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "paciente_id": {
+          "name": "paciente_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accion": {
+          "name": "accion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tabla": {
+          "name": "tabla",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "registro_id": {
+          "name": "registro_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "audit_log_actor_idx": {
+          "name": "audit_log_actor_idx",
+          "columns": [
+            {
+              "expression": "actor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "first"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_log_paciente_idx": {
+          "name": "audit_log_paciente_idx",
+          "columns": [
+            {
+              "expression": "paciente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "first"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_log_tabla_idx": {
+          "name": "audit_log_tabla_idx",
+          "columns": [
+            {
+              "expression": "tabla",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "first"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "audit_log_paciente_id_fkey": {
+          "name": "audit_log_paciente_id_fkey",
+          "tableFrom": "audit_log",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "paciente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "audit_log_actor_id_fkey": {
+          "name": "audit_log_actor_id_fkey",
+          "tableFrom": "audit_log",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "actor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "audit_log_accion_check": {
+          "name": "audit_log_accion_check",
+          "value": "accion = ANY (ARRAY['insert'::text, 'update'::text, 'delete'::text, 'ver'::text])"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.bloqueos_horario": {
+      "name": "bloqueos_horario",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "bloqueos_horario_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "profesional_id": {
+          "name": "profesional_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_inicio": {
+          "name": "fecha_inicio",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_fin": {
+          "name": "fecha_fin",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "motivo": {
+          "name": "motivo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "bloqueos_profesional_idx": {
+          "name": "bloqueos_profesional_idx",
+          "columns": [
+            {
+              "expression": "profesional_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "bloqueos_horario_profesional_id_fkey": {
+          "name": "bloqueos_horario_profesional_id_fkey",
+          "tableFrom": "bloqueos_horario",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "profesional_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.contenido_sitio": {
+      "name": "contenido_sitio",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "default": 1
+        },
+        "direccion": {
+          "name": "direccion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lugar": {
+          "name": "lugar",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ciudad": {
+          "name": "ciudad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "map_embed_url": {
+          "name": "map_embed_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_contacto": {
+          "name": "email_contacto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "whatsapp_general": {
+          "name": "whatsapp_general",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "instagram_handle": {
+          "name": "instagram_handle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "instagram_url": {
+          "name": "instagram_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metodologia_pasos": {
+          "name": "metodologia_pasos",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "metodologia_pilares": {
+          "name": "metodologia_pilares",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "metodologia_dirigido_a": {
+          "name": "metodologia_dirigido_a",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "contenido_sitio_singleton": {
+          "name": "contenido_sitio_singleton",
+          "value": "id = 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ejercicios": {
+      "name": "ejercicios",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "byDefault",
+            "name": "ejercicios_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1000000",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parte_cuerpo": {
+          "name": "parte_cuerpo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "equipo": {
+          "name": "equipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "musculo_principal": {
+          "name": "musculo_principal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "musculos_secundarios": {
+          "name": "musculos_secundarios",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{\"\"}'"
+        },
+        "instrucciones": {
+          "name": "instrucciones",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "imagen_url": {
+          "name": "imagen_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gif_url": {
+          "name": "gif_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "atribucion": {
+          "name": "atribucion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "origen": {
+          "name": "origen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'dataset'"
+        },
+        "creado_por": {
+          "name": "creado_por",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "youtube_url": {
+          "name": "youtube_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "modo": {
+          "name": "modo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'fuerza'"
+        }
+      },
+      "indexes": {
+        "ejercicios_equipo_idx": {
+          "name": "ejercicios_equipo_idx",
+          "columns": [
+            {
+              "expression": "equipo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ejercicios_modo_idx": {
+          "name": "ejercicios_modo_idx",
+          "columns": [
+            {
+              "expression": "modo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ejercicios_origen_idx": {
+          "name": "ejercicios_origen_idx",
+          "columns": [
+            {
+              "expression": "origen",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ejercicios_parte_cuerpo_idx": {
+          "name": "ejercicios_parte_cuerpo_idx",
+          "columns": [
+            {
+              "expression": "parte_cuerpo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ejercicios_creado_por_fkey": {
+          "name": "ejercicios_creado_por_fkey",
+          "tableFrom": "ejercicios",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "creado_por"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ejercicios_origen_check": {
+          "name": "ejercicios_origen_check",
+          "value": "origen = ANY (ARRAY['dataset'::text, 'staff'::text])"
+        },
+        "ejercicios_media_check": {
+          "name": "ejercicios_media_check",
+          "value": "(origen <> 'staff'::text) OR ((gif_url IS NOT NULL) <> (youtube_url IS NOT NULL))"
+        },
+        "ejercicios_modo_check": {
+          "name": "ejercicios_modo_check",
+          "value": "modo = ANY (ARRAY['fuerza'::text, 'cardio'::text])"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.evaluaciones_funcionales": {
+      "name": "evaluaciones_funcionales",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "evaluaciones_funcionales_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "paciente_id": {
+          "name": "paciente_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha": {
+          "name": "fecha",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_DATE"
+        },
+        "test_wells_adams": {
+          "name": "test_wells_adams",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "test_thomas": {
+          "name": "test_thomas",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "test_dorsiflexion": {
+          "name": "test_dorsiflexion",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "test_sentadilla": {
+          "name": "test_sentadilla",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "test_estabilidad": {
+          "name": "test_estabilidad",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fuerza_inferior": {
+          "name": "fuerza_inferior",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fuerza_superior": {
+          "name": "fuerza_superior",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resistencia_metabolica": {
+          "name": "resistencia_metabolica",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "puntaje_total": {
+          "name": "puntaje_total",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false,
+          "generated": {
+            "as": "(((((((COALESCE((test_wells_adams)::integer, 0) + COALESCE((test_thomas)::integer, 0)) + COALESCE((test_dorsiflexion)::integer, 0)) + COALESCE((test_sentadilla)::integer, 0)) + COALESCE((test_estabilidad)::integer, 0)) + COALESCE((fuerza_inferior)::integer, 0)) + COALESCE((fuerza_superior)::integer, 0)) + COALESCE((resistencia_metabolica)::integer, 0))",
+            "type": "stored"
+          }
+        },
+        "observaciones": {
+          "name": "observaciones",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "registrado_por": {
+          "name": "registrado_por",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "evals_paciente_idx": {
+          "name": "evals_paciente_idx",
+          "columns": [
+            {
+              "expression": "paciente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fecha",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "first"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "evaluaciones_funcionales_paciente_id_fkey": {
+          "name": "evaluaciones_funcionales_paciente_id_fkey",
+          "tableFrom": "evaluaciones_funcionales",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "paciente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "evaluaciones_funcionales_registrado_por_fkey": {
+          "name": "evaluaciones_funcionales_registrado_por_fkey",
+          "tableFrom": "evaluaciones_funcionales",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "registrado_por"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "evaluaciones_funcionales_test_wells_adams_check": {
+          "name": "evaluaciones_funcionales_test_wells_adams_check",
+          "value": "(test_wells_adams >= 0) AND (test_wells_adams <= 10)"
+        },
+        "evaluaciones_funcionales_test_thomas_check": {
+          "name": "evaluaciones_funcionales_test_thomas_check",
+          "value": "(test_thomas >= 0) AND (test_thomas <= 10)"
+        },
+        "evaluaciones_funcionales_test_dorsiflexion_check": {
+          "name": "evaluaciones_funcionales_test_dorsiflexion_check",
+          "value": "(test_dorsiflexion >= 0) AND (test_dorsiflexion <= 10)"
+        },
+        "evaluaciones_funcionales_test_sentadilla_check": {
+          "name": "evaluaciones_funcionales_test_sentadilla_check",
+          "value": "(test_sentadilla >= 0) AND (test_sentadilla <= 10)"
+        },
+        "evaluaciones_funcionales_test_estabilidad_check": {
+          "name": "evaluaciones_funcionales_test_estabilidad_check",
+          "value": "(test_estabilidad >= 0) AND (test_estabilidad <= 10)"
+        },
+        "evaluaciones_funcionales_fuerza_inferior_check": {
+          "name": "evaluaciones_funcionales_fuerza_inferior_check",
+          "value": "(fuerza_inferior >= 0) AND (fuerza_inferior <= 15)"
+        },
+        "evaluaciones_funcionales_fuerza_superior_check": {
+          "name": "evaluaciones_funcionales_fuerza_superior_check",
+          "value": "(fuerza_superior >= 0) AND (fuerza_superior <= 15)"
+        },
+        "evaluaciones_funcionales_resistencia_metabolica_check": {
+          "name": "evaluaciones_funcionales_resistencia_metabolica_check",
+          "value": "(resistencia_metabolica >= 0) AND (resistencia_metabolica <= 20)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.evolucion_entradas": {
+      "name": "evolucion_entradas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "evolucion_entradas_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "paciente_id": {
+          "name": "paciente_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origen": {
+          "name": "origen",
+          "type": "origen_evolucion",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contenido": {
+          "name": "contenido",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "visible_paciente": {
+          "name": "visible_paciente",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "registrado_por": {
+          "name": "registrado_por",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "contenido_enc": {
+          "name": "contenido_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "evolucion_paciente_idx": {
+          "name": "evolucion_paciente_idx",
+          "columns": [
+            {
+              "expression": "paciente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "first"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "evolucion_entradas_paciente_id_fkey": {
+          "name": "evolucion_entradas_paciente_id_fkey",
+          "tableFrom": "evolucion_entradas",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "paciente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "evolucion_entradas_registrado_por_fkey": {
+          "name": "evolucion_entradas_registrado_por_fkey",
+          "tableFrom": "evolucion_entradas",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "registrado_por"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "evolucion_entradas_tipo_check": {
+          "name": "evolucion_entradas_tipo_check",
+          "value": "tipo = ANY (ARRAY['evolucion'::text, 'observacion'::text])"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.feedback_mensajes": {
+      "name": "feedback_mensajes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "feedback_mensajes_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "feedback_id": {
+          "name": "feedback_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "autor_id": {
+          "name": "autor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contenido": {
+          "name": "contenido",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "edited_at": {
+          "name": "edited_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "feedback_mensajes_feedback_idx": {
+          "name": "feedback_mensajes_feedback_idx",
+          "columns": [
+            {
+              "expression": "feedback_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "feedback_mensajes_feedback_id_fkey": {
+          "name": "feedback_mensajes_feedback_id_fkey",
+          "tableFrom": "feedback_mensajes",
+          "tableTo": "feedback_semanal",
+          "columnsFrom": [
+            "feedback_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "feedback_mensajes_autor_id_fkey": {
+          "name": "feedback_mensajes_autor_id_fkey",
+          "tableFrom": "feedback_mensajes",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "autor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "feedback_mensajes_contenido_check": {
+          "name": "feedback_mensajes_contenido_check",
+          "value": "(char_length(contenido) >= 1) AND (char_length(contenido) <= 2000)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.feedback_semanal": {
+      "name": "feedback_semanal",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "feedback_semanal_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "paciente_id": {
+          "name": "paciente_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "semana_inicio": {
+          "name": "semana_inicio",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado_fisico": {
+          "name": "estado_fisico",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "animo": {
+          "name": "animo",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "energia": {
+          "name": "energia",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adherencia_entrenamiento": {
+          "name": "adherencia_entrenamiento",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adherencia_alimentacion": {
+          "name": "adherencia_alimentacion",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "peso_autoreporte_kg": {
+          "name": "peso_autoreporte_kg",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observaciones": {
+          "name": "observaciones",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dudas": {
+          "name": "dudas",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "respuesta_profesional": {
+          "name": "respuesta_profesional",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "respondido_por": {
+          "name": "respondido_por",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "respondido_at": {
+          "name": "respondido_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "adjunto_path": {
+          "name": "adjunto_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "feedback_paciente_idx": {
+          "name": "feedback_paciente_idx",
+          "columns": [
+            {
+              "expression": "paciente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "semana_inicio",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "first"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "feedback_semanal_paciente_id_fkey": {
+          "name": "feedback_semanal_paciente_id_fkey",
+          "tableFrom": "feedback_semanal",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "paciente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "feedback_semanal_respondido_por_fkey": {
+          "name": "feedback_semanal_respondido_por_fkey",
+          "tableFrom": "feedback_semanal",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "respondido_por"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "feedback_semanal_paciente_id_semana_inicio_key": {
+          "name": "feedback_semanal_paciente_id_semana_inicio_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "paciente_id",
+            "semana_inicio"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "feedback_semanal_estado_fisico_check": {
+          "name": "feedback_semanal_estado_fisico_check",
+          "value": "(estado_fisico >= 1) AND (estado_fisico <= 10)"
+        },
+        "feedback_semanal_animo_check": {
+          "name": "feedback_semanal_animo_check",
+          "value": "(animo >= 1) AND (animo <= 10)"
+        },
+        "feedback_semanal_energia_check": {
+          "name": "feedback_semanal_energia_check",
+          "value": "(energia >= 1) AND (energia <= 10)"
+        },
+        "feedback_semanal_adherencia_entrenamiento_check": {
+          "name": "feedback_semanal_adherencia_entrenamiento_check",
+          "value": "(adherencia_entrenamiento >= 0) AND (adherencia_entrenamiento <= 100)"
+        },
+        "feedback_semanal_adherencia_alimentacion_check": {
+          "name": "feedback_semanal_adherencia_alimentacion_check",
+          "value": "(adherencia_alimentacion >= 0) AND (adherencia_alimentacion <= 100)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.fichas_paciente": {
+      "name": "fichas_paciente",
+      "schema": "",
+      "columns": {
+        "paciente_id": {
+          "name": "paciente_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "fecha_nacimiento": {
+          "name": "fecha_nacimiento",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sexo": {
+          "name": "sexo",
+          "type": "sexo_paciente",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ocupacion": {
+          "name": "ocupacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha_primera_consulta": {
+          "name": "fecha_primera_consulta",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fuma": {
+          "name": "fuma",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bebe": {
+          "name": "bebe",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "drogas": {
+          "name": "drogas",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entrena": {
+          "name": "entrena",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actividad_diaria": {
+          "name": "actividad_diaria",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "horas_sueno": {
+          "name": "horas_sueno",
+          "type": "numeric(3, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dx_medico": {
+          "name": "dx_medico",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dx_nutricional": {
+          "name": "dx_nutricional",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "medicacion": {
+          "name": "medicacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "suplementacion": {
+          "name": "suplementacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lesiones": {
+          "name": "lesiones",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "molestias": {
+          "name": "molestias",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "datos_laboratorio": {
+          "name": "datos_laboratorio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "motivos_consulta": {
+          "name": "motivos_consulta",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observaciones_internas": {
+          "name": "observaciones_internas",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dx_medico_enc": {
+          "name": "dx_medico_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dx_nutricional_enc": {
+          "name": "dx_nutricional_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "medicacion_enc": {
+          "name": "medicacion_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "datos_laboratorio_enc": {
+          "name": "datos_laboratorio_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observaciones_internas_enc": {
+          "name": "observaciones_internas_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "fichas_updated_idx": {
+          "name": "fichas_updated_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "first"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fichas_paciente_paciente_id_fkey": {
+          "name": "fichas_paciente_paciente_id_fkey",
+          "tableFrom": "fichas_paciente",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "paciente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fichas_paciente_updated_by_fkey": {
+          "name": "fichas_paciente_updated_by_fkey",
+          "tableFrom": "fichas_paciente",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "updated_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.horarios_disponibles": {
+      "name": "horarios_disponibles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "horarios_disponibles_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "profesional_id": {
+          "name": "profesional_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dia_semana": {
+          "name": "dia_semana",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hora_inicio": {
+          "name": "hora_inicio",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hora_fin": {
+          "name": "hora_fin",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "modalidad": {
+          "name": "modalidad",
+          "type": "modalidad_horario",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ambas'"
+        },
+        "activo": {
+          "name": "activo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "horarios_prof_dia_idx": {
+          "name": "horarios_prof_dia_idx",
+          "columns": [
+            {
+              "expression": "profesional_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "dia_semana",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "horarios_disponibles_profesional_id_fkey": {
+          "name": "horarios_disponibles_profesional_id_fkey",
+          "tableFrom": "horarios_disponibles",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "profesional_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "horarios_disponibles_dia_semana_check": {
+          "name": "horarios_disponibles_dia_semana_check",
+          "value": "(dia_semana >= 0) AND (dia_semana <= 6)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.mediciones_antropometricas": {
+      "name": "mediciones_antropometricas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "mediciones_antropometricas_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "paciente_id": {
+          "name": "paciente_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_medicion": {
+          "name": "fecha_medicion",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_DATE"
+        },
+        "peso_kg": {
+          "name": "peso_kg",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "talla_cm": {
+          "name": "talla_cm",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "imc": {
+          "name": "imc",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "porc_grasa": {
+          "name": "porc_grasa",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "porc_masa_muscular": {
+          "name": "porc_masa_muscular",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kg_grasa": {
+          "name": "kg_grasa",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kg_musculo": {
+          "name": "kg_musculo",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dx_antropometrico": {
+          "name": "dx_antropometrico",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observaciones": {
+          "name": "observaciones",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "registrado_por": {
+          "name": "registrado_por",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "pliegue_triceps_mm": {
+          "name": "pliegue_triceps_mm",
+          "type": "numeric(4, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pliegue_subescapular_mm": {
+          "name": "pliegue_subescapular_mm",
+          "type": "numeric(4, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pliegue_supraespinal_mm": {
+          "name": "pliegue_supraespinal_mm",
+          "type": "numeric(4, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pliegue_abdominal_mm": {
+          "name": "pliegue_abdominal_mm",
+          "type": "numeric(4, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pliegue_muslo_mm": {
+          "name": "pliegue_muslo_mm",
+          "type": "numeric(4, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pliegue_pierna_mm": {
+          "name": "pliegue_pierna_mm",
+          "type": "numeric(4, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pliegue_biceps_mm": {
+          "name": "pliegue_biceps_mm",
+          "type": "numeric(4, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pliegue_cresta_iliaca_mm": {
+          "name": "pliegue_cresta_iliaca_mm",
+          "type": "numeric(4, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "perimetro_brazo_cm": {
+          "name": "perimetro_brazo_cm",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "perimetro_muslo_cm": {
+          "name": "perimetro_muslo_cm",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "perimetro_pierna_cm": {
+          "name": "perimetro_pierna_cm",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kg_tejido_muscular": {
+          "name": "kg_tejido_muscular",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kg_tejido_oseo": {
+          "name": "kg_tejido_oseo",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "mediciones_paciente_idx": {
+          "name": "mediciones_paciente_idx",
+          "columns": [
+            {
+              "expression": "paciente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fecha_medicion",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "first"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "mediciones_antropometricas_paciente_id_fkey": {
+          "name": "mediciones_antropometricas_paciente_id_fkey",
+          "tableFrom": "mediciones_antropometricas",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "paciente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "mediciones_antropometricas_registrado_por_fkey": {
+          "name": "mediciones_antropometricas_registrado_por_fkey",
+          "tableFrom": "mediciones_antropometricas",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "registrado_por"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.mediciones_wearable": {
+      "name": "mediciones_wearable",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "mediciones_wearable_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "paciente_id": {
+          "name": "paciente_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha": {
+          "name": "fecha",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pasos": {
+          "name": "pasos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calorias_activas": {
+          "name": "calorias_activas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fc_prom": {
+          "name": "fc_prom",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fc_min": {
+          "name": "fc_min",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fc_max": {
+          "name": "fc_max",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "minutos_sueno": {
+          "name": "minutos_sueno",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fuente": {
+          "name": "fuente",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sincronizado_at": {
+          "name": "sincronizado_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "mediciones_wearable_paciente_idx": {
+          "name": "mediciones_wearable_paciente_idx",
+          "columns": [
+            {
+              "expression": "paciente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fecha",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "first"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "mediciones_wearable_paciente_id_fkey": {
+          "name": "mediciones_wearable_paciente_id_fkey",
+          "tableFrom": "mediciones_wearable",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "paciente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "mediciones_wearable_paciente_fecha_fuente_unica": {
+          "name": "mediciones_wearable_paciente_fecha_fuente_unica",
+          "nullsNotDistinct": false,
+          "columns": [
+            "paciente_id",
+            "fecha",
+            "fuente"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "mediciones_wearable_fuente_valida": {
+          "name": "mediciones_wearable_fuente_valida",
+          "value": "fuente = ANY (ARRAY['health_connect'::text, 'apple_health'::text])"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.objetivos": {
+      "name": "objetivos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "objetivos_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "paciente_id": {
+          "name": "paciente_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "categoria_objetivo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_objetivo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pendiente'"
+        },
+        "fecha_objetivo": {
+          "name": "fecha_objetivo",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "registrado_por": {
+          "name": "registrado_por",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "objetivos_paciente_idx": {
+          "name": "objetivos_paciente_idx",
+          "columns": [
+            {
+              "expression": "paciente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "categoria",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "objetivos_paciente_id_fkey": {
+          "name": "objetivos_paciente_id_fkey",
+          "tableFrom": "objetivos",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "paciente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "objetivos_registrado_por_fkey": {
+          "name": "objetivos_registrado_por_fkey",
+          "tableFrom": "objetivos",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "registrado_por"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.plan_ejercicios": {
+      "name": "plan_ejercicios",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "plan_ejercicios_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ejercicio_id": {
+          "name": "ejercicio_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dia_semana": {
+          "name": "dia_semana",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "series": {
+          "name": "series",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "repeticiones": {
+          "name": "repeticiones",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "descanso_seg": {
+          "name": "descanso_seg",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notas": {
+          "name": "notas",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cardio_entrada_calor_valor": {
+          "name": "cardio_entrada_calor_valor",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cardio_entrada_calor_unidad": {
+          "name": "cardio_entrada_calor_unidad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cardio_trabajo_principal_valor": {
+          "name": "cardio_trabajo_principal_valor",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cardio_trabajo_principal_unidad": {
+          "name": "cardio_trabajo_principal_unidad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cardio_vuelta_calma_valor": {
+          "name": "cardio_vuelta_calma_valor",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cardio_vuelta_calma_unidad": {
+          "name": "cardio_vuelta_calma_unidad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "plan_ejercicios_plan_idx": {
+          "name": "plan_ejercicios_plan_idx",
+          "columns": [
+            {
+              "expression": "plan_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "dia_semana",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "orden",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "plan_ejercicios_plan_id_fkey": {
+          "name": "plan_ejercicios_plan_id_fkey",
+          "tableFrom": "plan_ejercicios",
+          "tableTo": "planes",
+          "columnsFrom": [
+            "plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "plan_ejercicios_ejercicio_id_fkey": {
+          "name": "plan_ejercicios_ejercicio_id_fkey",
+          "tableFrom": "plan_ejercicios",
+          "tableTo": "ejercicios",
+          "columnsFrom": [
+            "ejercicio_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "plan_ejercicios_dia_valido": {
+          "name": "plan_ejercicios_dia_valido",
+          "value": "(dia_semana IS NULL) OR (dia_semana = ANY (ARRAY['lunes'::text, 'martes'::text, 'miercoles'::text, 'jueves'::text, 'viernes'::text, 'sabado'::text, 'domingo'::text]))"
+        },
+        "plan_ejercicios_cardio_unidad_valida": {
+          "name": "plan_ejercicios_cardio_unidad_valida",
+          "value": "((cardio_entrada_calor_unidad IS NULL) OR (cardio_entrada_calor_unidad = ANY (ARRAY['minutos'::text, 'horas'::text, 'km'::text]))) AND ((cardio_trabajo_principal_unidad IS NULL) OR (cardio_trabajo_principal_unidad = ANY (ARRAY['minutos'::text, 'horas'::text, 'km'::text]))) AND ((cardio_vuelta_calma_unidad IS NULL) OR (cardio_vuelta_calma_unidad = ANY (ARRAY['minutos'::text, 'horas'::text, 'km'::text])))"
+        },
+        "plan_ejercicios_cardio_pares_completos": {
+          "name": "plan_ejercicios_cardio_pares_completos",
+          "value": "((cardio_entrada_calor_valor IS NULL) = (cardio_entrada_calor_unidad IS NULL)) AND ((cardio_trabajo_principal_valor IS NULL) = (cardio_trabajo_principal_unidad IS NULL)) AND ((cardio_vuelta_calma_valor IS NULL) = (cardio_vuelta_calma_unidad IS NULL))"
+        },
+        "plan_ejercicios_cardio_valor_positivo": {
+          "name": "plan_ejercicios_cardio_valor_positivo",
+          "value": "((cardio_entrada_calor_valor IS NULL) OR (cardio_entrada_calor_valor > (0)::numeric)) AND ((cardio_trabajo_principal_valor IS NULL) OR (cardio_trabajo_principal_valor > (0)::numeric)) AND ((cardio_vuelta_calma_valor IS NULL) OR (cardio_vuelta_calma_valor > (0)::numeric))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.plan_seccion_comidas": {
+      "name": "plan_seccion_comidas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "plan_seccion_comidas_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "seccion_id": {
+          "name": "seccion_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nombre_momento": {
+          "name": "nombre_momento",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contenido": {
+          "name": "contenido",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {
+        "plan_seccion_comidas_seccion_idx": {
+          "name": "plan_seccion_comidas_seccion_idx",
+          "columns": [
+            {
+              "expression": "seccion_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "orden",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "plan_seccion_comidas_seccion_id_fkey": {
+          "name": "plan_seccion_comidas_seccion_id_fkey",
+          "tableFrom": "plan_seccion_comidas",
+          "tableTo": "plan_secciones",
+          "columnsFrom": [
+            "seccion_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.plan_seccion_imagenes": {
+      "name": "plan_seccion_imagenes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "plan_seccion_imagenes_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "seccion_id": {
+          "name": "seccion_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "storage_path": {
+          "name": "storage_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "plan_seccion_imagenes_seccion_idx": {
+          "name": "plan_seccion_imagenes_seccion_idx",
+          "columns": [
+            {
+              "expression": "seccion_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "orden",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "plan_seccion_imagenes_seccion_id_fkey": {
+          "name": "plan_seccion_imagenes_seccion_id_fkey",
+          "tableFrom": "plan_seccion_imagenes",
+          "tableTo": "plan_secciones",
+          "columnsFrom": [
+            "seccion_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.plan_secciones": {
+      "name": "plan_secciones",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "plan_secciones_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_seccion_plan",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contenido": {
+          "name": "contenido",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "plan_secciones_plan_idx": {
+          "name": "plan_secciones_plan_idx",
+          "columns": [
+            {
+              "expression": "plan_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "orden",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "plan_secciones_plan_id_fkey": {
+          "name": "plan_secciones_plan_id_fkey",
+          "tableFrom": "plan_secciones",
+          "tableTo": "planes",
+          "columnsFrom": [
+            "plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.planes": {
+      "name": "planes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "planes_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "paciente_id": {
+          "name": "paciente_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "profesional_id": {
+          "name": "profesional_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_plan",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_plan",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'vigente'"
+        },
+        "fecha_desde": {
+          "name": "fecha_desde",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "CURRENT_DATE"
+        },
+        "fecha_hasta": {
+          "name": "fecha_hasta",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archivo_path": {
+          "name": "archivo_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "disciplina": {
+          "name": "disciplina",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "experiencia_previa": {
+          "name": "experiencia_previa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "frecuencia": {
+          "name": "frecuencia",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "volumen": {
+          "name": "volumen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "disponibilidad_lunes": {
+          "name": "disponibilidad_lunes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "disponibilidad_martes": {
+          "name": "disponibilidad_martes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "disponibilidad_miercoles": {
+          "name": "disponibilidad_miercoles",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "disponibilidad_jueves": {
+          "name": "disponibilidad_jueves",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "disponibilidad_viernes": {
+          "name": "disponibilidad_viernes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "disponibilidad_sabado": {
+          "name": "disponibilidad_sabado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notas": {
+          "name": "notas",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "dias_descanso": {
+          "name": "dias_descanso",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{\"\"}'"
+        },
+        "notas_enc": {
+          "name": "notas_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "planes_paciente_tipo_idx": {
+          "name": "planes_paciente_tipo_idx",
+          "columns": [
+            {
+              "expression": "paciente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "tipo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "estado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "planes_paciente_id_fkey": {
+          "name": "planes_paciente_id_fkey",
+          "tableFrom": "planes",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "paciente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "planes_profesional_id_fkey": {
+          "name": "planes_profesional_id_fkey",
+          "tableFrom": "planes",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "profesional_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "planes_dias_descanso_check": {
+          "name": "planes_dias_descanso_check",
+          "value": "dias_descanso <@ ARRAY['lunes'::text, 'martes'::text, 'miercoles'::text, 'jueves'::text, 'viernes'::text, 'sabado'::text, 'domingo'::text]"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.profiles": {
+      "name": "profiles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "apellido": {
+          "name": "apellido",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "telefono": {
+          "name": "telefono",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rol": {
+          "name": "rol",
+          "type": "rol_usuario",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'paciente'"
+        },
+        "activo": {
+          "name": "activo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "matricula": {
+          "name": "matricula",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "foto_url": {
+          "name": "foto_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "instagram_handle": {
+          "name": "instagram_handle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "instagram_url": {
+          "name": "instagram_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "whatsapp_url": {
+          "name": "whatsapp_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bio_corta": {
+          "name": "bio_corta",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bio": {
+          "name": "bio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "especialidades": {
+          "name": "especialidades",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{\"\"}'"
+        },
+        "areas_trabajo": {
+          "name": "areas_trabajo",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "debe_cambiar_password": {
+          "name": "debe_cambiar_password",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "activado_en": {
+          "name": "activado_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gestionado_por_staff": {
+          "name": "gestionado_por_staff",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "slot_publico": {
+          "name": "slot_publico",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "profiles_activo_idx": {
+          "name": "profiles_activo_idx",
+          "columns": [
+            {
+              "expression": "activo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "profiles_rol_idx": {
+          "name": "profiles_rol_idx",
+          "columns": [
+            {
+              "expression": "rol",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "profiles_slot_publico_unique": {
+          "name": "profiles_slot_publico_unique",
+          "columns": [
+            {
+              "expression": "slot_publico",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "(slot_publico IS NOT NULL)",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "profiles_slot_publico_check": {
+          "name": "profiles_slot_publico_check",
+          "value": "slot_publico = ANY (ARRAY['avril'::text, 'gero'::text])"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.recursos_paciente": {
+      "name": "recursos_paciente",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "recursos_paciente_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "paciente_id": {
+          "name": "paciente_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_recurso",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "categoria_recurso",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'otro'"
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "storage_path": {
+          "name": "storage_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "visible_paciente": {
+          "name": "visible_paciente",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "creado_por": {
+          "name": "creado_por",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "recursos_paciente_idx": {
+          "name": "recursos_paciente_idx",
+          "columns": [
+            {
+              "expression": "paciente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "first"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "recursos_paciente_paciente_id_fkey": {
+          "name": "recursos_paciente_paciente_id_fkey",
+          "tableFrom": "recursos_paciente",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "paciente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "recursos_paciente_plan_id_fkey": {
+          "name": "recursos_paciente_plan_id_fkey",
+          "tableFrom": "recursos_paciente",
+          "tableTo": "planes",
+          "columnsFrom": [
+            "plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "recursos_paciente_creado_por_fkey": {
+          "name": "recursos_paciente_creado_por_fkey",
+          "tableFrom": "recursos_paciente",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "creado_por"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "recursos_titulo_len": {
+          "name": "recursos_titulo_len",
+          "value": "(char_length(titulo) >= 1) AND (char_length(titulo) <= 200)"
+        },
+        "recursos_url_o_path": {
+          "name": "recursos_url_o_path",
+          "value": "((tipo = 'link'::tipo_recurso) AND (url IS NOT NULL) AND (storage_path IS NULL)) OR ((tipo <> 'link'::tipo_recurso) AND (storage_path IS NOT NULL) AND (url IS NULL))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.servicios": {
+      "name": "servicios",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "servicios_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "duracion_minutos": {
+          "name": "duracion_minutos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 60
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_servicio",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "icono": {
+          "name": "icono",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profesional_id": {
+          "name": "profesional_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "activo": {
+          "name": "activo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "servicios_profesional_idx": {
+          "name": "servicios_profesional_idx",
+          "columns": [
+            {
+              "expression": "profesional_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "servicios_tipo_idx": {
+          "name": "servicios_tipo_idx",
+          "columns": [
+            {
+              "expression": "tipo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "servicios_profesional_id_fkey": {
+          "name": "servicios_profesional_id_fkey",
+          "tableFrom": "servicios",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "profesional_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.sesiones_entrenamiento": {
+      "name": "sesiones_entrenamiento",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "sesiones_entrenamiento_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "paciente_id": {
+          "name": "paciente_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dia_semana": {
+          "name": "dia_semana",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fuente": {
+          "name": "fuente",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'manual'"
+        },
+        "iniciada_at": {
+          "name": "iniciada_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "finalizada_at": {
+          "name": "finalizada_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "sesiones_entrenamiento_paciente_idx": {
+          "name": "sesiones_entrenamiento_paciente_idx",
+          "columns": [
+            {
+              "expression": "paciente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "iniciada_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "first"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "sesiones_entrenamiento_plan_id_fkey": {
+          "name": "sesiones_entrenamiento_plan_id_fkey",
+          "tableFrom": "sesiones_entrenamiento",
+          "tableTo": "planes",
+          "columnsFrom": [
+            "plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "sesiones_entrenamiento_paciente_id_fkey": {
+          "name": "sesiones_entrenamiento_paciente_id_fkey",
+          "tableFrom": "sesiones_entrenamiento",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "paciente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "sesiones_entrenamiento_dia_valido": {
+          "name": "sesiones_entrenamiento_dia_valido",
+          "value": "(dia_semana IS NULL) OR (dia_semana = ANY (ARRAY['lunes'::text, 'martes'::text, 'miercoles'::text, 'jueves'::text, 'viernes'::text, 'sabado'::text, 'domingo'::text]))"
+        },
+        "sesiones_entrenamiento_fuente_valida": {
+          "name": "sesiones_entrenamiento_fuente_valida",
+          "value": "fuente = ANY (ARRAY['manual'::text, 'health_connect'::text, 'apple_health'::text])"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.sets_completados": {
+      "name": "sets_completados",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "sets_completados_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "sesion_id": {
+          "name": "sesion_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "plan_ejercicio_id": {
+          "name": "plan_ejercicio_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numero_set": {
+          "name": "numero_set",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "peso_kg": {
+          "name": "peso_kg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "repeticiones": {
+          "name": "repeticiones",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "duracion_seg": {
+          "name": "duracion_seg",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "descanso_seg": {
+          "name": "descanso_seg",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completado_at": {
+          "name": "completado_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "sets_completados_sesion_idx": {
+          "name": "sets_completados_sesion_idx",
+          "columns": [
+            {
+              "expression": "sesion_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "sets_completados_sesion_id_fkey": {
+          "name": "sets_completados_sesion_id_fkey",
+          "tableFrom": "sets_completados",
+          "tableTo": "sesiones_entrenamiento",
+          "columnsFrom": [
+            "sesion_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "sets_completados_plan_ejercicio_id_fkey": {
+          "name": "sets_completados_plan_ejercicio_id_fkey",
+          "tableFrom": "sets_completados",
+          "tableTo": "plan_ejercicios",
+          "columnsFrom": [
+            "plan_ejercicio_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.turnos": {
+      "name": "turnos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "turnos_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "paciente_id": {
+          "name": "paciente_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "profesional_id": {
+          "name": "profesional_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "servicio_id": {
+          "name": "servicio_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fecha": {
+          "name": "fecha",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hora_inicio": {
+          "name": "hora_inicio",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hora_fin": {
+          "name": "hora_fin",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "modalidad": {
+          "name": "modalidad",
+          "type": "modalidad_turno",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'presencial'"
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_turno",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pendiente'"
+        },
+        "notas_paciente": {
+          "name": "notas_paciente",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notas_profesional": {
+          "name": "notas_profesional",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "turno_par_id": {
+          "name": "turno_par_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "motivo_cancelacion": {
+          "name": "motivo_cancelacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "motivo_reprogramacion": {
+          "name": "motivo_reprogramacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "turnos_estado_idx": {
+          "name": "turnos_estado_idx",
+          "columns": [
+            {
+              "expression": "estado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "turnos_paciente_idx": {
+          "name": "turnos_paciente_idx",
+          "columns": [
+            {
+              "expression": "paciente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "turnos_profesional_fecha_idx": {
+          "name": "turnos_profesional_fecha_idx",
+          "columns": [
+            {
+              "expression": "profesional_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fecha",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "turnos_turno_par_idx": {
+          "name": "turnos_turno_par_idx",
+          "columns": [
+            {
+              "expression": "turno_par_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "turnos_paciente_id_fkey": {
+          "name": "turnos_paciente_id_fkey",
+          "tableFrom": "turnos",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "paciente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "turnos_profesional_id_fkey": {
+          "name": "turnos_profesional_id_fkey",
+          "tableFrom": "turnos",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "profesional_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "turnos_servicio_id_fkey": {
+          "name": "turnos_servicio_id_fkey",
+          "tableFrom": "turnos",
+          "tableTo": "servicios",
+          "columnsFrom": [
+            "servicio_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "turnos_turno_par_id_fkey": {
+          "name": "turnos_turno_par_id_fkey",
+          "tableFrom": "turnos",
+          "tableTo": "turnos",
+          "columnsFrom": [
+            "turno_par_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.categoria_objetivo": {
+      "name": "categoria_objetivo",
+      "schema": "public",
+      "values": [
+        "nutricional",
+        "antropometrico",
+        "clinico",
+        "entrenamiento",
+        "rendimiento"
+      ]
+    },
+    "public.categoria_recurso": {
+      "name": "categoria_recurso",
+      "schema": "public",
+      "values": [
+        "ejercicio",
+        "nutricion",
+        "progreso",
+        "educativo",
+        "otro"
+      ]
+    },
+    "public.estado_objetivo": {
+      "name": "estado_objetivo",
+      "schema": "public",
+      "values": [
+        "pendiente",
+        "en_progreso",
+        "cumplido",
+        "descartado"
+      ]
+    },
+    "public.estado_plan": {
+      "name": "estado_plan",
+      "schema": "public",
+      "values": [
+        "vigente",
+        "archivado",
+        "borrador"
+      ]
+    },
+    "public.estado_turno": {
+      "name": "estado_turno",
+      "schema": "public",
+      "values": [
+        "pendiente",
+        "confirmado",
+        "cancelado",
+        "completado",
+        "no_asistio",
+        "pendiente_reprogramacion"
+      ]
+    },
+    "public.modalidad_horario": {
+      "name": "modalidad_horario",
+      "schema": "public",
+      "values": [
+        "presencial",
+        "virtual",
+        "ambas"
+      ]
+    },
+    "public.modalidad_turno": {
+      "name": "modalidad_turno",
+      "schema": "public",
+      "values": [
+        "presencial",
+        "virtual"
+      ]
+    },
+    "public.origen_evolucion": {
+      "name": "origen_evolucion",
+      "schema": "public",
+      "values": [
+        "nutricion",
+        "entrenamiento"
+      ]
+    },
+    "public.rol_usuario": {
+      "name": "rol_usuario",
+      "schema": "public",
+      "values": [
+        "admin",
+        "nutricionista",
+        "entrenador",
+        "paciente"
+      ]
+    },
+    "public.sexo_paciente": {
+      "name": "sexo_paciente",
+      "schema": "public",
+      "values": [
+        "femenino",
+        "masculino",
+        "otro"
+      ]
+    },
+    "public.tipo_plan": {
+      "name": "tipo_plan",
+      "schema": "public",
+      "values": [
+        "nutricion",
+        "entrenamiento",
+        "combo"
+      ]
+    },
+    "public.tipo_recurso": {
+      "name": "tipo_recurso",
+      "schema": "public",
+      "values": [
+        "link",
+        "pdf",
+        "imagen",
+        "video"
+      ]
+    },
+    "public.tipo_seccion_plan": {
+      "name": "tipo_seccion_plan",
+      "schema": "public",
+      "values": [
+        "pautas_generales",
+        "receta",
+        "comidas_dia",
+        "imagenes"
+      ]
+    },
+    "public.tipo_servicio": {
+      "name": "tipo_servicio",
+      "schema": "public",
+      "values": [
+        "nutricion",
+        "entrenamiento",
+        "combo"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
