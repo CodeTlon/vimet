@@ -1,9 +1,15 @@
 import { CheckCheck, ClipboardList, FileText, Lock, Paperclip } from 'lucide-react'
 import Link from 'next/link'
+import { getSessionUser } from '@/lib/auth/session'
 
 import { FeedbackChat, type MensajeFeedback } from '@/components/seguimiento/feedback-chat'
 import { FeedbackForm } from '@/components/seguimiento/feedback-form'
-import { createClient } from '@/lib/supabase/server'
+import { and, desc, eq, ne, sql } from 'drizzle-orm'
+
+import { feedback_semanal, fichas_paciente, planes } from '@/db/schema'
+import { mensajesDeFeedback } from '@/lib/data/feedback'
+import { db } from '@/lib/db'
+import { urlFirmada } from '@/lib/storage/s3'
 import { formatearFechaCorta, lunesDeSemana } from '@/lib/seguimiento'
 export const metadata = { title: 'Feedback semanal' }
 export const dynamic  = 'force-dynamic'
@@ -25,87 +31,68 @@ type Feedback = {
 }
 
 export default async function FeedbackSemanalPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   if (!user) return null
 
   const semana = lunesDeSemana()
 
-  const [{ data: actual }, { data: historicoRaw }, { data: ficha }, { count: planesVigentes }] =
-    await Promise.all([
-      supabase
-        .from('feedback_semanal')
-        .select('*')
-        .eq('paciente_id', user.id)
-        .eq('semana_inicio', semana)
-        .maybeSingle(),
-      supabase
-        .from('feedback_semanal')
-        .select(
-          'id, semana_inicio, estado_fisico, animo, energia, adherencia_entrenamiento, adherencia_alimentacion, peso_autoreporte_kg, observaciones, dudas, respuesta_profesional, respondido_at, adjunto_path',
-        )
-        .eq('paciente_id', user.id)
-        .neq('semana_inicio', semana)
-        .order('semana_inicio', { ascending: false })
-        .limit(8),
-      supabase
-        .from('fichas_paciente')
-        .select('paciente_id')
-        .eq('paciente_id', user.id)
-        .maybeSingle(),
-      supabase
-        .from('planes')
-        .select('id', { count: 'exact', head: true })
-        .eq('paciente_id', user.id)
-        .eq('estado', 'vigente'),
-    ])
+  // Todo del paciente logueado (policies `feedback paciente own select`, `fichas paciente read`).
+  const [[actual], historicoRaw, [ficha], [{ planesVigentes }]] = await Promise.all([
+    db
+      .select()
+      .from(feedback_semanal)
+      .where(and(eq(feedback_semanal.paciente_id, user.id), eq(feedback_semanal.semana_inicio, semana)))
+      .limit(1),
+    db
+      .select({
+        id: feedback_semanal.id,
+        semana_inicio: feedback_semanal.semana_inicio,
+        estado_fisico: feedback_semanal.estado_fisico,
+        animo: feedback_semanal.animo,
+        energia: feedback_semanal.energia,
+        adherencia_entrenamiento: feedback_semanal.adherencia_entrenamiento,
+        adherencia_alimentacion: feedback_semanal.adherencia_alimentacion,
+        peso_autoreporte_kg: feedback_semanal.peso_autoreporte_kg,
+        observaciones: feedback_semanal.observaciones,
+        dudas: feedback_semanal.dudas,
+        respuesta_profesional: feedback_semanal.respuesta_profesional,
+        respondido_at: feedback_semanal.respondido_at,
+        adjunto_path: feedback_semanal.adjunto_path,
+      })
+      .from(feedback_semanal)
+      .where(and(eq(feedback_semanal.paciente_id, user.id), ne(feedback_semanal.semana_inicio, semana)))
+      .orderBy(desc(feedback_semanal.semana_inicio))
+      .limit(8),
+    db
+      .select({ paciente_id: fichas_paciente.paciente_id })
+      .from(fichas_paciente)
+      .where(eq(fichas_paciente.paciente_id, user.id))
+      .limit(1),
+    db
+      .select({ planesVigentes: sql<number>`count(*)::int` })
+      .from(planes)
+      .where(and(eq(planes.paciente_id, user.id), eq(planes.estado, 'vigente'))),
+  ])
 
   const tieneFicha = Boolean(ficha)
-  const tienePlan  = (planesVigentes ?? 0) > 0
+  const tienePlan  = planesVigentes > 0
   const habilitado = tieneFicha && tienePlan
 
-  // URL firmada del adjunto de la semana actual (si existe)
-  const adjuntoUrlActual =
-    actual?.adjunto_path
-      ? (
-          await supabase.storage
-            .from('recursos')
-            .createSignedUrl(actual.adjunto_path, 3600)
-        ).data?.signedUrl ?? null
-      : null
+  // URL firmada del adjunto de la semana actual (si existe) — el path sale de una fila propia.
+  const adjuntoUrlActual = actual?.adjunto_path ? await urlFirmada('recursos', actual.adjunto_path, 3600) : null
 
   // URLs firmadas de adjuntos del histórico
   const historico: (Feedback & { adjuntoUrl: string | null })[] = await Promise.all(
-    ((historicoRaw ?? []) as Feedback[]).map(async (f) => {
-      if (!f.adjunto_path) return { ...f, adjuntoUrl: null }
-      const { data: signed } = await supabase.storage
-        .from('recursos')
-        .createSignedUrl(f.adjunto_path, 3600)
-      return { ...f, adjuntoUrl: signed?.signedUrl ?? null }
-    }),
+    (historicoRaw as Feedback[]).map(async (f) => ({
+      ...f,
+      adjuntoUrl: f.adjunto_path ? await urlFirmada('recursos', f.adjunto_path, 3600) : null,
+    })),
   )
 
   const feedbackIds = [actual?.id, ...historico.map((f) => f.id)].filter(
     (id): id is number => id != null,
   )
-  const { data: mensajesData } = feedbackIds.length
-    ? await supabase
-        .from('feedback_mensajes')
-        .select(
-          'id, feedback_id, autor_id, contenido, created_at, edited_at, autor:profiles!feedback_mensajes_autor_id_fkey(nombre, apellido)',
-        )
-        .in('feedback_id', feedbackIds)
-        .order('id', { ascending: true })
-    : { data: [] }
-
-  const mensajesPorFeedback = new Map<number, MensajeFeedback[]>()
-  for (const m of (mensajesData ?? []) as unknown as (MensajeFeedback & { feedback_id: number })[]) {
-    const arr = mensajesPorFeedback.get(m.feedback_id) ?? []
-    arr.push(m)
-    mensajesPorFeedback.set(m.feedback_id, arr)
-  }
+  const mensajesPorFeedback = await mensajesDeFeedback(feedbackIds)
 
   return (
     <>

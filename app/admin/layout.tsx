@@ -1,15 +1,13 @@
 import { redirect } from 'next/navigation'
 import { type ReactNode } from 'react'
+import { getSessionUser } from '@/lib/auth/session'
 
 import { AdminSidebar } from '@/components/admin-sidebar'
 import { createClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   if (!user) redirect('/login?next=/admin/dashboard')
 
   const { data: profile } = await supabase

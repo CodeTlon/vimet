@@ -1,7 +1,11 @@
 import { Sparkles, Target } from 'lucide-react'
 
 import { hoyArgentina } from '@/lib/datetime'
-import { createClient } from '@/lib/supabase/server'
+import { getSessionUser } from '@/lib/auth/session'
+import { eq } from 'drizzle-orm'
+
+import { objetivos as tablaObjetivos } from '@/db/schema'
+import { db } from '@/lib/db'
 import {
   CATEGORIA_OBJETIVO_LABEL,
   ESTADO_OBJETIVO_BADGE,
@@ -28,18 +32,20 @@ const ESTADO_ORDER: Record<string, number> = {
 }
 
 export default async function MisObjetivosPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   if (!user) return null
 
-  const { data } = await supabase
-    .from('objetivos')
-    .select('id, categoria, descripcion, estado, fecha_objetivo, created_at')
-    .eq('paciente_id', user.id)
-
-  const objetivos = (data ?? []) as Objetivo[]
+  const objetivos: Objetivo[] = await db
+    .select({
+      id: tablaObjetivos.id,
+      categoria: tablaObjetivos.categoria,
+      descripcion: tablaObjetivos.descripcion,
+      estado: tablaObjetivos.estado,
+      fecha_objetivo: tablaObjetivos.fecha_objetivo,
+      created_at: tablaObjetivos.created_at,
+    })
+    .from(tablaObjetivos)
+    .where(eq(tablaObjetivos.paciente_id, user.id))
   objetivos.sort(
     (a, b) =>
       (ESTADO_ORDER[a.estado] ?? 99) - (ESTADO_ORDER[b.estado] ?? 99) ||

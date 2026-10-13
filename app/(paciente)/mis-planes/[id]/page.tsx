@@ -1,12 +1,17 @@
 import { CalendarDays, ChevronLeft, FileText } from 'lucide-react'
 import Link from 'next/link'
+import { getSessionUser } from '@/lib/auth/session'
 import { notFound } from 'next/navigation'
 
 import { PlanPrintButton } from '@/components/seguimiento/plan-print-button'
 import { PlanDownloadButton } from '@/components/seguimiento/plan-download'
 import { RutinaViewer, type RutinaEjercicio } from '@/components/seguimiento/rutina-viewer'
 import { obtenerSeccionesPlan } from '@/lib/plan-secciones'
-import { createClient } from '@/lib/supabase/server'
+import { and, eq } from 'drizzle-orm'
+
+import { planes } from '@/db/schema'
+import { obtenerRutinaPlan } from '@/lib/data/rutina'
+import { db } from '@/lib/db'
 import {
   ESTADO_PLAN_BADGE,
   ESTADO_PLAN_LABEL,
@@ -22,18 +27,15 @@ export default async function MiPlanDetallePage(
   }
 ) {
   const params = await props.params;
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   if (!user) return null
 
-  const { data: planRaw } = await supabase
-    .from('planes')
-    .select('*')
-    .eq('id', Number(params.id))
-    .eq('paciente_id', user.id)
-    .maybeSingle()
+  // Solo un plan propio: cualquier otro id responde 404 (no se revela si existe).
+  const [planRaw] = await db
+    .select()
+    .from(planes)
+    .where(and(eq(planes.id, Number(params.id)), eq(planes.paciente_id, user.id)))
+    .limit(1)
 
   if (!planRaw) notFound()
 
@@ -41,24 +43,10 @@ export default async function MiPlanDetallePage(
   // cae a la columna vieja en texto plano (histórico sin backfillear).
   const plan = { ...planRaw, notas: readClinicalField(planRaw.notas_enc, planRaw.notas) }
 
-  const { data: rutina } =
-    plan.tipo === 'entrenamiento' || plan.tipo === 'combo'
-      ? await supabase
-          .from('plan_ejercicios')
-          .select(
-            'id, dia_semana, series, repeticiones, descanso_seg, notas, ' +
-              'cardio_entrada_calor_valor, cardio_entrada_calor_unidad, ' +
-              'cardio_trabajo_principal_valor, cardio_trabajo_principal_unidad, ' +
-              'cardio_vuelta_calma_valor, cardio_vuelta_calma_unidad, ' +
-              'ejercicio:ejercicios(nombre, gif_url, imagen_url, youtube_url, atribucion, instrucciones, modo)',
-          )
-          .eq('plan_id', Number(params.id))
-          .order('orden')
-      : { data: null }
-
-  const rutinaOrdenada = (rutina ?? []) as unknown as RutinaEjercicio[]
-  const diasDescanso = (plan.dias_descanso ?? []) as string[]
-  const secciones = await obtenerSeccionesPlan(supabase, Number(params.id))
+  const rutinaOrdenada: RutinaEjercicio[] =
+    plan.tipo === 'entrenamiento' || plan.tipo === 'combo' ? await obtenerRutinaPlan(Number(params.id)) : []
+  const diasDescanso = plan.dias_descanso
+  const secciones = await obtenerSeccionesPlan(Number(params.id))
 
   const dias = [
     { key: 'disponibilidad_lunes', label: 'Lunes' },

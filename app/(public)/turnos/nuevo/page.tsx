@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { ArrowLeft } from 'lucide-react'
+import { getSessionUser } from '@/lib/auth/session'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
@@ -15,10 +16,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function NuevoTurnoPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   if (!user) redirect('/login?next=/turnos/nuevo')
 
   const [{ data: profesionales }, { data: servicios }] = await Promise.all([

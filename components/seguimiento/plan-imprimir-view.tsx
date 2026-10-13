@@ -89,7 +89,7 @@ export function PlanImprimirView({
   tieneEntreno,
 }: {
   plan: PlanRow
-  paciente: { nombre: string; apellido: string; email: string }
+  paciente: { nombre: string; apellido: string; email: string | null }
   ficha: { fecha_nacimiento: string | null; sexo: string | null; ocupacion: string | null } | null
   profesional: { nombre: string; apellido: string } | null
   secciones: Seccion[]

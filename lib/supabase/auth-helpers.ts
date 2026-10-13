@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from './server'
+import { getSessionUser } from '@/lib/auth/session'
 
 export type Profile = {
   id: string
@@ -13,10 +14,7 @@ export type Profile = {
 }
 
 export async function getUserAndProfile() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   if (!user) return { user: null, profile: null }
 
   const { data: profile } = await supabase

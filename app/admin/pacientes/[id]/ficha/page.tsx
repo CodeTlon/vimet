@@ -1,5 +1,6 @@
 import { FichaForm } from '@/components/seguimiento/ficha-form'
 import { createClient } from '@/lib/supabase/server'
+import { getSessionUser } from '@/lib/auth/session'
 import { readClinicalField } from '@/lib/crypto/clinical'
 import { logAuditView } from '@/lib/audit'
 export const dynamic = 'force-dynamic'
@@ -10,11 +11,7 @@ export default async function PacienteFichaPage(
   }
 ) {
   const params = await props.params;
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   // Best-effort: si por lo que sea no hay user acá (no debería pasar, el
   // layout de /admin ya lo exige), simplemente no se loguea el acceso —
   // no vale la pena romper la página por esto.

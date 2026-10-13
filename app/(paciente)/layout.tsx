@@ -6,7 +6,7 @@ import { type ReactNode } from 'react'
 
 import { LogoutButton } from '@/components/logout-button'
 import { PacienteSubnav } from '@/components/paciente-subnav'
-import { createClient } from '@/lib/supabase/server'
+import { esStaff, getUserAndProfile } from '@/lib/auth/session'
 export const dynamic = 'force-dynamic'
 
 const tabs = [
@@ -20,19 +20,10 @@ const tabs = [
 ]
 
 export default async function PacienteLayout({ children }: { children: ReactNode }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { user, profile } = await getUserAndProfile()
   if (!user) redirect('/login?next=/mis-turnos')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('rol, nombre')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (profile && ['admin', 'nutricionista', 'entrenador'].includes(profile.rol)) {
+  if (profile && esStaff(profile.rol)) {
     redirect('/admin/dashboard')
   }
 

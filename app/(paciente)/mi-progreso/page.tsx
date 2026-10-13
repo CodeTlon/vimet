@@ -1,7 +1,11 @@
 import { Activity, Eye, HeartPulse, MessageCircle, Sparkles } from 'lucide-react'
 
 import { ExpandableChart } from '@/components/expandable-chart'
-import { createClient } from '@/lib/supabase/server'
+import { getSessionUser } from '@/lib/auth/session'
+import { and, asc, desc, eq } from 'drizzle-orm'
+
+import { evaluaciones_funcionales, evolucion_entradas, mediciones_antropometricas } from '@/db/schema'
+import { db } from '@/lib/db'
 import {
   PUNTAJE_MAX_FUNCIONAL,
   categoriaCondicionFisica,
@@ -12,30 +16,40 @@ export const metadata = { title: 'Mi progreso' }
 export const dynamic = 'force-dynamic'
 
 export default async function MiProgresoPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   if (!user) return null
 
-  const [{ data: mediciones }, { data: evals }, { data: evolucion }] = await Promise.all([
-    supabase
-      .from('mediciones_antropometricas')
-      .select('fecha_medicion, peso_kg, imc, porc_grasa, porc_masa_muscular, dx_antropometrico')
-      .eq('paciente_id', user.id)
-      .order('fecha_medicion', { ascending: true })
-      .order('id', { ascending: true }),
-    supabase
-      .from('evaluaciones_funcionales')
-      .select('fecha, puntaje_total')
-      .eq('paciente_id', user.id)
-      .order('fecha', { ascending: true }),
-    supabase
-      .from('evolucion_entradas')
-      .select('id, origen, contenido, contenido_enc, created_at')
-      .eq('paciente_id', user.id)
-      .eq('visible_paciente', true)
-      .order('created_at', { ascending: false })
+  // Todo filtrado por el paciente logueado; la evolucion solo si el staff la marco visible
+  // (policy `evolucion paciente read visible`).
+  const [mediciones, evals, evolucion] = await Promise.all([
+    db
+      .select({
+        fecha_medicion: mediciones_antropometricas.fecha_medicion,
+        peso_kg: mediciones_antropometricas.peso_kg,
+        imc: mediciones_antropometricas.imc,
+        porc_grasa: mediciones_antropometricas.porc_grasa,
+        porc_masa_muscular: mediciones_antropometricas.porc_masa_muscular,
+        dx_antropometrico: mediciones_antropometricas.dx_antropometrico,
+      })
+      .from(mediciones_antropometricas)
+      .where(eq(mediciones_antropometricas.paciente_id, user.id))
+      .orderBy(asc(mediciones_antropometricas.fecha_medicion), asc(mediciones_antropometricas.id)),
+    db
+      .select({ fecha: evaluaciones_funcionales.fecha, puntaje_total: evaluaciones_funcionales.puntaje_total })
+      .from(evaluaciones_funcionales)
+      .where(eq(evaluaciones_funcionales.paciente_id, user.id))
+      .orderBy(asc(evaluaciones_funcionales.fecha)),
+    db
+      .select({
+        id: evolucion_entradas.id,
+        origen: evolucion_entradas.origen,
+        contenido: evolucion_entradas.contenido,
+        contenido_enc: evolucion_entradas.contenido_enc,
+        created_at: evolucion_entradas.created_at,
+      })
+      .from(evolucion_entradas)
+      .where(and(eq(evolucion_entradas.paciente_id, user.id), eq(evolucion_entradas.visible_paciente, true)))
+      .orderBy(desc(evolucion_entradas.created_at))
       .limit(10),
   ])
 
@@ -53,7 +67,7 @@ export default async function MiProgresoPage() {
 
   const ultEval = (evals ?? []).at(-1)
   const ultMed = (mediciones ?? []).at(-1)
-  const cat = ultEval ? categoriaCondicionFisica(ultEval.puntaje_total, PUNTAJE_MAX_FUNCIONAL) : null
+  const cat = ultEval ? categoriaCondicionFisica(ultEval.puntaje_total ?? 0, PUNTAJE_MAX_FUNCIONAL) : null
 
   return (
     <>

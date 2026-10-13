@@ -1,6 +1,7 @@
 import { Paperclip } from 'lucide-react'
 
 import { Pagination } from '@/components/pagination'
+import { getSessionUser } from '@/lib/auth/session'
 import { FeedbackChat, type MensajeFeedback } from '@/components/seguimiento/feedback-chat'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
@@ -31,10 +32,7 @@ export default async function FeedbackPacientePage(
 ) {
   const params = await props.params;
   const searchParams = await props.searchParams;
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getSessionUser()
 
   const page = parsePage(searchParams?.page)
   const [from, to] = pageRange(page)
