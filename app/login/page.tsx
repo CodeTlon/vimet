@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 
 import { AuthShell } from '@/components/auth-shell'
 import { LoginForm } from '@/components/login-form'
+import { esStaff, getUserAndProfile } from '@/lib/auth/session'
 
 export const metadata: Metadata = {
   title: 'Ingresar',
@@ -14,6 +16,10 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ linkinvalido?: string }>
 }) {
+  // Quien ya tiene sesion no necesita esta pantalla (antes lo resolvia el middleware).
+  const { user, profile } = await getUserAndProfile()
+  if (user && profile) redirect(esStaff(profile.rol) ? '/admin/dashboard' : '/mis-turnos')
+
   const params = await searchParams
 
   return (

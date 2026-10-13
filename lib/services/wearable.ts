@@ -4,7 +4,14 @@ import { z } from 'zod'
 import { mediciones_wearable } from '@/db/schema'
 import { db as dbGlobal, type Db } from '@/lib/db'
 
-const entero = z.number().int().min(0).max(10_000_000).nullable().optional()
+// Los lectores del reloj pueden entregar fracciones (pasos, kcal): se redondea al entero mas cercano.
+const entero = z
+  .number()
+  .min(0)
+  .max(10_000_000)
+  .nullable()
+  .optional()
+  .transform((v) => (v == null ? null : Math.round(v)))
 
 const filaSchema = z.object({
   fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
