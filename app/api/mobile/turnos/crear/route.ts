@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
-import { crearTurno } from '@/actions/turnos'
-import { requireMobileUser } from '@/lib/supabase/bearer'
+import { crearTurno } from '@/lib/services/turnos'
+import { requireMobileUser } from '@/lib/auth/mobile'
 import { crearSchema } from '@/lib/validation/turnos'
 
 export const dynamic = 'force-dynamic'
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 })
   }
 
-  const result = await crearTurno(ctx.supabase, ctx.user.id, parsed.data)
+  const result = await crearTurno(ctx.user.id, parsed.data)
 
   if ('error' in result) return NextResponse.json(result, { status: 400 })
   return NextResponse.json(result)

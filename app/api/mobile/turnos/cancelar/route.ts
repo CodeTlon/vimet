@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
-import { cancelarTurno } from '@/actions/turnos'
-import { requireMobileUser } from '@/lib/supabase/bearer'
+import { cancelarTurno } from '@/lib/services/turnos'
+import { requireMobileUser } from '@/lib/auth/mobile'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const id = Number(body?.id)
   if (!id) return NextResponse.json({ error: 'Turno inválido' }, { status: 400 })
 
-  const result = await cancelarTurno(ctx.supabase, ctx.user.id, id)
+  const result = await cancelarTurno(ctx.user.id, id)
   if ('error' in result) return NextResponse.json(result, { status: 400 })
   return NextResponse.json(result)
 }

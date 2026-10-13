@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
-import { cancelarYNotificar, turnosSinCobertura } from '@/actions/horarios'
-import { requireMobileStaff } from '@/lib/supabase/bearer'
+import { requireMobileStaff } from '@/lib/auth/mobile'
+import {
+  actualizarFranja,
+  cancelarYNotificar,
+  eliminarFranja,
+  franjaPropia,
+  franjaSeSolapa,
+  turnosSinCobertura,
+} from '@/lib/services/horarios'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,39 +34,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'La hora de inicio debe ser anterior a la de fin.' }, { status: 400 })
   }
 
-  const { data: actual } = await ctx.supabase
-    .from('horarios_disponibles')
-    .select('dia_semana')
-    .eq('id', d.id)
-    .eq('profesional_id', ctx.user.id)
-    .maybeSingle()
+  const actual = await franjaPropia(ctx.user.id, d.id)
   if (!actual) return NextResponse.json({ error: 'Franja no encontrada.' }, { status: 404 })
 
-  const { data: existentes } = await ctx.supabase
-    .from('horarios_disponibles')
-    .select('hora_inicio, hora_fin')
-    .eq('profesional_id', ctx.user.id)
-    .eq('dia_semana', d.dia_semana)
-    .eq('activo', true)
-    .neq('id', d.id)
-
-  const seSolapa = (existentes ?? []).some(
-    (h) => d.hora_inicio < h.hora_fin.slice(0, 5) && d.hora_fin > h.hora_inicio.slice(0, 5),
-  )
-  if (seSolapa) {
+  const { id, ...franja } = d
+  if (await franjaSeSolapa(ctx.user.id, franja, id)) {
     return NextResponse.json({ error: 'Esa franja se superpone con otra que ya tenés cargada ese día.' }, { status: 400 })
   }
 
-  const { error } = await ctx.supabase
-    .from('horarios_disponibles')
-    .update({ dia_semana: d.dia_semana, hora_inicio: d.hora_inicio, hora_fin: d.hora_fin, modalidad: d.modalidad })
-    .eq('id', d.id)
-    .eq('profesional_id', ctx.user.id)
-  if (error) return NextResponse.json({ error: 'No se pudo guardar la franja horaria.' }, { status: 400 })
+  try {
+    await actualizarFranja(ctx.user.id, id, franja)
+  } catch (err) {
+    console.error('horarios/actualizar:', err)
+    return NextResponse.json({ error: 'No se pudo guardar la franja horaria.' }, { status: 400 })
+  }
 
   const dias = [...new Set([actual.dia_semana, d.dia_semana])]
-  const afectados = await turnosSinCobertura(ctx.supabase, ctx.user.id, dias)
-  const cancelados = await cancelarYNotificar(ctx.supabase, afectados)
+  const afectados = await turnosSinCobertura(ctx.user.id, dias)
+  const cancelados = await cancelarYNotificar(afectados)
 
   return NextResponse.json({ ok: true, cancelados })
 }

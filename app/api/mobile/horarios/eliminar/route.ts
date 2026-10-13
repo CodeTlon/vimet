@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server'
 
-import { cancelarYNotificar, turnosSinCobertura } from '@/actions/horarios'
-import { requireMobileStaff } from '@/lib/supabase/bearer'
+import { requireMobileStaff } from '@/lib/auth/mobile'
+import {
+  actualizarFranja,
+  cancelarYNotificar,
+  eliminarFranja,
+  franjaPropia,
+  franjaSeSolapa,
+  turnosSinCobertura,
+} from '@/lib/services/horarios'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,17 +20,12 @@ export async function POST(request: Request) {
   const id = Number(body?.id)
   if (!id) return NextResponse.json({ ok: true })
 
-  const { data: horario } = await ctx.supabase
-    .from('horarios_disponibles')
-    .select('dia_semana, hora_inicio, hora_fin')
-    .eq('id', id)
-    .eq('profesional_id', ctx.user.id)
-    .maybeSingle()
+  // franjaPropia/eliminarFranja filtran por profesional_id: solo se borra una franja propia.
+  const horario = await franjaPropia(ctx.user.id, id)
+  await eliminarFranja(ctx.user.id, id)
 
-  await ctx.supabase.from('horarios_disponibles').delete().eq('id', id).eq('profesional_id', ctx.user.id)
-
-  const afectados = horario ? await turnosSinCobertura(ctx.supabase, ctx.user.id, [horario.dia_semana]) : []
-  const cancelados = await cancelarYNotificar(ctx.supabase, afectados)
+  const afectados = horario ? await turnosSinCobertura(ctx.user.id, [horario.dia_semana]) : []
+  const cancelados = await cancelarYNotificar(afectados)
 
   return NextResponse.json({ ok: true, cancelados })
 }
