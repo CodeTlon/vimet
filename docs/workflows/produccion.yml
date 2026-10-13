@@ -1,0 +1,67 @@
+name: Produccion
+
+# Release a produccion con aprobacion manual (Environment `production` con
+# required reviewers). Hoy Coolify despliega `main` por su cuenta; este workflow
+# queda DESHABILITADO hasta que el usuario desactive el auto-deploy de Coolify y
+# defina la variable de REPOSITORIO PRODUCCION_HABILITADA=true.
+#
+# Variables del Environment `production`: PROD_APP_UUID, PROD_URL
+# Secrets del repo: COOLIFY_URL, COOLIFY_TOKEN
+# Gate de backup (BACKUP_GATE=true, solo cuando exista el backup a B2, ver
+# docs/BACKUPS.md de codetlon-cloud): exige un .dump de las ultimas 24 h.
+#   vars: BACKUP_BUCKET, BACKUP_PROJECT; secrets: B2_READ_KEY_ID, B2_READ_APP_KEY
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: produccion
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ vars.PRODUCCION_HABILITADA == 'true' }}
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+      COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      APP_UUID: ${{ vars.PROD_APP_UUID }}
+      PROD_URL: ${{ vars.PROD_URL }}
+    steps:
+      - name: Verificar backup reciente en B2
+        if: ${{ vars.BACKUP_GATE == 'true' }}
+        env:
+          RCLONE_CONFIG_B2_TYPE: b2
+          RCLONE_CONFIG_B2_ACCOUNT: ${{ secrets.B2_READ_KEY_ID }}
+          RCLONE_CONFIG_B2_KEY: ${{ secrets.B2_READ_APP_KEY }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq rclone jq
+          ruta="b2:${{ vars.BACKUP_BUCKET }}/prod/${{ vars.BACKUP_PROJECT }}/postgres"
+          recientes=$(rclone lsjson "$ruta" --recursive --files-only --max-age 24h)
+          dumps=$(echo "$recientes" | jq '[.[] | select(.Name | endswith(".dump"))] | length')
+          sums=$(echo "$recientes" | jq '[.[] | select(.Name | endswith(".dump.sha256"))] | length')
+          [ "$dumps" -ge 1 ] || { echo "::error::no hay .dump de las ultimas 24 h en $ruta"; exit 1; }
+          [ "$sums" -ge 1 ] || { echo "::error::el backup reciente no tiene .sha256"; exit 1; }
+
+      - name: Deploy
+        run: |
+          id=$(curl -fsS -X POST -H "Authorization: Bearer $COOLIFY_TOKEN" \
+            "$COOLIFY_URL/api/v1/deploy?uuid=$APP_UUID" | jq -r '.deployments[0].deployment_uuid')
+          for i in $(seq 1 90); do
+            estado=$(curl -fsS -H "Authorization: Bearer $COOLIFY_TOKEN" "$COOLIFY_URL/api/v1/deployments/$id" | jq -r '.status')
+            echo "estado: $estado"
+            case "$estado" in
+              finished) exit 0 ;;
+              failed|cancelled*) echo "::error::deploy termino en $estado"; exit 1 ;;
+            esac
+            sleep 10
+          done
+          echo "::error::deploy no termino en 15 minutos"; exit 1
+
+      - name: Smoke de produccion
+        run: curl -fsS --retry 10 --retry-delay 6 --retry-connrefused -o /dev/null -w "web %{http_code}\n" "$PROD_URL/login"

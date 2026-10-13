@@ -4,7 +4,9 @@ import { defineConfig, devices } from '@playwright/test'
 // producción (npm start) para reproducir el comportamiento real de las
 // Server Components y el middleware (cookies async).
 const PORT = 3137
-const BASE_URL = `http://localhost:${PORT}`
+// BASE_URL externo = entorno test desplegado (entornos.yml): no se levanta server local.
+const EXTERNAL_URL = process.env.BASE_URL
+const BASE_URL = EXTERNAL_URL ?? `http://localhost:${PORT}`
 
 export default defineConfig({
   testDir: './e2e',
@@ -18,10 +20,12 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: {
-    command: `cross-env PORT=${PORT} npm start`,
-    url: `${BASE_URL}/login`,
-    timeout: 120_000,
-    reuseExistingServer: true,
-  },
+  webServer: EXTERNAL_URL
+    ? undefined
+    : {
+        command: `cross-env PORT=${PORT} npm start`,
+        url: `${BASE_URL}/login`,
+        timeout: 120_000,
+        reuseExistingServer: true,
+      },
 })

@@ -47,6 +47,10 @@ npm audit            # Ver .ai/context/KNOWN_ISSUES.md — hay un CRÍTICO sin p
 - **RLS + triggers**: los triggers `BEFORE UPDATE` que bloquean auto-escalación de rol/turnos arbitrarios chequean `auth.uid() is null or is_staff()` — si agregás un trigger nuevo sobre una tabla que recibe writes del cliente admin (service role), sumale ese mismo bypass o vas a romper una Server Action en silencio.
 - **Storage** (`planes`, `recursos`): privados, acceso solo vía signed URL con verificación de permisos en la Server Action — nunca exponer paths directo.
 
+## Ramas y entornos
+
+`feature/<origen>-<tarea>` -> PR a `dev` -> `test` (Coolify, apagada, se prende antes del PR a `main`) -> `main`. Los agentes no pushean a `dev`, `test` ni `main`. Detalle y pasos manuales en `docs/FLUJO-ENTORNOS.md`. Los mails en `APP_ENV=test` van siempre a `MAIL_SANDBOX_TO` (`lib/email/sandbox.ts`).
+
 ## Workflow de mantenimiento
 
 Este repo usa los skills `/cambio` (abre rama de sesión) y `/cerrar` (build + changelog + merge + tag) — cada sesión de mantenimiento actualiza `.claude/CLAUDE.md` (Historial de Cambios + Quirks) y el Changelog de `README.md`. Esa memoria de sesión sigue viva igual que siempre; no la reemplaza lo de abajo.

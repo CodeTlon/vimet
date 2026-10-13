@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 
 import { SMOKE_EMAIL, SMOKE_PASSWORD } from './_creds'
 
@@ -7,19 +7,28 @@ import { SMOKE_EMAIL, SMOKE_PASSWORD } from './_creds'
 // smoke pueda atravesar el gate de /admin. Idempotente: si ya existe, sólo
 // re-fija la contraseña y promueve el rol.
 export default async function globalSetup() {
-  const env = Object.fromEntries(
-    readFileSync('.env.local', 'utf8')
-      .split('\n')
-      .filter((l) => l.includes('='))
-      .map((l) => {
-        const i = l.indexOf('=')
-        return [l.slice(0, i).trim(), l.slice(i + 1).trim()]
-      }),
-  )
+  // En CI las credenciales llegan por variables de entorno; en local, de .env.local.
+  const fromFile: Record<string, string> = existsSync('.env.local')
+    ? Object.fromEntries(
+        readFileSync('.env.local', 'utf8')
+          .split('\n')
+          .filter((l) => l.includes('='))
+          .map((l) => {
+            const i = l.indexOf('=')
+            return [l.slice(0, i).trim(), l.slice(i + 1).trim()]
+          }),
+      )
+    : {}
 
-  const url = env.NEXT_PUBLIC_SUPABASE_URL
-  const key = env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) throw new Error('Faltan NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY en .env.local')
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? fromFile.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? fromFile.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) {
+    throw new Error('Faltan NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY (env o .env.local)')
+  }
+  // Este setup CREA usuarios: jamas contra el proyecto de produccion.
+  if (url.includes('ayjzcxvtylvsjacgjxgh')) {
+    throw new Error('global-setup se niega a correr contra el Supabase de PRODUCCION.')
+  }
 
   const sb = createClient(url, key, { auth: { persistSession: false } })
 

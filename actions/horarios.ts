@@ -6,6 +6,7 @@ import { z } from 'zod'
 
 import TurnoCanceladoEmail from '@/emails/turno-cancelado'
 import { brand } from '@/lib/config/team'
+import { aplicarSandboxEmail } from '@/lib/email/sandbox'
 import { diaSemana } from '@/lib/booking/slots'
 import { formatearFechaCorta } from '@/lib/seguimiento'
 import { hoyArgentina } from '@/lib/datetime'
@@ -270,10 +271,15 @@ export async function cancelarYNotificar(
         const servicioRow = Array.isArray(t.servicios) ? t.servicios[0] : t.servicios
         const servicio = (servicioRow as { nombre: string } | undefined)?.nombre ?? 'tu turno'
         try {
-          await resend.emails.send({
-            from: `${brand.name} <${from}>`,
+          const destino = aplicarSandboxEmail({
+            from,
             to: [paciente.email],
             subject: 'Tu turno fue cancelado — cambio en la agenda',
+          })
+          await resend.emails.send({
+            from: `${brand.name} <${from}>`,
+            to: destino.to,
+            subject: destino.subject,
             react: TurnoCanceladoEmail({
               nombre: `${paciente.nombre} ${paciente.apellido}`.trim(),
               fecha: formatearFechaCorta(t.fecha),
