@@ -325,19 +325,37 @@ Total con tabla literal: **270** en 72 archivos (+ 10 `.from(<variable>)` no res
 | `sitio` | 3 |
 <!-- END:huella -->
 
-## 3. Conteos de produccion (Supabase `ayjzcxvtylvsjacgjxgh`)
+## 3. Conteos de produccion (Supabase `ayjzcxvtylvsjacgjxgh`, 2026-10-13)
 
-**Pendiente.** El token de la Management API no esta disponible en el entorno de la sesion `dev1`
-(los `.env*` estan enmascarados y no hay variable `SUPABASE_*`), asi que no se pudo consultar produccion.
-El script de solo lectura ya esta listo y solo emite cantidades, sin datos personales:
+Consulta de solo lectura via Management API con `scripts/migracion/conteos-prod.mjs`; salida completa en
+[`conteos-prod.md`](conteos-prod.md). Solo cantidades.
 
-```bash
-SUPABASE_ACCESS_TOKEN=... node scripts/migracion/conteos-prod.mjs > docs/migracion/conteos-prod.md
-```
+| Dato | Valor |
+|---|---|
+| Usuarios `auth.users` | 8 (4 con email confirmado, 4 invitados, 3 con login alguna vez, 0 sinteticos) |
+| Roles en `profiles` | paciente 4, nutricionista 2, entrenador 1, admin 1 |
+| Hash de contrasena | bcrypt 5, vacio 3 (invitados que nunca fijaron contrasena) |
+| Filas en `public` | 28 en total: `profiles` 8, `horarios_disponibles` 15, `servicios` 4, `contenido_sitio` 1; el resto 0 |
+| Datos clinicos | 0 filas en fichas, evolucion, planes, mediciones y evaluaciones |
+| `audit_log` | 0 filas |
+| Storage | 4 buckets, 0 objetos, 0 MB |
 
-Cubre: usuarios de `auth.users` (confirmados, invitados, sinteticos, formato de hash bcrypt/otro),
-filas por tabla de `public` con estado de RLS, objetos y MB por bucket, `audit_log` por accion/tabla
-y filas clinicas todavia en texto plano. Con eso se decide la opcion A/B de contrasenas (Fase 3).
+**Lectura para el plan**
+1. Produccion esta practicamente vacia: ningun dato de paciente real ni archivo. El riesgo del corte es hoy minimo y cuanto antes
+   se haga, menos datos hay que mover. La Fase 7 se simplifica (no hace falta copia de objetos ni backfill de cifrado).
+2. Decision de contrasenas: con 5 hashes bcrypt, importarlos (opcion B) es viable y barato de probar; con 3 usuarios sin
+   contrasena no hay nada que migrar. El reset obligatorio (opcion A) tambien es aceptable a esta escala.
+3. **Drift detectado:** `public` no tiene `plan_secciones`, `plan_seccion_comidas` ni `plan_seccion_imagenes` (migracion `0037`).
+   La `0038` (columnas `_enc`) y la `0039` (`audit_log`) si estan aplicadas. El codigo desplegado de planes asume
+   `0037`; hoy no falla visiblemente porque hay 0 planes, pero cualquier plan nuevo con secciones daria error. Con el
+   esquema nuevo por Drizzle el drift deja de ser un problema; mientras tanto, avisar antes de cargar planes reales.
+4. `ejercicios` esta en 0 filas: el catalogo base no se sembro en prod (`npm run seed:ejercicios`); tenerlo en cuenta
+   para la migracion de datos de referencia (Fase 2).
+5. La tabla `supabase_migrations.schema_migrations` registra 18 migraciones (hasta `0018`), consistente con lo ya documentado.
+
+**`vimet-dev` (`qwzlhbecpgysgophpbyf`)**: la Management API respondio HTTP 544 a la primera consulta; no se obtuvieron conteos.
+Probable proyecto pausado o inaccesible (ya hubo un episodio de DNS sin resolver en junio). Si se quiere usar como base de
+`test` mientras dure Supabase, hay que reactivarlo desde el dashboard y repetir el script con `SUPABASE_PROJECT_REF`.
 
 ## 4. Auditoria de `audit_log` (migracion `0039`, `lib/audit.ts`)
 
