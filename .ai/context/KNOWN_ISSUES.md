@@ -15,7 +15,7 @@ Los items 1-11 de abajo describen producción con Supabase (`main`). En la rama 
 | 11 | `recursos` mobile con validación laxa | **Resuelto**: web y app comparten `lib/services/recursos.ts` (uuid validado, mismos tipos y tamaños). |
 
 ### Nuevos (abiertos)
-- **N1 — Sin verificar contra infra real** (Postgres/MinIO/correo/dispositivo): ver `CURRENT_STATE.md`. Severidad ALTA para el corte, no para producción actual.
+- **N1 — Sin verificar contra infra real** (Postgres/volumen/correo/dispositivo): ver `CURRENT_STATE.md`. Severidad ALTA para el corte, no para producción actual.
 - **N2 — `.env.example` desactualizado** (lista Supabase); está protegido en el sandbox de dev1. Fuente vigente: `docs/migracion/ENTORNO.md`.
 - **N3 — Falta cobertura automática de las acciones web y páginas de admin** (la protección es `requireStaff()` + filtros explícitos). Hace falta una pasada manual con un paciente y un staff no admin.
 - **N4 — Rate limit en memoria** (`lib/rate-limit.ts`): no se comparte entre instancias; ya era así.
@@ -101,3 +101,8 @@ Sin `enum`/`.uuid()`/tope de longitud del lado mobile. Falla controlada contra e
 
 - **N-lint — Deuda de lint (2026-10-15):** 19 usos de `setState` dentro de `useEffect` (`react-hooks/set-state-in-effect`) en componentes viejos (`booking-wizard`, `reprogramar-turno-form`, `rutina-panel`, `use-reset-on-success`, etc.). La regla pasó de `error` a `warn` en `eslint.config.mjs` para no trabar el CI; refactorizar de a uno y volver a `error`. Severidad baja.
 - **N-storage — Archivos de prod sin migrar:** el código lee del volumen; los objetos de producción (hoy en Supabase Storage) se copian con `scripts/migracion/copiar-storage.mjs --apply` en el corte.
+
+## Actualización 2026-10-15
+- **Lint:** `react-hooks/set-state-in-effect` pasó de `error` a `warn` en `eslint.config.mjs` (19 usos de `setState` dentro de `useEffect` en componentes viejos: `booking-wizard`, `reprogramar-turno-form`, `rutina-panel`, `use-reset-on-success`, etc.). Refactorizar de a uno y volver a `error`. Severidad baja.
+- **Archivos de producción sin migrar:** el código lee del volumen; los objetos de Supabase Storage se copian en el corte con `scripts/migracion/copiar-storage.mjs --apply`.
+- **Audit:** `npm audit` solo marca 2 moderadas de herramientas de desarrollo (`esbuild` anidado de `drizzle-kit`, `@vitest/mocker`); el gate de alta/crítica de runtime pasa.

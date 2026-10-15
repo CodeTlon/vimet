@@ -71,3 +71,6 @@ Para `produccion.yml` (deshabilitado por defecto): Environment `production` con 
 
 - `ci.yml`, `entornos.yml` y `produccion.yml` (en `docs/workflows/`) **no se ejecutaron todavia** (no hay runner ni secrets en esta maquina). El esqueleto viene del template de la fabrica, que tambien esta marcado como "validar con una corrida real". Primera corrida real: abrir un PR de prueba hacia `dev` y otro `dev -> main`.
 - `lib/email/sandbox.ts` y los 3 call sites de Resend (`lib/email/resend.ts`, `actions/contacto.ts`, `actions/horarios.ts`) compilan; el guard no se probo con un envio real.
+
+## Actualización 2026-10-15
+`dev` y `test` se mergean y pushean directo (sin PRs hacia ellas); `main` por PR. Los workflows de `.github/workflows/` son los de plantilla de la fábrica: `entornos.yml` (push a `test`: espera el deploy por `started_at` de `/api/health` y corre los E2E contra `TEST_URL`; sin la variable o con `test` apagado no hace nada), `produccion.yml` y `backup-check.yml` (llave `PRODUCCION_HABILITADA`, Environment `prod-coolify`). El despliegue es un recurso Docker Compose de Coolify con `docker-compose.coolify.yml` (reemplaza a los buildpacks de las app de Dokku mencionadas arriba).

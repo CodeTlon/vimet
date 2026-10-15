@@ -22,7 +22,7 @@ Al **2026-10-13**. Ramas: `main` = producción (Supabase, `186829d`); `dev` y `t
 **Datos de producción medidos (2026-10-13, solo lectura):** 8 usuarios (5 bcrypt, 3 sin contraseña), 28 filas en `public`, 0 datos clínicos, 0 objetos de Storage; faltan en prod las tablas de `0037` (`plan_secciones*`). El corte es barato hoy; conviene antes de que carguen pacientes reales.
 
 ## Pendiente (lo ejecuta Mateo o requiere infra)
-1. Postgres + MinIO de `test`/`prod` en Coolify; variables de `docs/migracion/ENTORNO.md`.
+1. Recurso de Coolify de `test`/`prod` (Docker Compose con `docker-compose.coolify.yml`: Postgres + volumen de archivos, sin MinIO); variables de `docs/migracion/ENTORNO.md`.
 2. `db:migrate` + `importar.mjs` + pruebas manuales en `test`; luego PR `test` → `main` (lo mergea Mateo).
 3. Copiar `docs/workflows/*.yml` a `.github/workflows/` (token de dev1 sin scope `workflow`); reducir `.env.example`.
 4. Build de la app en dispositivo contra `test`; forzar update de la app publicada tras el corte.
@@ -65,3 +65,10 @@ Esto también explica por qué el cifrado clínico y el gap de `plan_secciones` 
 
 - Mecanismo exacto de auto-deploy de Coolify (push automático vs. manual) — se confirmó la app/proyecto correctos, no el trigger de deploy en sí.
 - Si el código YA deployado en Coolify (no el de esta rama) queda 100% conforme con el nuevo schema — las migraciones están aplicadas, pero no se re-deployó la app en esta sesión.
+
+## Actualización 2026-10-15 (estándar de Coolify, video y vulnerabilidades)
+- **Hecho y verificado:** archivos en volumen (`lib/storage/disk.ts`, ruta `/media`; buckets `ejercicios-media` y `sitio` públicos, `planes` y `recursos` privados con URL firmada HMAC con vencimiento; sin MinIO ni `@aws-sdk/*`); `Dockerfile` + `docker-entrypoint.sh` (migra al arrancar, falla cerrado) + `docker-compose.coolify.yml`; `/api/health` con `started_at`; workflows `ci.yml` (lint, tipos, 48 tests, build, audit, E2E, imagen Docker), `entornos.yml`, `produccion.yml`, `backup-check.yml`. **Imagen Docker real probada** contra Postgres 17: migra (28 tablas), health 200, `/media` público 200, privado sin firma 403, path traversal 404, Range 206. Local: 48/48 tests, 51 E2E públicos en 3 viewports, `tsc` limpio, lint 0 errores (19 avisos `set-state-in-effect`, ver KNOWN_ISSUES), `npm audit --omit=dev --audit-level=high` en 0.
+- **Video:** los videos de recursos del paciente (tope 40 MB) pasan por el servicio global de compresión en `lib/services/recursos.ts` (`lib/transcode.ts`, preset `web`, soft-fail). El uploader de ejercicios convierte el video a GIF de hasta 6 s en el navegador (no sube video) y el video del hero es un archivo estático del repo: ahí no aplica.
+- **Dependencias:** `next` 16.3.8, `vitest` 3.2.7 y `overrides.tinypool` 2.2.0 (la copia vulnerable llega por el peer opcional de `better-auth`).
+- **Sin verificar:** firma de URL privada punta a punta contra la imagen (solo cubierta por tests unitarios, `tests/storage.test.ts`); compresión real de un video contra el servicio; despliegue en Coolify.
+- **Pendiente (del usuario):** crear los recursos de Coolify, cargar variables (`TRANSCODE_API_KEY` solo ahí), copiar los archivos de Supabase al volumen con `scripts/migracion/copiar-storage.mjs --apply`, ensayo y corte (`docs/migracion/CORTE.md`), cron de backup B2.

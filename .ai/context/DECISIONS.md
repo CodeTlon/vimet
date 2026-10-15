@@ -39,3 +39,8 @@ Decisiones de diseño reales con su porqué — no solo "qué se hizo". Extraíd
 **Flujo de ramas**: `feature/*` → `dev` (merge directo) → `test` (merge directo) → PR `test` → `main` (lo mergea Mateo). La app (`vimet-app`) usa el mismo flujo.
 
 **`toggleActivoAction` ya no es "cualquier staff sobre cualquiera"**: staff sobre pacientes; solo admin sobre cuentas del equipo (corrige la decisión histórica de arriba, que en la práctica permitía desactivar al admin).
+
+## 2026-10-15 — Estándar de Coolify y video
+- **Archivos en volumen servido por `/media`, sin MinIO.** Mismos nombres de bucket y paths que S3 (las columnas `*_path` siguen válidas). Privados por URL firmada HMAC (secreto `MEDIA_SIGNING_SECRET`, o `BETTER_AUTH_SECRET` si falta) con vencimiento; públicos directos. Implementación de referencia de la fábrica (`codetlon-cloud/.claude/modules/coolify-compose.md`).
+- **Video de recursos por el servicio global de compresión**, con soft-fail y una sola key (`TRANSCODE_API_KEY`, solo en Coolify). Se corrigió además la ayuda del formulario (decía «máx 100 MB»; el servidor limita a 40 MB).
+- **`overrides.tinypool`:** la copia vulnerable llega por el peer opcional de `better-auth`; el override evita subir `vitest` a un major incompatible con ese peer.
