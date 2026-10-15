@@ -20,7 +20,7 @@ const TIPOS = [
   { value: 'link',   label: 'Link externo', icon: Link2,      accept: '',                                                  hint: '' },
   { value: 'pdf',    label: 'PDF',          icon: FileText,   accept: '.pdf,application/pdf',                              hint: 'PDF · máx 20 MB' },
   { value: 'imagen', label: 'Imagen',       icon: FileImage,  accept: 'image/jpeg,image/png,image/webp,image/gif',         hint: 'JPG, PNG, WEBP, GIF · máx 10 MB' },
-  { value: 'video',  label: 'Video',        icon: Video,      accept: 'video/mp4,video/webm,video/quicktime',              hint: 'MP4, WEBM, MOV · máx 100 MB' },
+  { value: 'video',  label: 'Video',        icon: Video,      accept: 'video/mp4,video/webm,video/quicktime',              hint: 'MP4, WEBM, MOV · máx 40 MB' },
 ] as const
 
 type TipoValue = (typeof TIPOS)[number]['value']

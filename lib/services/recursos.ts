@@ -1,6 +1,7 @@
 // Alta de recursos multimedia del paciente (link / pdf / imagen / video). SIN 'use server':
 // lo comparten actions/recursos.ts (web) y app/api/mobile/recursos (bearer); ambos validan que el
 // actor sea staff ANTES de llamar (policy `recursos staff all`).
+import { transcodeWithService } from '@/lib/transcode'
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -102,8 +103,15 @@ export async function crearRecurso(
     storage_path = storage_path.replace(/\.\w+$/, '') + '.webp'
   } else if (t === 'pdf' && !pareceUnPdf(buf)) {
     return { ok: false, error: 'El archivo no es un PDF válido.' }
-  } else if (t === 'video' && !pareceUnVideo(buf, file.type)) {
-    return { ok: false, error: 'El archivo no es un video válido.' }
+  } else if (t === 'video') {
+    if (!pareceUnVideo(buf, file.type)) return { ok: false, error: 'El archivo no es un video válido.' }
+    // Servicio global de compresion (soft-fail: sin servicio o con error se guarda el original).
+    const comprimido = await transcodeWithService(buf, 'web')
+    if (comprimido) {
+      buf = comprimido
+      contentType = 'video/mp4'
+      storage_path = storage_path.replace(/\.\w+$/, '') + '.mp4'
+    }
   }
 
   try {
