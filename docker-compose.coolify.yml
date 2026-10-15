@@ -6,7 +6,8 @@
 # El desarrollo local NO usa este archivo: usa docker-compose.yml (solo Postgres).
 #
 # Variables a cargar en Coolify (sin comillas):
-#   Obligatoria : BETTER_AUTH_SECRET   (openssl rand -base64 48 | tr -d '\n=+/' | cut -c1-64; distinto por entorno)
+#   Obligatorias: BETTER_AUTH_SECRET   (openssl rand -base64 48 | tr -d '\n=+/' | cut -c1-64; distinto por entorno)
+#                 CLINICAL_DATA_ENCRYPTION_KEY (openssl rand -base64 32; distinta por entorno, hacer backup de la clave)
 #   Opcionales  : NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_GA_ID (entran en el BUILD), RESEND_API_KEY, RESEND_FROM_EMAIL,
 #                 COMPANY_EMAIL, APP_ENV, MAIL_SANDBOX_TO (obligatoria en test, prohibida en prod),
 #                 TRANSCODE_SERVICE_URL, TRANSCODE_API_KEY (servicio global de video, ver video-transcode.md)
@@ -37,6 +38,9 @@ services:
       APP_ENV: ${APP_ENV:-production}
       DATABASE_URL: postgres://vimet:${SERVICE_PASSWORD_POSTGRES}@db:5432/vimet
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Definí BETTER_AUTH_SECRET en las variables del recurso}
+      # Cifrado de datos clínicos (AES-256, 32 bytes en base64: openssl rand -base64 32). Distinta por entorno; sin ella no se guardan fichas ni evoluciones.
+      CLINICAL_DATA_ENCRYPTION_KEY: ${CLINICAL_DATA_ENCRYPTION_KEY:?Definí CLINICAL_DATA_ENCRYPTION_KEY en las variables del recurso}
+      MEDIA_SIGNING_SECRET: ${MEDIA_SIGNING_SECRET:-}
       BETTER_AUTH_URL: ${SERVICE_URL_APP}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
       STORAGE_DIR: /data/storage
