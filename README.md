@@ -39,7 +39,7 @@ Listado completo y notas en `docs/migracion/ENTORNO.md`. Obligatorias: `DATABASE
 
 ### Ramas y entornos
 
-`feature/<origen>-<tarea>` -> PR a `dev` -> `test` (app `vimet-test` en Coolify, apagada, espejo de `main` para probar antes del PR) -> `main` (produccion). Promover `dev -> test -> main` lo hace el responsable del repo. Workflows de CI en `docs/workflows/` (`ci.yml`, `entornos.yml`, `produccion.yml`), pendientes de copiar a `.github/workflows/`. Detalle, variables de test y pasos manuales: [`docs/FLUJO-ENTORNOS.md`](docs/FLUJO-ENTORNOS.md).
+`feature/<origen>-<tarea>` -> `dev` -> `test` (recurso `vimet-test` en Coolify, apagado, espejo de `main` para probar antes del PR) -> `main` (produccion). `dev` y `test` se mergean y pushean directo; `main` por PR. Workflows en `.github/workflows/` (`ci.yml`, `entornos.yml`, `produccion.yml`, `backup-check.yml`). Detalle, variables de test y pasos manuales: [`docs/FLUJO-ENTORNOS.md`](docs/FLUJO-ENTORNOS.md).
 
 ---
 

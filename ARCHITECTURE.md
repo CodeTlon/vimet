@@ -3,7 +3,7 @@
 Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio acá y abrí solo esos archivos. El mapa de archivos completo + DB + quirks vive en `.claude/CLAUDE.md`.
 
 ## Stack
-**Next.js 16** (App Router) · React 19 · TS · Tailwind · Shadcn/UI · Lucide · Postgres + Drizzle · Better Auth · MinIO (S3) · Resend (en `main` todavía Supabase hasta el corte). Deploy real: **Coolify** (Vercel es solo preview, ver `.ai/context/ARCHITECTURE.md`). Migración de un sitio PHP MVC + MySQL. Web app con auth + booking + dashboard admin + módulo de seguimiento de pacientes.
+**Next.js 16** (App Router) · React 19 · TS · Tailwind · Shadcn/UI · Lucide · Postgres + Drizzle · Better Auth · archivos en volumen servido por `/media` (sin MinIO/S3) · Resend (en `main` todavía Supabase hasta el corte). Deploy real: **Coolify** (Vercel es solo preview, ver `.ai/context/ARCHITECTURE.md`). Migración de un sitio PHP MVC + MySQL. Web app con auth + booking + dashboard admin + módulo de seguimiento de pacientes.
 
 ## Route Groups / áreas
 - Público: home, nosotros, metodologia, servicios, faq, contacto, login, registro, legales
