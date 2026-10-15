@@ -41,7 +41,7 @@ const nextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
           },
-          // Fuerza HTTPS en el browser (Vercel/Dokku sirven siempre sobre TLS en prod).
+          // Fuerza HTTPS en el browser (Coolify/Traefik sirve siempre sobre TLS en prod).
           {
             key: 'Strict-Transport-Security',
             value: 'max-age=63072000; includeSubDomains; preload',

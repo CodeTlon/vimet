@@ -1,6 +1,6 @@
 # CURRENT_STATE — VIMET (web)
 
-Al **2026-10-13**. Ramas: `main` = producción (Supabase, `186829d`); `dev` y `test` = `feature/dev1-backend-propio` (`d047bb3`, backend propio); `archive/dev-dokku-2026-07` = la `dev` vieja.
+Al **2026-10-15**. Ramas: `main` = producción (Supabase, `186829d`, sin migrar); `dev` = `test` = backend propio (v0.29.1, `15aebbd`, imagen Docker verificada, sin desplegar); `archive/dev-dokku-2026-07` = la `dev` vieja. El detalle de abajo es del 2026-10-13 y sigue vigente salvo lo anotado en el README (v0.29.x). Pendiente del corte a `main`: recursos de Coolify, variables, copia de archivos y revocar el token de Supabase compartido.
 
 ## Backend propio (rama `feature/dev1-backend-propio`, en `dev`/`test`, SIN desplegar a producción)
 

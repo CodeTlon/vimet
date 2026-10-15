@@ -8,7 +8,6 @@
       "Bash(npm ci)",
       "Bash(npm run lint)",
       "Bash(npx playwright*)",
-      "Bash(npx supabase*)",
       "Bash(npx tsx*)",
       "Bash(git status)",
       "Bash(git diff*)",
