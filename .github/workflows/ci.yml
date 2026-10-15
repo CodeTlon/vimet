@@ -1,0 +1,69 @@
+name: CI
+# Gate de calidad (estandar CodeTlon: estandar-calidad.md). PR a `test` o `main` y push a dev/test/main.
+on:
+  pull_request:
+    branches: [test, main]
+  push:
+    branches: [dev, test, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Valores de relleno: el build y los E2E publicos no consultan la base ni mandan mails.
+  BETTER_AUTH_SECRET: ci_placeholder_secret_ci_placeholder_secret
+  BETTER_AUTH_URL: http://localhost:3137
+  NEXT_PUBLIC_SITE_URL: http://localhost:3137
+  STORAGE_PUBLIC_URL: http://localhost:3137/media
+  RESEND_API_KEY: re_placeholder
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      # Autorizacion (IDOR), auth, turnos, importador y storage contra Postgres real en memoria (PGlite).
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
+
+  e2e:
+    name: E2E (3 viewports)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+  imagen-docker:
+    name: Imagen Docker
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t vimet-ci --build-arg STORAGE_PUBLIC_URL=https://ci.test/media --build-arg NEXT_PUBLIC_SITE_URL=https://ci.test .

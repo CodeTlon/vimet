@@ -1,14 +1,15 @@
-// Copia los objetos de Supabase Storage al S3 propio (MinIO) y reescribe las URLs absolutas que la base
+// Copia los objetos de Supabase Storage al volumen de archivos (STORAGE_DIR, estandar CodeTlon) y reescribe las URLs absolutas que la base
 // guarda (profiles.foto_url, ejercicios.gif_url / imagen_url). Mismo nombre de bucket y mismo path de
 // objeto, asi que las columnas *_path / storage_path siguen siendo validas sin tocarlas.
 //
 //   SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY=...   (origen, solo lectura)
-//   S3_ENDPOINT=... S3_ACCESS_KEY_ID=... S3_SECRET_ACCESS_KEY=... S3_PUBLIC_URL=... [S3_BUCKET_PREFIX=]
+//   STORAGE_DIR=/data/storage STORAGE_PUBLIC_URL=https://<dominio>/media
 //   DATABASE_URL=...                                                          (base nueva)
 //   node scripts/migracion/copiar-storage.mjs [--apply]
 //
 // Sin --apply solo lista y cuenta (dry-run). Es idempotente: re-ejecutar vuelve a copiar y a verificar.
-import { HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { mkdir, stat, writeFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
 import pg from 'pg'
 
 const BUCKETS = ['planes', 'recursos', 'ejercicios-media', 'sitio']
@@ -22,15 +23,8 @@ function requerir(n) {
 
 const SUPABASE_URL = requerir('SUPABASE_URL').replace(/\/$/, '')
 const SERVICE_KEY = requerir('SUPABASE_SERVICE_ROLE_KEY')
-const PREFIJO = process.env.S3_BUCKET_PREFIX ?? ''
-const PUBLIC_URL = requerir('S3_PUBLIC_URL').replace(/\/$/, '')
-
-const s3 = new S3Client({
-  endpoint: requerir('S3_ENDPOINT'),
-  region: process.env.S3_REGION ?? 'us-east-1',
-  forcePathStyle: true,
-  credentials: { accessKeyId: requerir('S3_ACCESS_KEY_ID'), secretAccessKey: requerir('S3_SECRET_ACCESS_KEY') },
-})
+const STORAGE_DIR = resolve(process.env.STORAGE_DIR ?? './storage')
+const PUBLIC_URL = requerir('STORAGE_PUBLIC_URL').replace(/\/$/, '')
 const auth = { Authorization: `Bearer ${SERVICE_KEY}`, apikey: SERVICE_KEY }
 
 /** Lista recursivamente todos los archivos de un bucket (la API lista un nivel por llamada). */
@@ -72,19 +66,13 @@ async function main() {
         continue
       }
       const body = Buffer.from(await res.arrayBuffer())
-      const Bucket = `${PREFIJO}${bucket}`
-      await s3.send(
-        new PutObjectCommand({
-          Bucket,
-          Key: f.ruta,
-          Body: body,
-          ContentType: f.tipo ?? res.headers.get('content-type') ?? 'application/octet-stream',
-        }),
-      )
-      // Verificacion: el objeto existe y pesa lo mismo.
-      const head = await s3.send(new HeadObjectCommand({ Bucket, Key: f.ruta }))
-      if (head.ContentLength !== body.length) {
-        console.error(`  x ${bucket}/${f.ruta}: tamano distinto (${head.ContentLength} vs ${body.length})`)
+      const abs = resolve(STORAGE_DIR, bucket, f.ruta)
+      await mkdir(dirname(abs), { recursive: true })
+      await writeFile(abs, body)
+      // Verificacion: el archivo existe y pesa lo mismo.
+      const { size } = await stat(abs)
+      if (size !== body.length) {
+        console.error(`  x ${bucket}/${f.ruta}: tamano distinto (${size} vs ${body.length})`)
         fallos++
       }
     }
@@ -95,7 +83,7 @@ async function main() {
     await db.connect()
     try {
       const desde = `${SUPABASE_URL}/storage/v1/object/public/`
-      const hacia = `${PUBLIC_URL}/${PREFIJO}`
+      const hacia = `${PUBLIC_URL}/`
       for (const [tabla, col] of [
         ['profiles', 'foto_url'],
         ['ejercicios', 'gif_url'],

@@ -1,16 +1,17 @@
 // Seed unico del catalogo de ejercicios (tabla `ejercicios` + bucket `ejercicios-media`) desde
 // github.com/hasaneyldrm/exercises-dataset. No corre en runtime: se ejecuta a mano una vez por entorno.
-//   DATABASE_URL=... S3_ENDPOINT=... S3_ACCESS_KEY_ID=... S3_SECRET_ACCESS_KEY=... S3_PUBLIC_URL=... \
-//     node scripts/seed-ejercicios.mjs
+//   DATABASE_URL=... STORAGE_DIR=/data/storage STORAGE_PUBLIC_URL=https://<dominio>/media node scripts/seed-ejercicios.mjs
+// (en Coolify: `docker exec <app> ...` o con el volumen `storage` montado en STORAGE_DIR)
 //
 // ponytail: nombres de campo (name/category/body_part/target/...) tomados de la documentacion del
 // dataset. Si `data/exercises.schema.json` real difiere, ajustar el mapeo antes de correr.
 
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
 import pg from 'pg'
 
 const RAW_BASE = 'https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main'
-const BUCKET = `${process.env.S3_BUCKET_PREFIX ?? ''}ejercicios-media`
+const BUCKET = 'ejercicios-media'
 
 function requerir(nombre) {
   const v = process.env[nombre]
@@ -18,13 +19,8 @@ function requerir(nombre) {
   return v
 }
 
-const s3 = new S3Client({
-  endpoint: requerir('S3_ENDPOINT'),
-  region: process.env.S3_REGION ?? 'us-east-1',
-  forcePathStyle: true,
-  credentials: { accessKeyId: requerir('S3_ACCESS_KEY_ID'), secretAccessKey: requerir('S3_SECRET_ACCESS_KEY') },
-})
-const PUBLIC_URL = requerir('S3_PUBLIC_URL').replace(/\/$/, '')
+const STORAGE_DIR = resolve(process.env.STORAGE_DIR ?? './storage')
+const PUBLIC_URL = requerir('STORAGE_PUBLIC_URL').replace(/\/$/, '')
 
 async function fetchJson(path) {
   const res = await fetch(`${RAW_BASE}/${path}`)
@@ -42,16 +38,11 @@ async function subirMedia(relPath, destPrefix) {
   const buf = Buffer.from(await res.arrayBuffer())
   const destPath = `${destPrefix}/${relPath.split('/').pop()}`
   try {
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: BUCKET,
-        Key: destPath,
-        Body: buf,
-        ContentType: res.headers.get('content-type') ?? 'application/octet-stream',
-      }),
-    )
+    const abs = resolve(STORAGE_DIR, BUCKET, destPath)
+    await mkdir(dirname(abs), { recursive: true })
+    await writeFile(abs, buf)
   } catch (e) {
-    console.warn(`  ! no se pudo subir ${destPath}: ${e.message}`)
+    console.warn(`  ! no se pudo guardar ${destPath}: ${e.message}`)
     return null
   }
   return `${PUBLIC_URL}/${BUCKET}/${destPath}`

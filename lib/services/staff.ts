@@ -7,7 +7,7 @@ import { setUserPassword } from '@/lib/auth/password'
 import { crearUsuario, eliminarUsuario } from '@/lib/auth/usuarios'
 import { db as dbGlobal, type Db } from '@/lib/db'
 import { PG, pgCode } from '@/lib/db-errors'
-import { borrarArchivos, listarArchivos } from '@/lib/storage/s3'
+import { borrarArchivos, listarArchivos } from '@/lib/storage/disk'
 
 export type Resultado<T = object> = ({ ok: true } & T) | { ok: false; error: string; status?: number }
 

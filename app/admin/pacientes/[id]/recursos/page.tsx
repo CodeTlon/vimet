@@ -17,7 +17,7 @@ import { desc, eq } from 'drizzle-orm'
 import { profiles, recursos_paciente as tabla } from '@/db/schema'
 import { requireStaff } from '@/lib/auth/session'
 import { db } from '@/lib/db'
-import { urlFirmada } from '@/lib/storage/s3'
+import { urlFirmada } from '@/lib/storage/disk'
 export const dynamic = 'force-dynamic'
 
 type Recurso = {

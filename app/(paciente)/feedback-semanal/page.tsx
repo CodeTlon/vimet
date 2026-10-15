@@ -9,7 +9,7 @@ import { and, desc, eq, ne, sql } from 'drizzle-orm'
 import { feedback_semanal, fichas_paciente, planes } from '@/db/schema'
 import { mensajesDeFeedback } from '@/lib/data/feedback'
 import { db } from '@/lib/db'
-import { urlFirmada } from '@/lib/storage/s3'
+import { urlFirmada } from '@/lib/storage/disk'
 import { formatearFechaCorta, lunesDeSemana } from '@/lib/seguimiento'
 export const metadata = { title: 'Feedback semanal' }
 export const dynamic  = 'force-dynamic'

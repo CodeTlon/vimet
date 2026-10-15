@@ -45,7 +45,7 @@ Mapa para mantenimiento. **No releas el repo entero**: buscá tu tipo de cambio 
 - **`lib/datetime.ts`** — el server es UTC; representar "hoy" con UTC corre un día. Usar siempre los helpers AR (server y client).
 - **Autorización** — no hay RLS: toda consulta filtra por la sesión y toda escritura pasa por un servicio con su regla (`docs/migracion/AUTORIZACION.md`). Un archivo `'use server'` solo exporta `*Action`.
 - **`drizzle/`** — nunca editar una migración aplicada; crear otra. `supabase/migrations/` queda como referencia hasta el corte.
-- **Storage** (`lib/storage/s3.ts`): buckets `planes` y `recursos` privados → acceso solo vía URL firmada tras verificar permiso. No exponer paths.
+- **Storage** (`lib/storage/disk.ts`): buckets `planes` y `recursos` privados → acceso solo vía URL firmada tras verificar permiso. No exponer paths.
 - `crearTurnoAction` revalida `fecha >= hoyArgentina()` server-side (el `min` del input es solo defensa en profundidad).
 - IMC se calcula al guardar la medición; `puntaje_total` de eval funcional es columna `GENERATED ... STORED`.
 
@@ -65,6 +65,6 @@ Sin Supabase en runtime. Capas:
 - **Servicios:** `lib/services/*` — reglas de negocio SIN `'use server'`, compartidas por `actions/*` (web) y `lib/mobile/*` (app).
   Todo export de un archivo `'use server'` es invocable desde el cliente: nunca exportar funciones que reciban un `userId`.
 - **Acceso a datos con autorizacion explicita:** `lib/data/*` (turnos, rutina, feedback). No hay RLS: cada consulta filtra por la sesion.
-- **Archivos:** `lib/storage/s3.ts` (MinIO), URLs firmadas tras verificar permiso.
+- **Archivos:** `lib/storage/disk.ts` (volumen `storage`, ruta `/media`), URLs firmadas tras verificar permiso.
 - **App mobile:** `POST /api/mobile/data` + `lib/mobile/registry.ts` (catalogo cerrado, `acceso: usuario|staff|admin`).
 - **Tests:** `npm test` (Vitest + PGlite con las migraciones reales).

@@ -8,7 +8,7 @@ import { recursos_paciente } from '@/db/schema'
 import { db as dbGlobal, type Db } from '@/lib/db'
 import { pareceUnPdf, pareceUnVideo } from '@/lib/file-sniff'
 import { optimizeImage } from '@/lib/storage/optimize-image'
-import { borrarArchivos, subirArchivo } from '@/lib/storage/s3'
+import { borrarArchivos, subirArchivo } from '@/lib/storage/disk'
 
 export type RecursoResultado = { ok: true } | { ok: false; error: string }
 

@@ -8,7 +8,7 @@ import { contenido_sitio, profiles, servicios } from '@/db/schema'
 import { esStaff, getUserAndProfile } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { optimizeImage } from '@/lib/storage/optimize-image'
-import { borrarArchivos, subirArchivo, urlPublica } from '@/lib/storage/s3'
+import { borrarArchivos, subirArchivo, urlPublica } from '@/lib/storage/disk'
 
 export type ContenidoState = { ok?: boolean; error?: string }
 

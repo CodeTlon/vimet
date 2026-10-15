@@ -1,0 +1,96 @@
+# Compose ESTÁNDAR de CodeTlon para Coolify: app + Postgres + archivos en volumen, un solo recurso por entorno.
+# Receta y paso a paso: .claude/modules/coolify-compose.md. Referencias reales: gc2-entrenamiento, inglobal-site.
+#
+# Coolify: New Resource -> Docker Compose, "Compose Location": /docker-compose.coolify.yml. Un recurso por entorno
+# (test y prod), cada uno con sus propias variables, base y volúmenes. El dominio se asigna al servicio `app` (puerto 3000).
+# El desarrollo local NO usa este archivo: usa docker-compose.yml (solo Postgres).
+#
+# Variables a cargar en Coolify (sin comillas):
+#   Obligatoria : BETTER_AUTH_SECRET   (openssl rand -base64 48 | tr -d '\n=+/' | cut -c1-64; distinto por entorno)
+#   Opcionales  : NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_GA_ID (entran en el BUILD), RESEND_API_KEY, RESEND_FROM_EMAIL,
+#                 COMPANY_EMAIL, APP_ENV, MAIL_SANDBOX_TO (obligatoria en test, prohibida en prod),
+#                 TRANSCODE_SERVICE_URL, TRANSCODE_API_KEY (servicio global de video, ver video-transcode.md)
+# La contraseña de Postgres y el CRON_SECRET los genera Coolify (variables mágicas SERVICE_PASSWORD_*): no se tipean.
+#
+# Reglas que costaron un bug real (no las cambies):
+#  - `environment` en formato MAPA, nunca lista: Coolify falla con "non-string key 0".
+#  - La base NO publica puertos: solo la app llega a ella por la red interna.
+#  - Sin `container_name` ni `ports:`: Coolify gestiona nombres y proxy.
+#  - Las migraciones corren solas al arrancar la app y fallan cerrado (docker-entrypoint.sh / instrumentation.ts).
+
+services:
+  app:
+    build:
+      context: .
+      args:
+        # Se incrustan en sitemap, robots, CSP y metadatos: tienen que llegar como argumentos de build.
+        STORAGE_PUBLIC_URL: ${SERVICE_URL_APP}/media
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
+        NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SERVICE_FQDN_APP_3000:
+      NODE_ENV: production
+      APP_ENV: ${APP_ENV:-production}
+      DATABASE_URL: postgres://vimet:${SERVICE_PASSWORD_POSTGRES}@db:5432/vimet
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Definí BETTER_AUTH_SECRET en las variables del recurso}
+      BETTER_AUTH_URL: ${SERVICE_URL_APP}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
+      STORAGE_DIR: /data/storage
+      STORAGE_PUBLIC_URL: ${SERVICE_URL_APP}/media
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
+      COMPANY_EMAIL: ${COMPANY_EMAIL:-}
+      MAIL_SANDBOX_TO: ${MAIL_SANDBOX_TO:-}
+      # Servicio global de compresión de video (opcional; sin él se guarda el original).
+      TRANSCODE_SERVICE_URL: ${TRANSCODE_SERVICE_URL:-}
+      TRANSCODE_API_KEY: ${TRANSCODE_API_KEY:-}
+    volumes:
+      - storage:/data/storage
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/api/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vimet
+      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_POSTGRES}
+      POSTGRES_DB: vimet
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U vimet -d vimet']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Solo si el proyecto tiene crons (reemplaza a GitHub Actions / vercel.json). Borrar el servicio si no hay.
+  # cron:
+  #   image: alpine:3.20
+  #   restart: unless-stopped
+  #   depends_on:
+  #     app:
+  #       condition: service_healthy
+  #   environment:
+  #     CRON_SECRET: ${SERVICE_PASSWORD_CRON}
+  #   command:
+  #     - sh
+  #     - -c
+  #     - |
+  #       while true; do
+  #         wget -qO- --header="Authorization: Bearer $$CRON_SECRET" http://app:3000/api/cron/tarea >/dev/null 2>&1 || echo "[cron] tarea falló"
+  #         sleep 900
+  #       done
+  # (y en `app.environment`: CRON_SECRET: ${SERVICE_PASSWORD_CRON})
+
+volumes:
+  pgdata:
+  storage:

@@ -1,12 +1,14 @@
 const isDev = process.env.NODE_ENV === 'development'
 
-// Host publico de los archivos (MinIO detras de Coolify): fotos de perfil, GIFs de ejercicios y
-// miniaturas se sirven de aca. Los buckets privados se acceden por URL firmada del mismo host.
-const s3PublicUrl = process.env.S3_PUBLIC_URL ? new URL(process.env.S3_PUBLIC_URL) : null
+// Los archivos viven en el volumen de la app y se sirven por /media (mismo host que el sitio). STORAGE_PUBLIC_URL
+// (https://<dominio>/media) llega como argumento de build: entra a images.remotePatterns y a la CSP.
+// Los buckets privados se acceden por URL firmada del mismo host.
+const s3PublicUrl = process.env.STORAGE_PUBLIC_URL ? new URL(process.env.STORAGE_PUBLIC_URL) : null
 const s3Origin = s3PublicUrl ? s3PublicUrl.origin : null
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   images: {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

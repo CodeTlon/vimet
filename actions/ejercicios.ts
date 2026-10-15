@@ -9,7 +9,7 @@ import { esStaff, getUserAndProfile } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { PG, pgCode } from '@/lib/db-errors'
 import { pareceUnGif } from '@/lib/file-sniff'
-import { borrarArchivos, subirArchivo, urlPublica } from '@/lib/storage/s3'
+import { borrarArchivos, subirArchivo, urlPublica } from '@/lib/storage/disk'
 import { extraerYoutubeId } from '@/lib/youtube'
 
 export type EjercicioCustomState = { ok?: boolean; error?: string }

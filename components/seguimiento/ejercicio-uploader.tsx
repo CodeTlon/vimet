@@ -237,7 +237,7 @@ export function EjercicioUploader() {
         </label>
       ) : (
         <div className="space-y-4">
-          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          { }
           <video
             ref={videoRef}
             src={videoUrl}

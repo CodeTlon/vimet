@@ -266,7 +266,7 @@ export function RutinaPanel({
   // nunca se manda a guardar() un par a medias que el constraint de la DB rechace.
   function guardarFaseCardio(item: RutinaItem, fase: FaseCardio, cambio: { valor: string } | { unidad: string }) {
     const { valor: campoValor, unidad: campoUnidad } = FASE_CAMPOS[fase]
-    let valor = 'valor' in cambio ? (cambio.valor === '' ? null : Number(cambio.valor)) : item[campoValor]
+    const valor = 'valor' in cambio ? (cambio.valor === '' ? null : Number(cambio.valor)) : item[campoValor]
     let unidad: string | null = 'unidad' in cambio ? cambio.unidad : item[campoUnidad]
     if (valor == null) unidad = null
     else if (!unidad) unidad = 'minutos'

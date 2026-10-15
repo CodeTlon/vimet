@@ -21,8 +21,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "3.1150.0",
-    "@aws-sdk/s3-request-presigner": "3.1150.0",
     "@hookform/resolvers": "^5.2.2",
     "@react-email/components": "^1.0.12",
     "bcryptjs": "3.0.2",

@@ -9,7 +9,7 @@ import { desc, eq, sql } from 'drizzle-orm'
 import { feedback_semanal as tabla } from '@/db/schema'
 import { mensajesDeFeedback } from '@/lib/data/feedback'
 import { db } from '@/lib/db'
-import { urlFirmada } from '@/lib/storage/s3'
+import { urlFirmada } from '@/lib/storage/disk'
 import { formatearFechaCorta, lunesDeSemana } from '@/lib/seguimiento'
 export const dynamic = 'force-dynamic'
 

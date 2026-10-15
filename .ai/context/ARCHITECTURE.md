@@ -9,7 +9,7 @@ Para la tabla "qué archivo abrir para tal cambio", ver `/ARCHITECTURE.md` (raí
 - **Servicios**: `lib/services/*` (turnos, horarios, staff, recursos, ficha, mediciones, evaluaciones, evolución, objetivos, planes, plan-secciones, feedback, entrenamiento, wearable) — reglas de negocio, cifrado y auditoría, SIN `'use server'`. Los usan la web y la app mobile, así que la paridad de permisos es estructural, no manual.
 - **Datos**: Postgres con Drizzle (`db/schema.ts`, `drizzle/*.sql`), pool `pg` en `lib/db.ts`. **Sin RLS**: cada consulta filtra por la sesión y los permisos viven en `lib/data/*` y `lib/services/*` (ver `docs/migracion/AUTORIZACION.md`, con la tabla policy → guard → test). Exclusion constraints de turnos/horarios y triggers de `updated_at`/auditoría en `drizzle/0001`.
 - **Auth**: Better Auth (`lib/auth.ts`): email+password, confirmación de email que activa la cuenta, recuperación por código de 8 dígitos (emailOTP), plugin bearer para la app. Hashes bcrypt de Supabase verificables. `proxy.ts` es solo un redirect optimista por cookie.
-- **Storage**: MinIO vía S3 (`lib/storage/s3.ts`): `planes` y `recursos` privados (URL firmada tras verificar permiso), `sitio` y `ejercicios-media` públicos.
+- **Storage**: Volumen del servidor vía `lib/storage/disk.ts` (ruta pública `/media/<bucket>/...`; los privados con URL firmada HMAC): `planes` y `recursos` privados (URL firmada tras verificar permiso), `sitio` y `ejercicios-media` públicos.
 - **Email**: Resend, dominio verificado (`vimetsalud.com.ar`), política por entorno en `lib/email/sandbox.ts` (`APP_ENV`, `MAIL_SANDBOX_TO`). Los de autenticación (`lib/email/auth.ts`) lanzan si fallan; los de turnos son best-effort.
 
 ## Superficie dual: web (cookie) vs mobile (bearer)

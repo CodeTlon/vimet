@@ -25,7 +25,7 @@ Reglas FOS del proyecto + patrones observados en el código real (FACT salvo que
 ## Seguridad
 
 - Sin RLS ni triggers de escalación: la protección de `rol`/`activo`, turnos ajenos y respuestas de feedback vive en los servicios (`cambiarActivo`, `puedeGestionarTurno`, `lib/services/feedback.ts`).
-- Storage privado (`planes`, `recursos`): acceso solo vía URL firmada (`lib/storage/s3.ts`) generada tras verificar el permiso — nunca exponer paths directo al cliente.
+- Storage privado (`planes`, `recursos`): acceso solo vía URL firmada (`lib/storage/disk.ts`) generada tras verificar el permiso — nunca exponer paths directo al cliente.
 - Headers de seguridad centralizados en `next.config.mjs` → `headers()`, no por ruta.
 
 ## Estilo

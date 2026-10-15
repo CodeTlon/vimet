@@ -7,7 +7,7 @@ import { asc, eq, inArray } from 'drizzle-orm'
 import type { Seccion } from '@/components/seguimiento/plan-seccion-form'
 import { plan_seccion_comidas, plan_seccion_imagenes, plan_secciones } from '@/db/schema'
 import { db as dbGlobal, type Db } from '@/lib/db'
-import { urlsFirmadas } from '@/lib/storage/s3'
+import { urlsFirmadas } from '@/lib/storage/disk'
 
 export async function obtenerSeccionesPlan(planId: number, db: Db = dbGlobal): Promise<Seccion[]> {
   const secciones = await db

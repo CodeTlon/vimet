@@ -8,7 +8,7 @@ import { esStaff, type Profile } from '@/lib/auth/session'
 import { encryptClinical } from '@/lib/crypto/clinical'
 import { conActor, db } from '@/lib/db'
 import { pareceUnPdf } from '@/lib/file-sniff'
-import { borrarArchivos, subirArchivo, urlFirmada } from '@/lib/storage/s3'
+import { borrarArchivos, subirArchivo, urlFirmada } from '@/lib/storage/disk'
 
 export type PlanState = { ok?: boolean; error?: string; planId?: number }
 

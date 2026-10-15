@@ -30,7 +30,7 @@ vi.mock('@/lib/db', async () => {
       }),
   }
 })
-vi.mock('@/lib/storage/s3', () => ({
+vi.mock('@/lib/storage/disk', () => ({
   subirArchivo: async () => {},
   borrarArchivos: async () => {},
   listarArchivos: async () => [],

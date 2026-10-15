@@ -1,0 +1,37 @@
+# Alarma de backups: el backup de produccion lo hace un cron en el VPS de Coolify (scripts/backup/backup-coolify.sh, 03:30).
+# Este workflow lo comprueba una vez por dia: tiene que haber un .dump de las ultimas 24 h con su .sha256 en B2.
+# Si el cron dejo de correr, la corrida queda en rojo y GitHub avisa por mail. Solo lee B2 (clave de solo lectura).
+#
+# Configuracion (la hace el usuario):
+#   Variable de repo:         PRODUCCION_HABILITADA=true
+#   Environment `prod-coolify`: vars BACKUP_BUCKET, BACKUP_PROJECT + secrets B2_READ_KEY_ID, B2_READ_APP_KEY
+name: Backup check
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup-reciente:
+    if: ${{ vars.PRODUCCION_HABILITADA == 'true' }}
+    runs-on: ubuntu-24.04
+    environment: prod-coolify
+    steps:
+      - name: Instalar rclone
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq rclone
+      - name: Verificar backup reciente de la base de produccion en B2
+        env:
+          RCLONE_CONFIG_B2_TYPE: b2
+          RCLONE_CONFIG_B2_ACCOUNT: ${{ secrets.B2_READ_KEY_ID }}
+          RCLONE_CONFIG_B2_KEY: ${{ secrets.B2_READ_APP_KEY }}
+        run: |
+          ruta="b2:${{ vars.BACKUP_BUCKET }}/prod/${{ vars.BACKUP_PROJECT }}/postgres"
+          recientes=$(rclone lsjson "$ruta" --recursive --files-only --max-age 24h)
+          dumps=$(echo "$recientes" | jq '[.[] | select(.Name | endswith(".dump"))] | length')
+          sums=$(echo "$recientes" | jq '[.[] | select(.Name | endswith(".dump.sha256"))] | length')
+          [ "$dumps" -ge 1 ] || { echo "::error::no hay un .dump de las ultimas 24 h en $ruta"; exit 1; }
+          [ "$sums" -ge 1 ] || { echo "::error::el backup reciente no tiene su .sha256"; exit 1; }
+          echo "Backup reciente ok"

@@ -100,7 +100,7 @@ function seccionHuella() {
   const tablas = new Map() // tabla -> {total, archivos:Set}
   const buckets = new Map()
   let dinamicos = 0
-  let rpc = new Map()
+  const rpc = new Map()
   const porCapa = { auth: [], storage: [], datos: [], 'cliente/otros': [] }
   const porUbicacion = new Map()
 

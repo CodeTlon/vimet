@@ -9,7 +9,7 @@ import { lunesDeSemanaArgentina } from '@/lib/datetime'
 import { db } from '@/lib/db'
 import { pareceUnPdf } from '@/lib/file-sniff'
 import { optimizeImage } from '@/lib/storage/optimize-image'
-import { borrarArchivos, subirArchivo } from '@/lib/storage/s3'
+import { borrarArchivos, subirArchivo } from '@/lib/storage/disk'
 
 export type FeedbackState = { ok?: boolean; error?: string }
 

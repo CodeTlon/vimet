@@ -98,3 +98,6 @@ Se agregó el chequeo dentro de `requireMobileUser()` (`lib/supabase/bearer.ts`)
 
 ### 11. `recursos` (POST) mobile con validación de datos algo más laxa que su equivalente web
 Sin `enum`/`.uuid()`/tope de longitud del lado mobile. Falla controlada contra el `CHECK` de la tabla, no es bypass de permisos.
+
+- **N-lint — Deuda de lint (2026-10-15):** 19 usos de `setState` dentro de `useEffect` (`react-hooks/set-state-in-effect`) en componentes viejos (`booking-wizard`, `reprogramar-turno-form`, `rutina-panel`, `use-reset-on-success`, etc.). La regla pasó de `error` a `warn` en `eslint.config.mjs` para no trabar el CI; refactorizar de a uno y volver a `error`. Severidad baja.
+- **N-storage — Archivos de prod sin migrar:** el código lee del volumen; los objetos de producción (hoy en Supabase Storage) se copian con `scripts/migracion/copiar-storage.mjs --apply` en el corte.

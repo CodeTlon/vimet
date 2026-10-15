@@ -1,0 +1,63 @@
+# Verificacion de produccion: el recurso de prod tiene el auto-deploy de Coolify encendido, asi que cada push a `main` se despliega solo.
+# Este workflow espera a ese deploy y hace un smoke test; si algo falla, la corrida queda en rojo y GitHub avisa por mail.
+# No dispara el deploy ni necesita token de Coolify. Las migraciones las corre la app al arrancar (fail-closed) porque la base
+# no tiene puerto publico: deben ser compatibles hacia atras (agregar antes de usar; drop/rename en dos releases).
+#
+# Configuracion (la hace el usuario):
+#   Variable de repo:         PRODUCCION_HABILITADA=true (llave: mientras no sea 'true' el workflow no hace nada)
+#   Environment `prod-coolify`: variable PROD_URL (sin reviewers: no hay aprobacion manual)
+name: Produccion
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: produccion
+  cancel-in-progress: false
+
+jobs:
+  verificar:
+    if: ${{ vars.PRODUCCION_HABILITADA == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    environment: prod-coolify
+    steps:
+      - name: Esperar el deploy de produccion
+        env:
+          PROD_URL: ${{ vars.PROD_URL }}
+          EVENTO: ${{ github.event_name }}
+        run: |
+          inicio=$(date +%s)
+          deadline=$((SECONDS + 1500))
+          while [ $SECONDS -lt $deadline ]; do
+            cuerpo=$(curl -fsS --max-time 10 "$PROD_URL/api/health" 2>/dev/null || true)
+            estado=$(echo "$cuerpo" | jq -r '.status // empty' 2>/dev/null || true)
+            arranque=$(echo "$cuerpo" | jq -r '.started_at // empty' 2>/dev/null || true)
+            if [ "$estado" = "ok" ]; then
+              [ "$EVENTO" = "workflow_dispatch" ] && { echo "Produccion responde"; exit 0; }
+              if [ -n "$arranque" ] && [ "$(date -d "$arranque" +%s)" -ge "$inicio" ]; then echo "Produccion desplegada (arranque $arranque)"; exit 0; fi
+              echo "Produccion sigue con el contenedor anterior (arranque ${arranque:-desconocido})"
+            else
+              echo "Produccion no responde (deploy en curso o caida)"
+            fi
+            sleep 15
+          done
+          echo "::error::no hubo un deploy nuevo de produccion en 25 min"; exit 1
+      - name: Smoke test
+        env:
+          PROD_URL: ${{ vars.PROD_URL }}
+          SMOKE_RUTAS: ${{ vars.SMOKE_RUTAS }}
+        run: |
+          set -e
+          curl -fsS --retry 5 --retry-delay 6 --retry-connrefused "$PROD_URL/api/health" > /dev/null
+          # Rutas publicas del proyecto: variable de repo SMOKE_RUTAS (separadas por espacio). Por defecto, lo minimo.
+          for ruta in ${SMOKE_RUTAS:-/ /nosotros /servicios /contacto /login /terminos /privacidad /sitemap.xml /robots.txt}; do
+            curl -fsS --max-time 20 -o /dev/null "$PROD_URL$ruta" || { echo "::error::$ruta no responde"; exit 1; }
+          done
+          # Produccion no puede quedar bloqueada para buscadores (el bloqueo es solo de test).
+          if curl -fsS "$PROD_URL/robots.txt" | grep -qx 'Disallow: /'; then echo "::error::robots.txt bloquea todo el sitio"; exit 1; fi
+          echo "Smoke test ok"

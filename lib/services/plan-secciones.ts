@@ -6,7 +6,7 @@ import { planes, plan_seccion_comidas, plan_seccion_imagenes, plan_secciones } f
 import { db } from '@/lib/db'
 import { TIPO_SECCION_PLAN_LABEL } from '@/lib/seguimiento'
 import { optimizeImage } from '@/lib/storage/optimize-image'
-import { borrarArchivos, subirArchivo } from '@/lib/storage/s3'
+import { borrarArchivos, subirArchivo } from '@/lib/storage/disk'
 
 export type SeccionState = { ok?: boolean; error?: string }
 

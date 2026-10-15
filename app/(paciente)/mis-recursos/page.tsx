@@ -15,7 +15,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import { recursos_paciente } from '@/db/schema'
 import { getSessionUser } from '@/lib/auth/session'
 import { db } from '@/lib/db'
-import { urlFirmada } from '@/lib/storage/s3'
+import { urlFirmada } from '@/lib/storage/disk'
 export const metadata = { title: 'Mis recursos' }
 export const dynamic  = 'force-dynamic'
 

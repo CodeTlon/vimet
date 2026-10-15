@@ -33,7 +33,7 @@ import {
   sesionesDePaciente,
   sesionesFinalizadas,
 } from '@/lib/services/entrenamiento'
-import { urlFirmada } from '@/lib/storage/s3'
+import { urlFirmada } from '@/lib/storage/disk'
 
 import { ErrorOp, op, type Ctx } from './tipos'
 

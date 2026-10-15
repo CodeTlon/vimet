@@ -2,7 +2,7 @@
 
 Plataforma web para VIMET — Nutrición y entrenamiento especializado en alteraciones metabólicas (Córdoba, Argentina).
 
-**Stack:** Next.js 16 · TypeScript · Tailwind CSS · Shadcn/UI · Postgres + Drizzle · Better Auth · MinIO (S3) · Resend
+**Stack:** Next.js 16 · TypeScript · Tailwind CSS · Shadcn/UI · Postgres + Drizzle · Better Auth · archivos en volumen (`/media`) · Resend
 
 > **Migracion en curso (rama `feature/dev1-backend-propio`, sin desplegar):** el codigo ya no usa Supabase. Produccion sigue
 > corriendo la version anterior hasta el corte. Ver `docs/migracion/` (`CORTE.md`, `ENTORNO.md`, `AUTORIZACION.md`).
@@ -26,12 +26,12 @@ npm run dev
 | `npm test` | Vitest (autorizacion, auth, importador) sobre PGlite, sin Docker |
 | `npm run db:generate` / `db:migrate` | Migraciones de Drizzle (`drizzle/`) |
 | `npm run db:paridad` | Esquema Drizzle == `supabase/migrations` |
-| `docker compose up -d` | Postgres + MinIO locales |
+| `docker compose up -d` | Postgres local (los archivos van a `./storage`) |
 
 ## Variables de entorno
 
 Listado completo y notas en `docs/migracion/ENTORNO.md`. Obligatorias: `DATABASE_URL`, `BETTER_AUTH_SECRET`,
-`NEXT_PUBLIC_SITE_URL`, `S3_*`, `CLINICAL_DATA_ENCRYPTION_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `COMPANY_EMAIL`.
+`NEXT_PUBLIC_SITE_URL`, `STORAGE_DIR`, `STORAGE_PUBLIC_URL`, `TRANSCODE_API_KEY` (opcional), `CLINICAL_DATA_ENCRYPTION_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `COMPANY_EMAIL`.
 
 ## Deploy
 
@@ -47,6 +47,7 @@ Listado completo y notas en `docs/migracion/ENTORNO.md`. Obligatorias: `DATABASE
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| v0.29.0 | 2026-10-15 | Alineado con el estándar CodeTlon de Coolify (`codetlon-cloud/.claude/modules/coolify-compose.md`): archivos en volumen servidos por `/media` (se elimina MinIO/S3 y `@aws-sdk/*`; URLs firmadas con HMAC para `planes`/`recursos`, `lib/storage/disk.ts` + `app/media/[...ruta]`), `Dockerfile` + `docker-entrypoint.sh` (migra al arrancar, falla cerrado) + `docker-compose.coolify.yml` + `/api/health` con `started_at`, `output: 'standalone'`, workflows (`ci.yml` con lint, tipos, 47 tests, build, audit, E2E en 3 viewports e imagen Docker; `entornos.yml`, `produccion.yml`, `backup-check.yml` de plantilla). 51 pruebas E2E públicas (3 viewports). **Sin desplegar**: falta crear los recursos en Coolify, migrar los archivos de MinIO/Supabase al volumen con `scripts/migracion/copiar-storage.mjs` y repetir el ensayo de `docs/migracion/CORTE.md`. |
 | v0.28.0 | 2026-10-13 | Backend propio (rama `feature/dev1-backend-propio`, **no desplegado**): se reemplaza Supabase por Postgres + Drizzle (`db/schema.ts`, `drizzle/`, paridad verificada con las 39 migraciones), Better Auth (sesion por cookie y bearer, confirmacion de email que activa la cuenta, recuperacion por codigo de 8 digitos, hashes bcrypt de Supabase importables, invitaciones propias) y MinIO/S3 (`lib/storage/s3.ts`). La autorizacion que hacia la RLS pasa a guards del servidor con tests IDOR (`docs/migracion/AUTORIZACION.md`); la logica de escritura se extrae a `lib/services/*` compartida por web y app. App mobile: catalogo cerrado de operaciones en `POST /api/mobile/data`. Incluye importador con verificacion por checksum, copia de storage, scripts de backup (B2) y guias de corte. **Pendiente de verificar fuera del sandbox:** ejecucion contra Postgres/MinIO reales, build de la app en dispositivo, correo real y el ensayo completo en `test`. Ver `docs/migracion/HALLAZGOS.md` para los bugs encontrados en el camino. |
 | v0.27.0 | 2026-10-13 | Organizacion de entornos dev/test/main. Nuevo `docs/FLUJO-ENTORNOS.md` (flujo, correo de test, pasos manuales de ramas/Coolify/GitHub), CI (`ci.yml`: lint + typecheck + build + audit) y workflows `entornos.yml` (enciende `vimet-test`, smoke E2E, apaga) y `produccion.yml` (deshabilitado por defecto, aprobacion manual + gate de backup opcional). `lib/email/sandbox.ts`: guard de correo por `APP_ENV` aplicado a los 3 call sites de Resend (test siempre redirige a `MAIL_SANDBOX_TO`, fail-closed; produccion se niega si ve config de test). E2E: `global-setup` lee variables de entorno ademas de `.env.local` y se niega a correr contra el Supabase de produccion; `playwright.config.ts` acepta `BASE_URL` externo. Script `typecheck`. **No verificado**: los workflows no corrieron (sin runner ni secrets locales) y quedan en `docs/workflows/` porque el token de `dev1` no tiene scope `workflow`; typecheck/build/lint no se pudieron correr (el sandbox bloquea el registry de npm); `origin/dev` y `test` las recrea el responsable con los comandos del doc. |
 | v0.26.1 | 2026-09-23 | Fix de seguridad chico: `js-yaml` 4.3.1→4.3.2 (transitivo vía `eslint`/`@eslint/eslintrc`, devDependency) — GHSA-2883-xcg3-v3hh, `maxTotalMergeKeys` no limita el uso de CPU con merge sources vacíos (alto). Destapado por Dependabot recién después de pushear v0.26.0 (mi `npm audit --omit=dev` de esa sesión no lo veía por estar en dev). Solo lockfile, sin `--force`. `npm audit` → 0 vulnerabilidades. |

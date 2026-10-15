@@ -143,7 +143,7 @@ export function HorariosEditor({ horarios }: { horarios: Horario[] }) {
 
   useEffect(() => {
     if (state.ok) setEditing(null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [state])
 
   const porDia = new Map<number, Horario[]>()

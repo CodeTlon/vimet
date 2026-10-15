@@ -47,7 +47,7 @@ npm audit            # Ver .ai/context/KNOWN_ISSUES.md — hay un CRÍTICO sin p
 - **Server Actions**: firma `(prevState, formData)` + `useActionState` de `react` (no `useFormState`, removido en React 19).
 - **Redirects post-auth**: solo paths relativos internos; nunca `new URL(paramCrudo, origin)`.
 - **Autorización**: sin RLS; cada consulta filtra por la sesión y la regla vive en `lib/services|data`. Un archivo `'use server'` solo exporta `*Action`; nunca funciones con `userId`.
-- **Storage** (`planes`, `recursos`): privados (MinIO), acceso solo vía URL firmada tras verificar permisos — nunca exponer paths directo.
+- **Storage** (`planes`, `recursos`): privados (volumen `storage`, servido por `/media`), acceso solo vía URL firmada con vencimiento (HMAC) tras verificar permisos — nunca exponer paths directo.
 
 ## Ramas y entornos
 
