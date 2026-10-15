@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { DM_Sans, Outfit } from 'next/font/google'
+import localFont from 'next/font/local'
 
 import CookieConsent from '@/components/cookie-consent'
 import GoogleAnalytics from '@/components/google-analytics'
@@ -8,19 +8,10 @@ import { location, social } from '@/lib/config/team'
 import { SITE_URL } from '@/lib/config/site'
 
 import './globals.css'
-const outfit = Outfit({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-heading',
-  display: 'swap',
-})
+// Fuentes autoalojadas (app/fonts, subset latin): el build no depende de Google Fonts. Ver FONTS.md.
+const outfit = localFont({ src: './fonts/outfit-latin-wght-normal.woff2', weight: '100 900', variable: '--font-heading', display: 'swap' })
 
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-body',
-  display: 'swap',
-})
+const dmSans = localFont({ src: './fonts/dm-sans-latin-wght-normal.woff2', weight: '100 1000', variable: '--font-body', display: 'swap' })
 
 export const viewport: Viewport = {
   width: 'device-width',
