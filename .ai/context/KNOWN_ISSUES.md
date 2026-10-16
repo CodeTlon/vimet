@@ -1,5 +1,11 @@
 # KNOWN_ISSUES — VIMET (web)
 
+## Vigente (2026-10-16)
+- `npm audit` completo conserva 5 altas de herramientas de desarrollo: `braces` <= 3.0.3 via `eslint-config-next` -> `fast-glob` -> `micromatch`. Sin version corregida publicada; no entra al runtime (`npm audit --omit=dev` = 0). No usar `npm audit fix --force`.
+- Se retiro `overrides.tinypool`: con Vitest 5 ya no hace falta (el audit de runtime sigue en 0). Si reaparece una alta de `tinypool`, reponerlo.
+- 20 avisos de lint (`set-state-in-effect`, variables sin uso). Deuda existente.
+- El texto de las paginas legales ahora respeta `max-w-3xl` (con Tailwind 3 quedaba mas ancho por el orden entre `container-vimet` y la utilidad).
+
 ## Estado tras la migración a backend propio (2026-10-13)
 
 Los items 1-11 de abajo describen producción con Supabase (`main`). En la rama `feature/dev1-backend-propio`:

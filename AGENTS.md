@@ -1,6 +1,6 @@
 # VIMET (web)
 
-App de nutrición/entrenamiento para VIMET (Avril + Gero, Córdoba). Next.js 16 (App Router) + Postgres/Drizzle + Better Auth + MinIO(S3) + Resend (en `main` todavía Supabase hasta el corte; ver `docs/migracion/`). Migración de un sitio PHP MVC + MySQL. Sirve: sitio público, auth + booking de turnos, área paciente, dashboard admin/staff, y un módulo de seguimiento clínico-nutricional (ficha, mediciones, evaluación funcional, planes, feedback semanal, evolución, objetivos, recursos).
+App de nutrición/entrenamiento para VIMET (Avril + Gero, Córdoba). Next.js 16 (App Router) + Postgres/Drizzle + Better Auth + archivos en volumen (`/media`) + Resend (en `main` todavía Supabase hasta el corte; ver `docs/migracion/`). Migración de un sitio PHP MVC + MySQL. Sirve: sitio público, auth + booking de turnos, área paciente, dashboard admin/staff, y un módulo de seguimiento clínico-nutricional (ficha, mediciones, evaluación funcional, planes, feedback semanal, evolución, objetivos, recursos).
 
 > ⚠️ **Este proyecto está en producción con datos reales de pacientes.** Nunca mutar datos de producción sin confirmación explícita del usuario. Nunca asumir el mecanismo de deploy o el estado de una migración — verificarlo (ver `.ai/context/ARCHITECTURE.md`). Cualquier hallazgo de seguridad real (credencial expuesta, falta de auth server-side, vulnerabilidad crítica) se documenta en `.ai/context/KNOWN_ISSUES.md`, no se "arregla de paso".
 
@@ -10,7 +10,7 @@ App de nutrición/entrenamiento para VIMET (Avril + Gero, Córdoba). Next.js 16 
 
 ## Stack
 
-Next.js 16 (App Router) · React 19 · TypeScript · Tailwind (utility-only, sin styled-jsx) · Shadcn/UI · Lucide React · Postgres + Drizzle + Better Auth + MinIO (S3) · Resend · `sharp` (optimización de imágenes) · Zod + `useActionState` (React 19, no `useFormState`). Deploy real: **Coolify** (self-hosted, sirve `vimetsalud.com.ar`) — Vercel existe aparte, solo preview/pruebas (ver quirk "Deploy real es Coolify, no Vercel" en `.claude/CLAUDE.md` y el detalle en `.ai/context/ARCHITECTURE.md`).
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4 (tokens en `@theme`, utility-only, sin styled-jsx) · Shadcn/UI · Lucide React · Postgres + Drizzle + Better Auth + MinIO (S3) · Resend · `sharp` (optimización de imágenes) · Zod + `useActionState` (React 19, no `useFormState`). Deploy real: **Coolify** (self-hosted, sirve `vimetsalud.com.ar`) — Vercel existe aparte, solo preview/pruebas (ver quirk "Deploy real es Coolify, no Vercel" en `.claude/CLAUDE.md` y el detalle en `.ai/context/ARCHITECTURE.md`).
 
 ## Comandos
 
