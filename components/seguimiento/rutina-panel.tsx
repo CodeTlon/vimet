@@ -76,7 +76,7 @@ export type RutinaItem = {
 }
 
 const inputBase =
-  'w-full rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
+  'w-full rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
 const thBase = 'py-2.5 px-3 font-semibold text-xs uppercase tracking-wide align-bottom'
 const tdBase = 'py-3 px-3 align-middle'
 
@@ -457,7 +457,7 @@ export function RutinaPanel({
                   </ul>
 
                   <div className="hidden sm:block overflow-x-auto rounded-lg bg-white border border-gray-100">
-                    <table className="w-full min-w-[49rem] text-sm border-collapse table-fixed">
+                    <table className="w-full min-w-196 text-sm border-collapse table-fixed">
                       <colgroup>
                         <col className="w-10" />
                         <col className="w-60" />
@@ -490,7 +490,7 @@ export function RutinaPanel({
                             </td>
                             <td className={tdBase}>
                               <input
-                                className={`${inputBase} !w-20`}
+                                className={`${inputBase} w-20!`}
                                 inputMode="numeric"
                                 placeholder="4"
                                 defaultValue={item.series ?? ''}
@@ -502,7 +502,7 @@ export function RutinaPanel({
                             </td>
                             <td className={tdBase}>
                               <input
-                                className={`${inputBase} !w-24`}
+                                className={`${inputBase} w-24!`}
                                 placeholder="8-12"
                                 defaultValue={item.repeticiones ?? ''}
                                 onBlur={(e) => {
@@ -513,7 +513,7 @@ export function RutinaPanel({
                             </td>
                             <td className={tdBase}>
                               <input
-                                className={`${inputBase} !w-20`}
+                                className={`${inputBase} w-20!`}
                                 inputMode="numeric"
                                 placeholder="60"
                                 defaultValue={item.descanso_seg ?? ''}
@@ -622,7 +622,7 @@ export function RutinaPanel({
                   </ul>
 
                   <div className="hidden sm:block overflow-x-auto rounded-lg bg-white border border-gray-100">
-                    <table className="w-full min-w-[66rem] text-sm border-collapse table-fixed">
+                    <table className="w-full min-w-264 text-sm border-collapse table-fixed">
                       <colgroup>
                         <col className="w-10" />
                         <col className="w-60" />
@@ -659,7 +659,7 @@ export function RutinaPanel({
                                 <td key={fase} className={tdBase}>
                                   <div className="flex min-w-0 items-center gap-1.5">
                                     <input
-                                      className={`${inputBase} !w-16 shrink-0`}
+                                      className={`${inputBase} w-16! shrink-0`}
                                       inputMode="decimal"
                                       placeholder="30"
                                       defaultValue={item[campoValor] ?? ''}

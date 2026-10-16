@@ -75,9 +75,9 @@ export default async function HomePage() {
         {/* Video de fondo — cubre todo el hero */}
         <HeroVideo />
         {/* Scrim: sólido en mobile (el texto ocupa todo el ancho), a la izquierda en desktop */}
-        <div className="absolute inset-0 bg-black/90 lg:bg-gradient-to-r lg:from-black/70 lg:via-black/40 lg:to-transparent" />
+        <div className="absolute inset-0 bg-black/90 lg:bg-linear-to-r lg:from-black/70 lg:via-black/40 lg:to-transparent" />
         {/* Contrastado superior (negro casi transparente) */}
-        <div className="absolute inset-x-0 top-0 h-40 lg:h-48 bg-gradient-to-b from-black/70 lg:from-black/80 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-40 lg:h-48 bg-linear-to-b from-black/70 lg:from-black/80 to-transparent" />
 
         {/* Contenido */}
         <div className="relative flex flex-col h-full">
@@ -104,13 +104,13 @@ export default async function HomePage() {
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Link
                     href="/turnos/nuevo"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-lg text-sm transition-all hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-lg text-sm transition-all hover:shadow-xl active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                   >
                     <CalendarPlus className="size-4" /> Reservar turno
                   </Link>
                   <Link
                     href="/metodologia"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/20 text-white/80 font-semibold text-sm transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/20 text-white/80 font-semibold text-sm transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/60"
                   >
                     Cómo trabajamos <ArrowRight className="size-4" />
                   </Link>
@@ -184,7 +184,7 @@ export default async function HomePage() {
                 className="rounded-2xl bg-white border border-gray-100 p-7 shadow-sm hover:shadow-lg transition-all"
               >
                 <div
-                  className={`size-14 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center mb-5`}
+                  className={`size-14 rounded-xl bg-linear-to-br ${s.color} flex items-center justify-center mb-5`}
                 >
                   <s.icon className="size-7" />
                 </div>
@@ -198,7 +198,7 @@ export default async function HomePage() {
           <div className="text-center mt-10">
             <Link
               href="/turnos/nuevo"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
             >
               <CalendarPlus className="size-5" /> Agendá tu consulta
             </Link>
@@ -237,7 +237,7 @@ export default async function HomePage() {
                 key={prof.key}
                 className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="relative aspect-[4/3] w-full">
+                <div className="relative aspect-4/3 w-full">
                   <Image
                     src={prof.avatar}
                     alt={`${prof.nombre}, ${prof.titulo}`}
@@ -279,13 +279,13 @@ export default async function HomePage() {
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/turnos/nuevo"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-vimet-red font-semibold shadow-lg transition-all hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-vimet-red"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-vimet-red font-semibold shadow-lg transition-all hover:shadow-xl active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-vimet-red"
             >
               <CalendarPlus className="size-5" /> Reservar turno
             </Link>
             <Link
               href="/contacto"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white text-white font-semibold transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white text-white font-semibold transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/70"
             >
               Contactanos
             </Link>
@@ -325,7 +325,7 @@ export default async function HomePage() {
                       href={social.whatsapp}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-vimet-red rounded transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/40"
+                      className="text-sm text-vimet-red rounded transition-colors hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/40"
                     >
                       Escribinos por WhatsApp
                     </a>
@@ -341,7 +341,7 @@ export default async function HomePage() {
                       href={social.instagram}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-vimet-red rounded transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/40"
+                      className="text-sm text-vimet-red rounded transition-colors hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/40"
                     >
                       {social.instagramHandle}
                     </a>
@@ -350,7 +350,7 @@ export default async function HomePage() {
               </ul>
               <Link
                 href="/turnos/nuevo"
-                className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
+                className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
               >
                 <CalendarPlus className="size-5" /> Reservar consulta
               </Link>

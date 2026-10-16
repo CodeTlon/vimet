@@ -41,7 +41,7 @@ export function ConfigurarProfesionalForm() {
             type="email"
             required
             placeholder="usuario@ejemplo.com"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40"
           />
         </div>
         <div>
@@ -80,7 +80,7 @@ export function CambiarPasswordForm() {
             type="email"
             required
             placeholder="usuario@ejemplo.com"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40"
           />
         </div>
         <div>
@@ -91,7 +91,7 @@ export function CambiarPasswordForm() {
             required
             minLength={6}
             placeholder="Mínimo 6 caracteres"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40"
           />
         </div>
         <button

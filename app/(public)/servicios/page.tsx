@@ -225,19 +225,19 @@ export default async function ServiciosPage() {
           <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/turnos/nuevo"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-vimet-red font-semibold shadow-lg transition-all hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-vimet-red"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-vimet-red font-semibold shadow-lg transition-all hover:shadow-xl active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-vimet-red"
             >
               <CalendarPlus className="size-5" /> Reservar turno
             </Link>
             <Link
               href="/faq"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white text-white font-semibold transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white text-white font-semibold transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/70"
             >
               Ver FAQ
             </Link>
             <Link
               href="/metodologia"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white/40 text-white/90 font-semibold transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white/40 text-white/90 font-semibold transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/70"
             >
               Ver metodología
             </Link>

@@ -42,7 +42,7 @@ export default async function NuevoTurnoPage() {
   ])
 
   return (
-    <div className="min-h-screen pt-24 pb-16 bg-gradient-to-br from-vimet-sand to-vimet-cream">
+    <div className="min-h-screen pt-24 pb-16 bg-linear-to-br from-vimet-sand to-vimet-cream">
       <div className="container-vimet">
         <div className="max-w-3xl mx-auto mb-4">
           <Link

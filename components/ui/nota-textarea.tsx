@@ -67,7 +67,7 @@ export function NotaTextarea({
             onChange={(e) => setDraft(e.target.value)}
             placeholder={placeholder}
             maxLength={maxLength}
-            className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+            className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-base focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
           />
           <div className="flex justify-end gap-2">
             <button

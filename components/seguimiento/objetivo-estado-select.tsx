@@ -36,7 +36,7 @@ export function ObjetivoEstadoSelect({
             await cambiarEstadoObjetivoAction(fd)
           })
         }}
-        triggerClassName="flex items-center gap-1 bg-transparent rounded-full text-xs font-semibold pl-3 pr-2.5 py-1.5 border-0 cursor-pointer focus:outline-none disabled:opacity-60"
+        triggerClassName="flex items-center gap-1 bg-transparent rounded-full text-xs font-semibold pl-3 pr-2.5 py-1.5 border-0 cursor-pointer focus:outline-hidden disabled:opacity-60"
         valueClassName="text-current"
       />
     </div>
