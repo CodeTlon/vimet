@@ -39,7 +39,7 @@ export function ShareButton({
       onClick={handleShare}
       className={
         className ??
-        'inline-flex items-center gap-2 rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60'
+        'inline-flex items-center gap-2 rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/60'
       }
     >
       {copied ? <Check className="size-4" /> : <Share2 className="size-4" />}

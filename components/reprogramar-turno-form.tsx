@@ -132,7 +132,7 @@ export function ReprogramarTurnoForm({
               min={hoyArgentina()}
               value={fecha}
               onChange={(e) => setFecha(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
             />
           </div>
 
@@ -187,7 +187,7 @@ export function ReprogramarTurnoForm({
               rows={4}
               maxLength={500}
               placeholder="Ej: Tuve que mover el turno porque..."
-              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none"
+              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none"
             />
           </div>
 

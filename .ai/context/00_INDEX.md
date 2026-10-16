@@ -12,11 +12,12 @@ Capa de contexto estable para agentes de IA. Coexiste con `.claude/CLAUDE.md` (m
 | Qué está completo, qué a medias, qué mockeado — con evidencia | `CURRENT_STATE.md` |
 | Vulnerabilidades y gaps de seguridad/correctness reales, con severidad | `KNOWN_ISSUES.md` — **leer antes de tocar auth, cifrado clínico, o deploy** |
 | Qué no se pudo verificar y quién tiene que confirmarlo | `OPEN_QUESTIONS.md` |
+| Entornos (dev, test, main), variables que exige el compose, versiones | `ENVIRONMENTS.md` |
 | El mapa de archivos exhaustivo + esquema de DB completo + Quirks día a día | `../../.claude/CLAUDE.md` (memoria de sesión, se actualiza con `/cerrar`) |
 | Qué archivo abrir para un tipo de cambio puntual | `../../ARCHITECTURE.md` (raíz) |
 | La migración Supabase → backend propio: estado, runbook de corte, paridad de seguridad, hallazgos, variables | `../../docs/migracion/` (`CORTE.md`, `AUTORIZACION.md`, `HALLAZGOS.md`, `ENTORNO.md`, `inventario.md`) |
 | Flujo de ramas y entornos (feature → dev → test → PR a main) | `../../docs/FLUJO-ENTORNOS.md` |
 
-Última actualización de esta capa: **2026-10-13** (migración a backend propio, rama `feature/dev1-backend-propio`, hoy en `dev` y `test`). Las secciones fechadas 2026-09-22 describen producción con Supabase y se conservan como histórico: aplican a `main` hasta el corte. Regla del proyecto: **al terminar cualquier tarea se actualiza toda esta capa** (ver `CURRENT_STATE.md`).
+Última actualización de esta capa: **2026-10-16** (estándar de versiones de la flota; antes 2026-10-13 (migración a backend propio, rama `feature/dev1-backend-propio`, hoy en `dev` y `test`). Las secciones fechadas 2026-09-22 describen producción con Supabase y se conservan como histórico: aplican a `main` hasta el corte. Regla del proyecto: **al terminar cualquier tarea se actualiza toda esta capa** (ver `CURRENT_STATE.md`).
 
 Auditoría anterior (2026-09-22, contra `origin/main` `dcdb7bf`): dos subagentes de solo lectura (cifrado clínico + vigencia de Quirks; paridad de auth web/mobile) más verificación directa de deploy — nada mutó datos de producción.

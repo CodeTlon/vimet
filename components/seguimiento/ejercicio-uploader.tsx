@@ -208,7 +208,7 @@ export function EjercicioUploader() {
             value={youtubeUrl}
             onChange={(e) => setYoutubeUrl(e.target.value)}
             placeholder="https://www.youtube.com/watch?v=..."
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
           />
           {youtubeUrl.trim() && !youtubeId ? (
             <p className="text-xs text-vimet-red">No pudimos reconocer ese link como un video de YouTube.</p>
@@ -327,7 +327,7 @@ export function EjercicioUploader() {
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Nombre del ejercicio"
-              className={`rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange ${tipoEjercicio === 'cardio' ? 'sm:col-span-2' : ''}`}
+              className={`rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange ${tipoEjercicio === 'cardio' ? 'sm:col-span-2' : ''}`}
             />
             {tipoEjercicio === 'fuerza' ? (
               <>
@@ -341,7 +341,7 @@ export function EjercicioUploader() {
                     value={parteCuerpo}
                     onChange={(e) => setParteCuerpo(e.target.value)}
                     placeholder="Grupo muscular (ej: piernas, espalda)"
-                    className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange sm:col-span-2"
+                    className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange sm:col-span-2"
                   />
                 ) : null}
               </>
@@ -351,7 +351,7 @@ export function EjercicioUploader() {
               onChange={(e) => setInstrucciones(e.target.value)}
               placeholder="Instrucciones (opcional)"
               rows={2}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange sm:col-span-2"
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange sm:col-span-2"
             />
           </div>
 

@@ -71,7 +71,7 @@ export default function CookieConsent() {
       onKeyDown={(e) => {
         if (e.key === 'Escape') decidir('denied')
       }}
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-800 bg-gray-900/97 px-4 py-4 backdrop-blur sm:px-6"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-800 bg-gray-900/97 px-4 py-4 backdrop-blur-sm sm:px-6"
     >
       <div className="mx-auto flex max-w-[1280px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="font-body text-sm text-white/75">
@@ -86,7 +86,7 @@ export default function CookieConsent() {
           <button
             type="button"
             onClick={() => decidir('denied')}
-            className="rounded-full border border-white/20 px-4 py-2 font-body text-sm font-semibold text-white/90 transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+            className="rounded-full border border-white/20 px-4 py-2 font-body text-sm font-semibold text-white/90 transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/50"
           >
             Rechazar
           </button>
@@ -94,7 +94,7 @@ export default function CookieConsent() {
             ref={aceptarRef}
             type="button"
             onClick={() => decidir('granted')}
-            className="rounded-full bg-vimet-gradient px-4 py-2 font-body text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/60 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+            className="rounded-full bg-vimet-gradient px-4 py-2 font-body text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90 active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/60 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
           >
             Aceptar
           </button>

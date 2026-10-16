@@ -49,7 +49,7 @@ function CodigoForm({ email }: { email: string }) {
           maxLength={8}
           inputMode="numeric"
           placeholder="12345678"
-          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm tracking-widest focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
         />
       </div>
       <div>
@@ -60,7 +60,7 @@ function CodigoForm({ email }: { email: string }) {
           required
           minLength={6}
           placeholder="Mínimo 6 caracteres"
-          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
         />
       </div>
       <div>
@@ -71,7 +71,7 @@ function CodigoForm({ email }: { email: string }) {
           required
           minLength={6}
           placeholder="Repetí la contraseña"
-          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
         />
       </div>
       <SubmitButton label="Cambiar contraseña" pendingLabel="Guardando…" />
@@ -125,7 +125,7 @@ function RecuperarInner() {
               name="email"
               required
               placeholder="tu@email.com"
-              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
             />
           </div>
           <SubmitButton label="Enviar código" pendingLabel="Enviando…" />

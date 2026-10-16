@@ -71,7 +71,7 @@ function NuevaContrasenaInner() {
                   type="text"
                   name="nombre"
                   placeholder="Ej: Avril"
-                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
                 />
               </div>
               <div>
@@ -80,7 +80,7 @@ function NuevaContrasenaInner() {
                   type="text"
                   name="apellido"
                   placeholder="Ej: Jerushalmi"
-                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
                 />
               </div>
             </div>
@@ -90,7 +90,7 @@ function NuevaContrasenaInner() {
                 type="tel"
                 name="telefono"
                 placeholder="Ej: 3513752818"
-                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
               />
             </div>
           </>
@@ -104,7 +104,7 @@ function NuevaContrasenaInner() {
             required
             minLength={8}
             placeholder="Mínimo 8 caracteres"
-            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
           />
         </div>
         <div>
@@ -115,7 +115,7 @@ function NuevaContrasenaInner() {
             required
             minLength={8}
             placeholder="Repetí la contraseña"
-            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
           />
         </div>
         <SubmitButton recovery={recovery} />

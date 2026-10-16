@@ -32,7 +32,7 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
     <button
       type="submit"
       disabled={disabled || pending}
-      className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+      className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
     >
       {pending ? (
         <>
@@ -191,7 +191,7 @@ export function BookingWizard({
             min={todayISO()}
             value={fecha}
             onChange={(e) => setFecha(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
           />
         </div>
         <div>
@@ -247,7 +247,7 @@ export function BookingWizard({
                     key={s.hora_inicio}
                     type="button"
                     onClick={() => setSlot(s)}
-                    className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 ${
+                    className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors active:scale-[0.96] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50 ${
                       selected
                         ? 'bg-vimet-gradient text-white border-transparent shadow'
                         : 'border-gray-200 bg-white text-gray-800 hover:border-vimet-orange hover:text-vimet-orange'
@@ -270,7 +270,7 @@ export function BookingWizard({
           name="notas"
           rows={3}
           placeholder="Motivo de consulta, antecedentes, etc."
-          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none"
+          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none"
         />
       </div>
 
@@ -297,7 +297,7 @@ function ModalidadOption({
     <button
       type="button"
       onClick={() => onChange(value)}
-      className={`flex-1 inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 ${
+      className={`flex-1 inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50 ${
         active
           ? 'border-vimet-orange bg-vimet-cream text-vimet-red'
           : 'border-gray-200 bg-white text-gray-700 hover:border-vimet-orange/50'

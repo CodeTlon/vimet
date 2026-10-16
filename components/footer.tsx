@@ -68,7 +68,7 @@ export function Footer() {
                   href={social.whatsapp}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 text-white/55 rounded transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50"
+                  className="inline-flex items-center gap-2.5 text-white/55 rounded transition-colors hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50"
                 >
                   <WhatsAppIcon className="size-4" />
                   WhatsApp
@@ -77,7 +77,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/contacto"
-                  className="inline-flex items-center gap-2.5 text-white/55 rounded transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50"
+                  className="inline-flex items-center gap-2.5 text-white/55 rounded transition-colors hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50"
                 >
                   <Mail className="size-4" />
                   Formulario
@@ -96,7 +96,7 @@ export function Footer() {
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="text-white/55 rounded transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50"
+                    className="text-white/55 rounded transition-colors hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50"
                   >
                     {l.label}
                   </Link>
@@ -116,7 +116,7 @@ export function Footer() {
                   href={social.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 text-white/55 rounded transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50"
+                  className="inline-flex items-center gap-2.5 text-white/55 rounded transition-colors hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50"
                 >
                   <Instagram className="size-4" />
                   {social.instagramHandle}
@@ -127,7 +127,7 @@ export function Footer() {
                   href={team.avril.instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 text-white/55 rounded transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50"
+                  className="inline-flex items-center gap-2.5 text-white/55 rounded transition-colors hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50"
                 >
                   <Instagram className="size-4" />
                   {team.avril.instagram}
@@ -138,7 +138,7 @@ export function Footer() {
                   href={team.gero.instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 text-white/55 rounded transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50"
+                  className="inline-flex items-center gap-2.5 text-white/55 rounded transition-colors hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50"
                 >
                   <Instagram className="size-4" />
                   {team.gero.instagram}
@@ -153,10 +153,10 @@ export function Footer() {
         <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/50">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1">
             <span>© {new Date().getFullYear()} VIMET — Vida y Metabolismo. Todos los derechos reservados.</span>
-            <Link href="/privacidad" className="rounded transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50">
+            <Link href="/privacidad" className="rounded transition-colors hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50">
               Política de privacidad
             </Link>
-            <Link href="/terminos" className="rounded transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50">
+            <Link href="/terminos" className="rounded transition-colors hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50">
               Términos y condiciones
             </Link>
           </div>
