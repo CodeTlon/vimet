@@ -23,43 +23,46 @@
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@react-email/components": "^1.0.12",
-    "bcryptjs": "3.0.2",
-    "better-auth": "1.7.7",
+    "bcryptjs": "3.0.3",
+    "better-auth": "1.7.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "0.45.4",
     "gif.js": "^0.2.0",
-    "lucide-react": "^0.460.0",
-    "next": "16.3.8",
+    "lucide-react": "0.577.0",
+    "next": "16.4.2",
     "pg": "8.23.1",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "react-hook-form": "^7.75.0",
-    "resend": "^6.12.3",
+    "resend": "6.33.0",
     "sharp": "^0.35.4",
     "tailwind-merge": "^3.5.0",
-    "zod": "^4.4.3"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.9",
-    "@playwright/test": "^1.60.0",
-    "@types/node": "^20",
+    "@playwright/test": "1.64.1",
+    "@types/node": "22.20.5",
     "@types/pg": "8.23.1",
-    "@types/react": "19.2.18",
-    "@types/react-dom": "19.2.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "cross-env": "^7.0.3",
     "drizzle-kit": "0.31.11",
-    "eslint": "9.39.5",
-    "eslint-config-next": "16.3.0",
+    "eslint": "10.13.0",
+    "eslint-config-next": "16.4.2",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.23.15",
-    "typescript": "^5",
-    "vitest": "3.2.7"
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
   },
   "overrides": {
-    "@types/react": "19.2.18",
-    "@types/react-dom": "19.2.4",
-    "tinypool": "2.2.0"
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@esbuild-kit/core-utils": {
+      "esbuild": "^0.25.12"
+    },
+    "fflate": "^0.8.2"
   }
 }
