@@ -70,13 +70,13 @@ export default function FaqPage() {
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
                 href="/contacto"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
               >
                 <Mail className="size-5" /> Contactanos
               </Link>
               <Link
                 href="/turnos/nuevo"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-gray-200 text-gray-800 font-semibold transition-colors hover:bg-gray-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/40 focus-visible:ring-offset-2"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-gray-200 text-gray-800 font-semibold transition-colors hover:bg-gray-50 active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/40 focus-visible:ring-offset-2"
               >
                 Reservar turno
               </Link>

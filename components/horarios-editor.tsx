@@ -43,7 +43,7 @@ const MODALIDAD_LABEL: Record<Horario['modalidad'], string> = {
 }
 
 const inputBase =
-  'rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
+  'rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
 
 function hhmm(t: string) {
   return t.slice(0, 5)

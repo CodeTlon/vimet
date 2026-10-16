@@ -31,7 +31,7 @@ La rama `feature/dev1-backend-propio` (hoy en `dev` y `test`; **producción en `
 Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corría sobre Laragon + MySQL. Ver `docs/migration-report.md` para mapeo legacy → nuevo stack.
 
 ## Stack
-- Next.js 14 (App Router), TypeScript, Tailwind CSS, Shadcn/UI, Lucide React
+- Next.js 16.4.2 (App Router), React 19, TypeScript 6, Tailwind CSS 4 (tokens en `@theme`), Shadcn/UI, Lucide React (versiones: `codetlon-cloud/.claude/modules/stack-versions.md`)
 - Supabase: sí — tablas: `profiles`, `servicios`, `horarios_disponibles`, `turnos`, `bloqueos_horario`, `fichas_paciente`, `mediciones_antropometricas`, `evaluaciones_funcionales`, `planes`, `plan_secciones`, `plan_seccion_comidas`, `plan_seccion_imagenes`, `feedback_semanal`, `feedback_mensajes`, `evolucion_entradas`, `objetivos`, `recursos_paciente`, `contenido_sitio`. Bucket Storage: `planes` (privado, PDFs + imágenes de secciones) + `recursos` (privado, multimedia + adjuntos de feedback) + `sitio` (público, fotos de perfil + contenido).
 - Resend: sí — solo formulario de contacto público (sin almacenamiento en DB)
 - Fuentes: Outfit (headings) + DM Sans (body) — vía `next/font`
@@ -210,7 +210,7 @@ Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corr
 **Optimización de imágenes**: toda foto que sube un usuario (foto de perfil, recursos tipo imagen, adjuntos de feedback que sean imagen) pasa por `optimizeImage()` (`lib/storage/optimize-image.ts`, `sharp`) antes de ir a Storage — resize a max 1600px + reencode a webp calidad 80. Video de recursos NO se transcodifica server-side (sin ffmpeg en el proyecto) — solo se bajó el tope de subida a 40MB.
 
 ## Variables de Entorno
-> (backend propio) Lista vigente en `docs/migracion/ENTORNO.md`: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `S3_*`, `CLINICAL_DATA_ENCRYPTION_KEY`, `APP_ENV`, `MAIL_SANDBOX_TO`. Las de Supabase aplican solo a `main` hasta el corte.
+> (backend propio) Lista vigente en `docs/migracion/ENTORNO.md`: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `STORAGE_DIR`, `STORAGE_PUBLIC_URL`, `CLINICAL_DATA_ENCRYPTION_KEY`, `APP_ENV`, `MAIL_SANDBOX_TO`. Las de Supabase aplican solo a `main` hasta el corte.
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
@@ -297,6 +297,7 @@ npx playwright test  # Tests E2E
 ## Historial de Cambios
 | Fecha | Rama | Cambio |
 |-------|------|--------|
+| 2026-10-16 | feature/dev2-estandar-2026 | v0.30.0 — estandar de versiones de la flota: Next 16.4.2, React 19.3.1, Tailwind 4.3.3, TS 6.0.3, ESLint 10, Vitest 5. Sin cambios de comportamiento; capturas iguales salvo el ancho de los textos legales. Ver README (changelog) y `.ai/context/DECISIONS.md`. |
 | 2026-10-15 | dev/test | v0.29.1 — Video de recursos por el servicio global de compresión (`lib/transcode.ts`, soft-fail, `TRANSCODE_API_KEY` solo en Coolify), `next` 16.3.8, `vitest` 3.2.7 + `overrides.tinypool`, audit en 0. 48 tests, 51 E2E, imagen Docker verificada. Sin desplegar. |
 | 2026-10-15 | dev | v0.29.0 — Alineado con el estándar de Coolify de CodeTlon: archivos en volumen (`lib/storage/disk.ts`, `/media`, sin MinIO), Dockerfile + compose de Coolify + health con `started_at`, workflows de plantilla y E2E en 3 viewports. 47 tests y 51 E2E verdes. Sin desplegar. |
 | 2026-10-13 | feature/dev1-backend-propio | v0.28.0 — Backend propio completo (Postgres+Drizzle, Better Auth, MinIO, autorización en servidor con tests IDOR, servicios compartidos web/app, catálogo de operaciones mobile, importador con checksum, backups B2, guías de corte). App `vimet-app` sin supabase-js. Ramas `dev` y `test` creadas desde la feature (la `dev` vieja de Dokku archivada en `archive/dev-dokku-2026-07`). **Sin desplegar a producción**; pendiente ensayo en `test` (ver `docs/migracion/CORTE.md`). |

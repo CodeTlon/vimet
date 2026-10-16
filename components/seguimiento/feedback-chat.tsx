@@ -58,7 +58,7 @@ function Composer({ feedbackId }: { feedbackId: number }) {
           required
           rows={1}
           placeholder="Escribí un mensaje…"
-          className="flex-1 resize-none rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+          className="flex-1 resize-none rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
         />
         <SendBtn />
       </div>
@@ -82,7 +82,7 @@ function EditarMensajeForm({ mensaje, onDone }: { mensaje: MensajeFeedback; onDo
         defaultValue={mensaje.contenido}
         required
         rows={2}
-        className="w-full resize-none rounded-lg border border-white/40 bg-white/10 px-2 py-1.5 text-sm placeholder:text-white/60 focus:outline-none"
+        className="w-full resize-none rounded-lg border border-white/40 bg-white/10 px-2 py-1.5 text-sm placeholder:text-white/60 focus:outline-hidden"
       />
       <div className="flex items-center gap-3 text-xs">
         <button type="submit" className="font-semibold underline">

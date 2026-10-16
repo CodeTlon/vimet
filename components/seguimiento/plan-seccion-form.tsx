@@ -14,7 +14,7 @@ import { TIPO_SECCION_PLAN_LABEL, type TipoSeccionPlan } from '@/lib/seguimiento
 
 const initial: SeccionState = {}
 const inputBase =
-  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
+  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
 
 export type ImagenSeccion = { id: number; url: string }
 export type MomentoSeccion = { id: number; nombre_momento: string; contenido: string }

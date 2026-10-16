@@ -137,7 +137,7 @@ function ContactItem({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-vimet-orange rounded transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/40"
+            className="text-sm text-vimet-orange rounded transition-colors hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/40"
           >
             {value}
           </Link>

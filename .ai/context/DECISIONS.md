@@ -44,3 +44,8 @@ Decisiones de diseño reales con su porqué — no solo "qué se hizo". Extraíd
 - **Archivos en volumen servido por `/media`, sin MinIO.** Mismos nombres de bucket y paths que S3 (las columnas `*_path` siguen válidas). Privados por URL firmada HMAC (secreto `MEDIA_SIGNING_SECRET`, o `BETTER_AUTH_SECRET` si falta) con vencimiento; públicos directos. Implementación de referencia de la fábrica (`codetlon-cloud/.claude/modules/coolify-compose.md`).
 - **Video de recursos por el servicio global de compresión**, con soft-fail y una sola key (`TRANSCODE_API_KEY`, solo en Coolify). Se corrigió además la ayuda del formulario (decía «máx 100 MB»; el servidor limita a 40 MB).
 - **`overrides.tinypool`:** la copia vulnerable llega por el peer opcional de `better-auth`; el override evita subir `vitest` a un major incompatible con ese peer.
+
+## Estandar de versiones de la flota (2026-10-16)
+**Decision**: Next 16.4.2, React 19.3.1, Tailwind 4.3.3, TypeScript 6.0.3, ESLint 10.13.0 y Vitest 5.0.5, versiones exactas, segun `codetlon-cloud/.claude/modules/stack-versions.md`.
+**Por que**: bajar vulnerabilidades (Tailwind 3 arrastraba `chokidar`/`braces`; ESLint 9 sin soporte) y que todos los proyectos corran el mismo conjunto en `dev` y `test`.
+**Consecuencias**: se retiro `tailwind.config.ts` (tokens en `@theme`), `autoprefixer` y el override `tinypool`; `lucide-react` queda en 0.577 (la 1.x quito iconos de marca); `braces` de lint queda como excepcion documentada.

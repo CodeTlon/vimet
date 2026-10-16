@@ -102,7 +102,7 @@ export function Navbar({ user }: { user: { id: string; rol: string } | null }) {
                 key={l.href}
                 href={l.href}
                 className={cn(
-                  'px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
+                  'px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
                   active
                     ? transparent
                       ? 'bg-white/15 text-white'
@@ -127,7 +127,7 @@ export function Navbar({ user }: { user: { id: string; rol: string } | null }) {
                 <Link
                   href="/admin/dashboard"
                   className={cn(
-                    'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
+                    'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
                     transparent ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100',
                   )}
                 >
@@ -137,7 +137,7 @@ export function Navbar({ user }: { user: { id: string; rol: string } | null }) {
                 <Link
                   href="/mis-turnos"
                   className={cn(
-                    'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
+                    'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
                     transparent ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100',
                   )}
                 >
@@ -146,7 +146,7 @@ export function Navbar({ user }: { user: { id: string; rol: string } | null }) {
               )}
               <LogoutButton
                 className={cn(
-                  'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 disabled:opacity-60 disabled:active:scale-100',
+                  'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-colors active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50 disabled:opacity-60 disabled:active:scale-100',
                   transparent
                     ? 'border-white/40 text-white hover:bg-white/10'
                     : 'border-gray-300 text-gray-700 hover:bg-gray-50',
@@ -160,7 +160,7 @@ export function Navbar({ user }: { user: { id: string; rol: string } | null }) {
               <Link
                 href="/login"
                 className={cn(
-                  'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
+                  'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
                   transparent ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100',
                 )}
               >
@@ -168,7 +168,7 @@ export function Navbar({ user }: { user: { id: string; rol: string } | null }) {
               </Link>
               <Link
                 href="/turnos/nuevo"
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold bg-vimet-gradient text-white shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold bg-vimet-gradient text-white shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
               >
                 <CalendarPlus className="size-4" /> Reservar turno
               </Link>
@@ -180,7 +180,7 @@ export function Navbar({ user }: { user: { id: string; rol: string } | null }) {
           type="button"
           aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
           className={cn(
-            'lg:hidden p-2 rounded-md transition-colors active:scale-[0.92] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
+            'lg:hidden p-2 rounded-md transition-colors active:scale-[0.92] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
             transparent ? 'text-white' : 'text-gray-900',
           )}
           onClick={() => setOpen((v) => !v)}

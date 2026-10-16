@@ -1,5 +1,7 @@
 # CURRENT_STATE — VIMET (web)
 
+**Actualizacion 2026-10-16:** la rama `feature/dev2-estandar-2026` (integrada en `dev` y `test`) lleva la web al estandar de versiones de la flota: Next 16.4.2, React 19.3.1, Tailwind 4.3.3, TypeScript 6.0.3, ESLint 10.13.0, Vitest 5.0.5, Zod 4.6.7, Better Auth 1.7.10. Verificado localmente: `tsc`, lint (0 errores, 20 avisos), 48 tests, build, `npm audit --omit=dev` en 0 y comparacion visual contra la version anterior (igual salvo 12 px en el pie y el ancho de los textos legales). Imagen Docker Alpine construida. **Sin verificar:** los 51 E2E (los corre el CI) y el despliegue en Coolify (sin recursos todavia). `main` sigue en Supabase.
+
 Al **2026-10-15**. Ramas: `main` = producción (Supabase, `186829d`, sin migrar); `dev` = `test` = backend propio (v0.29.1, `15aebbd`, imagen Docker verificada, sin desplegar); `archive/dev-dokku-2026-07` = la `dev` vieja. El detalle de abajo es del 2026-10-13 y sigue vigente salvo lo anotado en el README (v0.29.x). Pendiente del corte a `main`: recursos de Coolify, variables, copia de archivos y revocar el token de Supabase compartido.
 
 ## Backend propio (rama `feature/dev1-backend-propio`, en `dev`/`test`, SIN desplegar a producción)
