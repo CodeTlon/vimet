@@ -205,7 +205,9 @@ export async function importarDatos({ origen, destino, aplicar = false, log = co
 }
 
 // ---- CLI -------------------------------------------------------------------------------------
-if (import.meta.url === `file://${process.argv[1]}`) {
+// pathToFileURL: en Windows argv[1] es "C:\..." y la comparacion con `file://${argv[1]}` nunca daba true.
+const { pathToFileURL } = await import('node:url')
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { default: pg } = await import('pg')
   const [srcUrl, dstUrl] = [process.env.SOURCE_DATABASE_URL, process.env.DATABASE_URL]
   if (!srcUrl || !dstUrl) {
@@ -216,10 +218,15 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.error('SOURCE_DATABASE_URL y DATABASE_URL no pueden ser la misma base.')
     process.exit(1)
   }
-  const origen = new pg.Client({ connectionString: srcUrl })
+  // Supabase exige TLS (su cadena no valida contra el store de Node: sin verificacion de CA, igual cifrado).
+  // El host directo db.<ref>.supabase.co es solo IPv6: desde IPv4 usar el pooler
+  // (postgres.<ref>@aws-1-<region>.pooler.supabase.com:5432).
+  const origen = new pg.Client({ connectionString: srcUrl, ssl: { rejectUnauthorized: false } })
   const destino = new pg.Client({ connectionString: dstUrl })
   await origen.connect()
   await destino.connect()
+  // Garantia extra: el origen nunca se escribe, aunque la URL tenga permisos de escritura.
+  await origen.query('set default_transaction_read_only = on')
   try {
     const r = await importarDatos({ origen, destino, aplicar: process.argv.includes('--apply') })
     process.exit(r.ok ? 0 : 1)

@@ -23,7 +23,7 @@ La rama `feature/dev1-backend-propio` (hoy en `dev` y `test`; **producción en `
 - **Cliente:** VIMET — Vida y Metabolismo (Avril Jerushalmi + Gerónimo Gallardo)
 - **Tipo:** L3 — Web app con auth + booking + dashboard admin (migración desde stack PHP MVC + MySQL)
 - **Generado:** 2026-05-09
-- **URL Producción:** pendiente
+- **URL Producción:** https://vimetsalud.com.ar (app vieja con Supabase hasta el corte) · **Test:** https://test.vimetsalud.com.ar (Coolify, Postgres propio)
 - **Repo GitHub:** CodeTlon/vimet
 - **Deploy:** **Coolify es la producción real** (sirve `vimetsalud.com.ar`, confirmado el 09/09 — DNS resuelve y responde 200 detrás de Cloudflare). Vercel existe aparte y solo se usa para pruebas/preview — no auto-deploya el sitio real pese a lo que decía esta línea antes. Ver quirk "Deploy real es Coolify, no Vercel" para el detalle y las implicancias (dónde chequear env vars, por qué el dominio nunca apareció cargado en Vercel). Supabase aparte, en su propio proyecto.
 
@@ -236,6 +236,7 @@ Ver `.env.example` para el listado completo.
 - **Iconos:** Lucide React. El proyecto legacy usa FontAwesome (fa-X), mapear cada ícono a su equivalente Lucide al migrar.
 
 ## Quirks y Advertencias
+- **Entornos en Coolify creados el 2026-11-25 — `vimet-test` (`eenyumu5fmauotsd3d3fdmk8`, rama `test`, `test.vimetsalud.com.ar`) y `vimet-produccion` (`2qb26vmqtsxvwfojdpcv0yz8`, rama `main`, auto-deploy apagado, sin deployar).** Procedimiento y UUIDs completos en `docs/migracion/CORTE.md`. **Mergear `test` -> `main` es el corte**: la app vieja `vimet` (Nixpacks + Supabase) auto-deploya `main` y no arranca con el codigo nuevo; seguir el orden de `CORTE.md`. Hallazgos del ensayo contra el Supabase de prod real (solo lectura): (1) le falta la migracion `0037` (`plan_secciones` no existe; su tracking llega a `0018`) y el detalle de un plan da 500 en cuanto exista uno; (2) la app vieja no tiene `CLINICAL_DATA_ENCRYPTION_KEY`, asi que guardar ficha/evolucion/notas de plan falla; (3) el catalogo de `ejercicios` esta vacio (0 filas). Las dos primeras se resuelven solas con el corte (esquema completo + clave cargada); la tercera necesita `scripts/seed-ejercicios.mjs` por entorno. `robots.txt` y `X-Robots-Tag` bloquean la indexacion cuando `APP_ENV != production` (test es subdominio del dominio real).
 - **(backend propio) Sin RLS: la autorización es explícita y está en el servidor.** Cada policy de `supabase/migrations` tiene su reemplazo documentado en `docs/migracion/AUTORIZACION.md` (guard + test). Reglas: el staff no admin solo ve/gestiona SUS turnos (`condicionTurnosVisibles`/`puedeGestionarTurno`); solo admin cambia `rol`/`activo` de cuentas del equipo; el paciente no recibe `observaciones_internas`; el feedback fija la semana en el servidor; nada de `paciente_id` del cliente como autoridad.
 - **(backend propio) `'use server'` expone todo lo que exporta.** Por eso `crearTurno(userId, …)` y similares viven en `lib/services/*`, no en `actions/*`. Un test de revisión: si un archivo `'use server'` exporta algo que no sea `*Action` o un tipo, es un bug.
 - **(backend propio) Auditoría con actor:** las escrituras clínicas van por `conActor(actorId, tx => …)`; el trigger `log_audit_change` lee `app.user_id`. `audit_log` NO tiene FK a `profiles` a propósito (el rastro sobrevive al borrado del paciente; con FK, borrar un paciente con ficha fallaba).
@@ -297,6 +298,7 @@ npx playwright test  # Tests E2E
 ## Historial de Cambios
 | Fecha | Rama | Cambio |
 |-------|------|--------|
+| 2026-11-25 | fix/auditoria-entornos-coolify | v0.31.0 — Entornos `vimet-test` y `vimet-produccion` creados en Coolify; ensayo de importacion desde Supabase prod a test (verificacion OK). Fixes de la auditoria: login vuelve a `next` (validado con `lib/safe-next.ts`), noindex fuera de produccion, sitemap sin `/turnos/nuevo`, video del hero respeta Save-Data/reduced-motion, Next 16.4.6, CLI de `importar.mjs` en Windows + origen TLS/solo lectura. `docs/migracion/CORTE.md` reescrito con el procedimiento real. |
 | 2026-10-16 | feature/dev2-estandar-2026 | v0.30.0 — estandar de versiones de la flota: Next 16.4.2, React 19.3.1, Tailwind 4.3.3, TS 6.0.3, ESLint 10, Vitest 5. Sin cambios de comportamiento; capturas iguales salvo el ancho de los textos legales. Ver README (changelog) y `.ai/context/DECISIONS.md`. |
 | 2026-10-15 | dev/test | v0.29.1 — Video de recursos por el servicio global de compresión (`lib/transcode.ts`, soft-fail, `TRANSCODE_API_KEY` solo en Coolify), `next` 16.3.8, `vitest` 3.2.7 + `overrides.tinypool`, audit en 0. 48 tests, 51 E2E, imagen Docker verificada. Sin desplegar. |
 | 2026-10-15 | dev | v0.29.0 — Alineado con el estándar de Coolify de CodeTlon: archivos en volumen (`lib/storage/disk.ts`, `/media`, sin MinIO), Dockerfile + compose de Coolify + health con `started_at`, workflows de plantilla y E2E en 3 viewports. 47 tests y 51 E2E verdes. Sin desplegar. |

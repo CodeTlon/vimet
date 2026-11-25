@@ -17,6 +17,7 @@ import { esStaff, getSessionUser, perfilPorId } from '@/lib/auth/session'
 import { registrarPaciente } from '@/lib/auth/registro'
 import { db } from '@/lib/db'
 import { ipDeLaRequest, rateLimit } from '@/lib/rate-limit'
+import { safeNextPath } from '@/lib/safe-next'
 
 export type AuthState = {
   ok?: boolean
@@ -89,7 +90,7 @@ export async function loginAction(_prev: unknown, formData: FormData): Promise<A
   }
 
   revalidatePath('/', 'layout')
-  redirect(esStaff(profile.rol) ? '/admin/dashboard' : '/mis-turnos')
+  redirect(safeNextPath(formData.get('next')) ?? (esStaff(profile.rol) ? '/admin/dashboard' : '/mis-turnos'))
 }
 
 // Llamada desde app/auth/confirmar/page.tsx cuando el paciente hace click en "Confirmar cuenta".
