@@ -16,7 +16,15 @@ Secretos de prod (clave de cifrado clinico incluida) respaldados fuera de Coolif
 - Esquema: lo crea la app al arrancar (`scripts/migrate.mjs`, falla cerrado).
 - Datos: `importar.mjs --apply` desde Supabase prod (solo lectura) -> 8 usuarios, 4 servicios, 15 horarios, contenido del sitio; conteos y checksums OK en todas las tablas.
 - Storage: prod tiene 0 objetos; no hubo nada que copiar.
-- **Falta**: pasada manual (login de Avril y Gero con su contrasena de siempre, registro + mail, turno, ficha, plan) y seed del catalogo de ejercicios (prod tambien esta en 0).
+- Catalogo de ejercicios: 1324 ejercicios + GIF/imagen cargados en el volumen y traducidos (seed + `traducir-ejercicios.mjs`).
+- **Falta**: pasada manual (login de Avril y Gero con su contrasena de siempre, registro + mail, turno, ficha, plan).
+
+### Seed de ejercicios en un recurso de Coolify (en el VPS, no desde la PC: baja ~140 MB)
+Copiar `scripts/seed-ejercicios.mjs`, `scripts/traducir-ejercicios.mjs` y un `package.json` (`{"type":"module","dependencies":{"pg":"8.16.3"}}`) a una carpeta del VPS y:
+```sh
+docker run --rm --user 100:101 --network <uuid-recurso> -v <uuid-recurso>_storage:/data/storage -v $PWD:/s -w /s -e HOME=/tmp   -e DATABASE_URL='postgres://vimet:<SERVICE_PASSWORD_POSTGRES>@db:5432/vimet' -e STORAGE_DIR=/data/storage   -e STORAGE_PUBLIC_URL=https://<dominio>/media node:22-alpine   sh -c 'npm i --silent --cache /tmp/npm && node seed-ejercicios.mjs && node traducir-ejercicios.mjs'
+```
+`--user 100:101` es el usuario `app` de la imagen (los archivos quedan a su nombre). Las URLs se guardan absolutas: usar el dominio definitivo del entorno.
 
 ### Como conectarse a una base de Coolify (no tiene puerto publico)
 ```powershell
@@ -39,6 +47,7 @@ El host directo `db.ayjzcxvtylvsjacgjxgh.supabase.co` es **solo IPv6**. Desde IP
 4. Modo mantenimiento: Stop de la app vieja `vimet`. Desde aca no entran datos nuevos a Supabase.
 5. Tunel a la base de `vimet-produccion` e `importar.mjs --apply` (dry-run antes). Debe terminar en `VERIFICACION OK`.
 6. Cambiar el dominio de `vimet-produccion` a `https://vimetsalud.com.ar,https://www.vimetsalud.com.ar`, actualizar `SERVICE_URL_APP`/`SERVICE_FQDN_APP` y redeploy. DNS no cambia (ya apunta al VPS).
+6b. Seed de ejercicios en `vimet-produccion` (ver seccion 1) con `STORAGE_PUBLIC_URL=https://vimetsalud.com.ar/media`.
 7. Smoke: health, home, login de Avril y Gero, registro con mail real, reservar/cancelar turno, ficha (cifrado), robots.txt con `Allow` y sitemap con el dominio real.
 8. Encender el auto-deploy de `vimet-produccion`. Supabase queda en solo lectura con fecha de baja (sugerido: 2 semanas).
 9. Backup B2 (`docs/BACKUPS.md` de codetlon-cloud, `FILES_MODE=volume`) + simulacro de restauracion fechado en `.claude/CLAUDE.md`. Sin esto no se da el corte por terminado.
