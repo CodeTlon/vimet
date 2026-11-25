@@ -1,5 +1,13 @@
 # KNOWN_ISSUES — VIMET (web)
 
+## Auditoria 2026-11-25 (entornos Coolify)
+- **ALTA (prod actual, Supabase):** falta la migracion `0037` (`plan_secciones`); el detalle de plan da 500 en cuanto exista un plan. Hoy 0 planes. Se resuelve con el corte.
+- **ALTA (prod actual):** la app vieja `vimet` no tiene `CLINICAL_DATA_ENCRYPTION_KEY`: guardar ficha, evolucion o notas de plan falla. Se resuelve con el corte (la clave ya esta en `vimet-produccion`).
+- **MEDIA:** catalogo `ejercicios` vacio en prod (Supabase). **En `vimet-test` ya esta cargado** (2026-11-25: 1324 ejercicios + GIF/imagen, 137 MB en el volumen, traducidos con `traducir-ejercicios.mjs`; nombres algo literales, ej. "Abajo Asistido Colgado Rodilla Elevacion Lanzamiento"). En `vimet-produccion` hay que correrlo en el corte con `STORAGE_PUBLIC_URL=https://vimetsalud.com.ar/media` (las URLs quedan absolutas). Ver `docs/migracion/CORTE.md`.
+- **MEDIA:** credenciales de Supabase prod y token de Coolify compartidos en chat el 2026-11-25: rotar tras el corte.
+- **BAJA (perf):** las paginas publicas se renderizan por request (`no-store`, TTFB 0,5-0,9 s). Evaluar `revalidate` cuando la app viva en Coolify.
+- Resueltos en `fix/auditoria-entornos-coolify`: login sin `next`, test indexable, `/turnos/nuevo` en sitemap, video del hero de 3-5 MB siempre, Next 16.4.2 con avisos moderados, `importar.mjs` roto en Windows.
+
 ## Vigente (2026-10-16)
 - `npm audit` completo conserva 5 altas de herramientas de desarrollo: `braces` <= 3.0.3 via `eslint-config-next` -> `fast-glob` -> `micromatch`. Sin version corregida publicada; no entra al runtime (`npm audit --omit=dev` = 0). No usar `npm audit fix --force`.
 - Se retiro `overrides.tinypool`: con Vitest 5 ya no hace falta (el audit de runtime sigue en 0). Si reaparece una alta de `tinypool`, reponerlo.
