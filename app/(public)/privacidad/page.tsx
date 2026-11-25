@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 }
 
-const LAST_UPDATE = '10 de mayo de 2026'
+const LAST_UPDATE = '25 de noviembre de 2026'
 
 export default function PrivacidadPage() {
   return (
@@ -67,9 +67,11 @@ export default function PrivacidadPage() {
           <section>
             <h2 className="font-heading text-xl font-semibold text-gray-900 mb-3">5. Almacenamiento y seguridad</h2>
             <p>
-              Los datos se almacenan en <strong>Supabase</strong> (infraestructura en la nube con cifrado en tránsito y en reposo),
-              desplegados mediante <strong>Vercel</strong>. Las comunicaciones de contacto se procesan a través de <strong>Resend</strong>.
-              Estos proveedores cumplen estándares internacionales de seguridad (SOC 2, ISO 27001).
+              Los datos se almacenan en un servidor virtual privado (VPS) gestionado por el proveedor técnico de VIMET, en una base de datos PostgreSQL sin
+              acceso público desde internet. Toda comunicación con el sitio viaja cifrada (HTTPS) y los datos clínicos
+              sensibles se guardan además cifrados con AES-256. Se realizan copias de seguridad diarias cifradas en tránsito
+              hacia un proveedor de almacenamiento externo (<strong>Backblaze B2</strong>). Los correos del sitio se envían a
+              través de <strong>Resend</strong>.
             </p>
             <p className="mt-2">
               Los datos de salud se conservan mientras la relación profesional esté activa y por un período mínimo de
