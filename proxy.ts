@@ -1,10 +1,21 @@
+import { getSessionCookie } from 'better-auth/cookies'
 import { NextResponse, type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
 
 // Next-Action real es un hash hex de 40-64 chars. Scanners mandan valores
 // tipo "x"/"0"/"action" probando encontrar endpoints — cortarlos acá evita
 // que gasten cómputo de auth/render y ensucien logs.
 const VALID_NEXT_ACTION_ID = /^[a-f0-9]{40,64}$/i
+
+// Rutas que exigen sesión. Es un redirect OPTIMISTA por presencia de cookie: NO es seguridad.
+// La sesión real se valida en cada página/acción (requireAuth/requireStaff) y en cada ruta de API.
+const PROTEGIDAS = ['/mis-', '/mi-', '/feedback-semanal', '/turnos/', '/admin', '/planes/']
+
+// test (y cualquier entorno que no sea produccion) no se indexa: es un subdominio del dominio real y
+// duplicaria su contenido en Google. APP_ENV se lee en runtime (no es variable de build).
+function conNoIndex(res: NextResponse): NextResponse {
+  if (process.env.APP_ENV !== 'production') res.headers.set('X-Robots-Tag', 'noindex, nofollow')
+  return res
+}
 
 export async function proxy(request: NextRequest) {
   const nextAction = request.headers.get('next-action')
@@ -12,7 +23,17 @@ export async function proxy(request: NextRequest) {
     return new NextResponse('Invalid Next-Action', { status: 400 })
   }
 
-  return await updateSession(request)
+  const { pathname } = request.nextUrl
+  if (PROTEGIDAS.some((p) => pathname.startsWith(p)) && !getSessionCookie(request)) {
+    const url = request.nextUrl.clone()
+    const destino = pathname + request.nextUrl.search
+    url.pathname = '/login'
+    url.search = ''
+    // Vuelve a donde iba despues de loguearse (ej. "Reservar turno"). loginAction lo valida con safeNextPath.
+    url.searchParams.set('next', destino)
+    return conNoIndex(NextResponse.redirect(url))
+  }
+  return conNoIndex(NextResponse.next())
 }
 
 export const config = {

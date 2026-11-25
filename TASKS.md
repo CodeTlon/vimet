@@ -1,5 +1,7 @@
 # Tasks — VIMET
 
+> **Obsoleto** (2026-10-13): lista del bootstrap de mayo 2026. El estado vigente esta en `.ai/context/CURRENT_STATE.md`; el flujo de ramas en `docs/FLUJO-ENTORNOS.md`.
+
 ## Setup
 - [x] Repo GitHub `CodeTlon/vimet` + ramas main + dev pushed
 - [x] `.claude/CLAUDE.md` + `.claude/settings.json`
@@ -82,3 +84,5 @@
 ## Entrega
 - [ ] Merge `dev` → `main` + tag `v1.0.0` + push
 - [ ] Actualizar `.claude/CLAUDE.md` con URL producción tras deploy del usuario
+
+> **Estado 2026-10-13:** la lista vigente de pendientes de la migración está en `docs/migracion/CORTE.md` y `.ai/context/CURRENT_STATE.md`.

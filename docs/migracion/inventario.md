@@ -1,0 +1,230 @@
+# Inventario de migracion Supabase -> backend propio (Fase 0, repo `vimet/`)
+
+Alcance: solo este repo. `vimet-app` (mobile) se inventaria despues. Las secciones entre
+marcadores se regeneran con `node scripts/migracion/generar-inventario.mjs`; el resto es manual.
+
+## 1. Policies RLS -> guard server-side -> test IDOR
+
+<!-- BEGIN:policies -->
+Sentencias `create policy` en `supabase/migrations`: **71**. Vigentes tras aplicar todos los `drop policy`: **60** (11 fueron reemplazadas por migraciones posteriores).
+
+Resumen por tipo de guard: admin: 2 · dueno-o-staff: 25 · publico: 4 · staff: 19 · dueno: 9 · publico-bucket: 1
+
+> Guard y test IDOR son **sugeridos por heuristica** sobre la expresion SQL; hay que revisarlos uno por uno al implementar la Fase 4. La columna "Estado" remite a `AUTORIZACION.md`, donde cada regla tiene su guard y su test.
+
+| # | Tabla / bucket | Policy | Op | Migracion | Expresion (resumida) | Guard server-side | Test IDOR | Estado |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `public.audit_log` | audit_log admin read | select | 0039_audit_log | `USING public.is_admin()` | requireAdmin() | staff no-admin y paciente reciben 403 al select en audit_log | ver AUTORIZACION.md |
+| 2 | `public.audit_log` | audit_log staff insert propio | insert | 0039_audit_log | `CHECK public.is_staff() and (actor_id = auth.uid() or actor_id is null)` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede insert fila de paciente A en audit_log; staff si | ver AUTORIZACION.md |
+| 3 | `public.bloqueos_horario` | bloqueos read all | select | 0001_init | `USING true` | sin guard (lectura publica) | anonimo puede select en bloqueos_horario; escritura anonima rechazada | ver AUTORIZACION.md |
+| 4 | `public.bloqueos_horario` | bloqueos staff write | all | 0020_scope_agenda_por_profesional | `USING public.is_admin() or (public.is_staff() and profesional_id = auth.uid()) / CHECK public.is_admin() or (…` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede cualquier operacion fila de paciente A en bloqueos_horario; staff si | ver AUTORIZACION.md |
+| 5 | `public.contenido_sitio` | contenido_sitio admin write | all | 0010_contenido_staff | `USING public.is_staff() / CHECK public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en contenido_sitio | ver AUTORIZACION.md |
+| 6 | `public.contenido_sitio` | contenido_sitio select publico | select | 0007_contenido_editable | `USING true` | sin guard (lectura publica) | anonimo puede select en contenido_sitio; escritura anonima rechazada | ver AUTORIZACION.md |
+| 7 | `public.ejercicios` | ejercicios read auth | select | 0012_ejercicios | `USING auth.uid() is not null` | requireAuth() + filtro de dueno (id/paciente_id = user.id) | paciente B no puede select fila/objeto de paciente A en ejercicios | ver AUTORIZACION.md |
+| 8 | `public.ejercicios` | ejercicios staff write | all | 0012_ejercicios | `USING public.is_staff() / CHECK public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en ejercicios | ver AUTORIZACION.md |
+| 9 | `public.evaluaciones_funcionales` | evals read | select | 0003_seguimiento | `USING auth.uid() = paciente_id or public.is_staff()` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede select fila de paciente A en evaluaciones_funcionales; staff si | ver AUTORIZACION.md |
+| 10 | `public.evaluaciones_funcionales` | evals staff write | all | 0003_seguimiento | `USING public.is_staff() / CHECK public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en evaluaciones_funcionales | ver AUTORIZACION.md |
+| 11 | `public.evolucion_entradas` | evolucion paciente read visible | select | 0003_seguimiento | `USING auth.uid() = paciente_id and visible_paciente = true` | requireAuth() + filtro de dueno (id/paciente_id = user.id) | paciente B no puede select fila/objeto de paciente A en evolucion_entradas | ver AUTORIZACION.md |
+| 12 | `public.evolucion_entradas` | evolucion staff all | all | 0003_seguimiento | `USING public.is_staff() / CHECK public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en evolucion_entradas | ver AUTORIZACION.md |
+| 13 | `public.feedback_mensajes` | feedback_mensajes insert propio o staff | insert | 0009_feedback_chat | `CHECK autor_id = auth.uid() and exists ( select 1 from public.feedback_semanal f where f.id = feedback_id and…` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede insert fila de paciente A en feedback_mensajes; staff si | ver AUTORIZACION.md |
+| 14 | `public.feedback_mensajes` | feedback_mensajes select propio o staff | select | 0009_feedback_chat | `USING exists ( select 1 from public.feedback_semanal f where f.id = feedback_id and (f.paciente_id = auth.uid…` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede select fila de paciente A en feedback_mensajes; staff si | ver AUTORIZACION.md |
+| 15 | `public.feedback_mensajes` | feedback_mensajes update propio | update | 0021_rls_check_pertenencia | `USING autor_id = auth.uid() / CHECK autor_id = auth.uid() and exists ( select 1 from public.feedback_semanal …` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede update fila de paciente A en feedback_mensajes; staff si | ver AUTORIZACION.md |
+| 16 | `public.feedback_semanal` | feedback paciente own insert | insert | 0003_seguimiento | `CHECK auth.uid() = paciente_id` | requireAuth() + filtro de dueno (id/paciente_id = user.id) | paciente B no puede insert fila/objeto de paciente A en feedback_semanal | ver AUTORIZACION.md |
+| 17 | `public.feedback_semanal` | feedback paciente own select | select | 0003_seguimiento | `USING auth.uid() = paciente_id or public.is_staff()` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede select fila de paciente A en feedback_semanal; staff si | ver AUTORIZACION.md |
+| 18 | `public.feedback_semanal` | feedback paciente own update | update | 0003_seguimiento | `USING auth.uid() = paciente_id or public.is_staff() / CHECK auth.uid() = paciente_id or public.is_staff()` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede update fila de paciente A en feedback_semanal; staff si | ver AUTORIZACION.md |
+| 19 | `public.feedback_semanal` | feedback staff delete | delete | 0003_seguimiento | `USING public.is_staff()` | requireStaff() | paciente recibe 403 al delete en feedback_semanal | ver AUTORIZACION.md |
+| 20 | `public.fichas_paciente` | fichas paciente read | select | 0003_seguimiento | `USING auth.uid() = paciente_id or public.is_staff()` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede select fila de paciente A en fichas_paciente; staff si | ver AUTORIZACION.md |
+| 21 | `public.fichas_paciente` | fichas staff write | all | 0003_seguimiento | `USING public.is_staff() / CHECK public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en fichas_paciente | ver AUTORIZACION.md |
+| 22 | `public.horarios_disponibles` | horarios read all | select | 0001_init | `USING true` | sin guard (lectura publica) | anonimo puede select en horarios_disponibles; escritura anonima rechazada | ver AUTORIZACION.md |
+| 23 | `public.horarios_disponibles` | horarios staff write | all | 0020_scope_agenda_por_profesional | `USING public.is_admin() or (public.is_staff() and profesional_id = auth.uid()) / CHECK public.is_admin() or (…` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede cualquier operacion fila de paciente A en horarios_disponibles; staff si | ver AUTORIZACION.md |
+| 24 | `public.mediciones_antropometricas` | mediciones read | select | 0003_seguimiento | `USING auth.uid() = paciente_id or public.is_staff()` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede select fila de paciente A en mediciones_antropometricas; staff si | ver AUTORIZACION.md |
+| 25 | `public.mediciones_antropometricas` | mediciones staff write | all | 0003_seguimiento | `USING public.is_staff() / CHECK public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en mediciones_antropometricas | ver AUTORIZACION.md |
+| 26 | `public.mediciones_wearable` | mediciones_wearable paciente rw | all | 0023_mediciones_wearable | `USING paciente_id = auth.uid() or public.is_staff() / CHECK paciente_id = auth.uid() or public.is_staff()` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede cualquier operacion fila de paciente A en mediciones_wearable; staff si | ver AUTORIZACION.md |
+| 27 | `public.objetivos` | objetivos read | select | 0003_seguimiento | `USING auth.uid() = paciente_id or public.is_staff()` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede select fila de paciente A en objetivos; staff si | ver AUTORIZACION.md |
+| 28 | `public.objetivos` | objetivos staff write | all | 0003_seguimiento | `USING public.is_staff() / CHECK public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en objetivos | ver AUTORIZACION.md |
+| 29 | `public.plan_ejercicios` | plan_ejercicios paciente read | select | 0012_ejercicios | `USING exists ( select 1 from public.planes p where p.id = plan_ejercicios.plan_id and p.paciente_id = auth.ui…` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede select fila de paciente A en plan_ejercicios; staff si | ver AUTORIZACION.md |
+| 30 | `public.plan_ejercicios` | plan_ejercicios staff write | all | 0012_ejercicios | `USING public.is_staff() / CHECK public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en plan_ejercicios | ver AUTORIZACION.md |
+| 31 | `public.plan_seccion_comidas` | plan_seccion_comidas paciente read | select | 0037_plan_secciones | `USING exists ( select 1 from public.plan_secciones s join public.planes p on p.id = s.plan_id where s.id = pl…` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede select fila de paciente A en plan_seccion_comidas; staff si | ver AUTORIZACION.md |
+| 32 | `public.plan_seccion_comidas` | plan_seccion_comidas staff write | all | 0037_plan_secciones | `USING public.is_staff() / CHECK public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en plan_seccion_comidas | ver AUTORIZACION.md |
+| 33 | `public.plan_seccion_imagenes` | plan_seccion_imagenes paciente read | select | 0037_plan_secciones | `USING exists ( select 1 from public.plan_secciones s join public.planes p on p.id = s.plan_id where s.id = pl…` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede select fila de paciente A en plan_seccion_imagenes; staff si | ver AUTORIZACION.md |
+| 34 | `public.plan_seccion_imagenes` | plan_seccion_imagenes staff write | all | 0037_plan_secciones | `USING public.is_staff() / CHECK public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en plan_seccion_imagenes | ver AUTORIZACION.md |
+| 35 | `public.plan_secciones` | plan_secciones paciente read | select | 0037_plan_secciones | `USING exists ( select 1 from public.planes p where p.id = plan_secciones.plan_id and p.paciente_id = auth.uid…` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede select fila de paciente A en plan_secciones; staff si | ver AUTORIZACION.md |
+| 36 | `public.plan_secciones` | plan_secciones staff write | all | 0037_plan_secciones | `USING public.is_staff() / CHECK public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en plan_secciones | ver AUTORIZACION.md |
+| 37 | `public.planes` | planes read | select | 0003_seguimiento | `USING auth.uid() = paciente_id or public.is_staff()` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede select fila de paciente A en planes; staff si | ver AUTORIZACION.md |
+| 38 | `public.planes` | planes staff write | all | 0003_seguimiento | `USING public.is_staff() / CHECK public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en planes | ver AUTORIZACION.md |
+| 39 | `public.profiles` | profiles admin all | all | 0001_init | `USING public.is_admin() / CHECK public.is_admin()` | requireAdmin() | staff no-admin y paciente reciben 403 al cualquier operacion en profiles | ver AUTORIZACION.md |
+| 40 | `public.profiles` | profiles select staff public | select | 0004_security_hardening | `USING auth.uid() is not null and ( auth.uid() = id or public.is_staff() or rol in ('nutricionista', 'entrenad…` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede select fila de paciente A en profiles; staff si | ver AUTORIZACION.md |
+| 41 | `public.profiles` | profiles update own | update | 0032_profiles_update_staff | `USING auth.uid() = id or public.is_staff() / CHECK auth.uid() = id or public.is_staff()` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede update fila de paciente A en profiles; staff si | ver AUTORIZACION.md |
+| 42 | `public.recursos_paciente` | recursos paciente read visible | select | 0005_recursos | `USING auth.uid() = paciente_id and visible_paciente = true` | requireAuth() + filtro de dueno (id/paciente_id = user.id) | paciente B no puede select fila/objeto de paciente A en recursos_paciente | ver AUTORIZACION.md |
+| 43 | `public.recursos_paciente` | recursos staff all | all | 0005_recursos | `USING public.is_staff() / CHECK public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en recursos_paciente | ver AUTORIZACION.md |
+| 44 | `public.servicios` | servicios admin write | all | 0010_contenido_staff | `USING public.is_staff() / CHECK public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en servicios | ver AUTORIZACION.md |
+| 45 | `public.servicios` | servicios read all | select | 0001_init | `USING true` | sin guard (lectura publica) | anonimo puede select en servicios; escritura anonima rechazada | ver AUTORIZACION.md |
+| 46 | `public.sesiones_entrenamiento` | sesiones_entrenamiento paciente rw | all | 0021_rls_check_pertenencia | `USING paciente_id = auth.uid() or public.is_staff() / CHECK public.is_staff() or ( paciente_id = auth.uid() a…` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede cualquier operacion fila de paciente A en sesiones_entrenamiento; staff si | ver AUTORIZACION.md |
+| 47 | `public.sets_completados` | sets_completados paciente rw | all | 0021_rls_check_pertenencia | `USING exists ( select 1 from public.sesiones_entrenamiento s where s.id = sets_completados.sesion_id and (s.p…` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede cualquier operacion fila de paciente A en sets_completados; staff si | ver AUTORIZACION.md |
+| 48 | `public.turnos` | turnos paciente own insert | insert | 0001_init | `CHECK auth.uid() = paciente_id` | requireAuth() + filtro de dueno (id/paciente_id = user.id) | paciente B no puede insert fila/objeto de paciente A en turnos | ver AUTORIZACION.md |
+| 49 | `public.turnos` | turnos paciente own select | select | 0001_init | `USING auth.uid() = paciente_id or auth.uid() = profesional_id or public.is_admin()` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede select fila de paciente A en turnos; staff si | ver AUTORIZACION.md |
+| 50 | `public.turnos` | turnos paciente own update | update | 0001_init | `USING auth.uid() = paciente_id or auth.uid() = profesional_id or public.is_admin() / CHECK auth.uid() = pacie…` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede update fila de paciente A en turnos; staff si | ver AUTORIZACION.md |
+| 51 | `public.turnos` | turnos staff delete | delete | 0020_scope_agenda_por_profesional | `USING public.is_admin() or (public.is_staff() and profesional_id = auth.uid())` | requireAuth() + (dueno \|\| isStaff) | paciente B no puede delete fila de paciente A en turnos; staff si | ver AUTORIZACION.md |
+| 52 | `storage.objects` | ejercicios media public read | select | 0012_ejercicios | `USING bucket_id = 'ejercicios-media'` | sin guard (objeto publico del bucket) | anonimo lee objeto de storage:ejercicios-media; no puede escribir | ver AUTORIZACION.md |
+| 53 | `storage.objects` | ejercicios media staff write | all | 0012_ejercicios | `USING bucket_id = 'ejercicios-media' and public.is_staff() / CHECK bucket_id = 'ejercicios-media' and public.…` | requireStaff() | paciente recibe 403 al cualquier operacion en storage:ejercicios-media | ver AUTORIZACION.md |
+| 54 | `storage.objects` | planes storage paciente read own | select | 0003_seguimiento | `USING bucket_id = 'planes' and (storage.foldername(name))[1] = auth.uid()::text` | guard de dueno por prefijo de path | paciente B no puede select fila/objeto de paciente A en storage:planes | ver AUTORIZACION.md |
+| 55 | `storage.objects` | planes storage staff all | all | 0003_seguimiento | `USING bucket_id = 'planes' and public.is_staff() / CHECK bucket_id = 'planes' and public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en storage:planes | ver AUTORIZACION.md |
+| 56 | `storage.objects` | recursos storage paciente feedback delete | delete | 0005_recursos | `USING bucket_id = 'recursos' and (storage.foldername(name))[1] = auth.uid()::text and (storage.foldername(nam…` | guard de dueno por prefijo de path (solo subcarpeta f/) | paciente B no puede delete fila/objeto de paciente A en storage:recursos | ver AUTORIZACION.md |
+| 57 | `storage.objects` | recursos storage paciente feedback insert | insert | 0005_recursos | `CHECK bucket_id = 'recursos' and (storage.foldername(name))[1] = auth.uid()::text and (storage.foldername(nam…` | guard de dueno por prefijo de path (solo subcarpeta f/) | paciente B no puede insert fila/objeto de paciente A en storage:recursos | ver AUTORIZACION.md |
+| 58 | `storage.objects` | recursos storage paciente read | select | 0005_recursos | `USING bucket_id = 'recursos' and (storage.foldername(name))[1] = auth.uid()::text` | guard de dueno por prefijo de path | paciente B no puede select fila/objeto de paciente A en storage:recursos | ver AUTORIZACION.md |
+| 59 | `storage.objects` | recursos storage staff all | all | 0005_recursos | `USING bucket_id = 'recursos' and public.is_staff() / CHECK bucket_id = 'recursos' and public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en storage:recursos | ver AUTORIZACION.md |
+| 60 | `storage.objects` | sitio storage admin write | all | 0010_contenido_staff | `USING bucket_id = 'sitio' and public.is_staff() / CHECK bucket_id = 'sitio' and public.is_staff()` | requireStaff() | paciente recibe 403 al cualquier operacion en storage:sitio | ver AUTORIZACION.md |
+
+Policies creadas y reemplazadas despues (ya no vigentes, solo informativo):
+
+- `public.profiles` · profiles select staff public (borrada en 0004_security_hardening)
+- `public.servicios` · servicios admin write (borrada en 0010_contenido_staff)
+- `public.contenido_sitio` · contenido_sitio admin write (borrada en 0010_contenido_staff)
+- `storage.objects` · sitio storage admin write (borrada en 0010_contenido_staff)
+- `public.horarios_disponibles` · horarios staff write (borrada en 0020_scope_agenda_por_profesional)
+- `public.bloqueos_horario` · bloqueos staff write (borrada en 0020_scope_agenda_por_profesional)
+- `public.turnos` · turnos staff delete (borrada en 0020_scope_agenda_por_profesional)
+- `public.feedback_mensajes` · feedback_mensajes update propio (borrada en 0021_rls_check_pertenencia)
+- `public.sesiones_entrenamiento` · sesiones_entrenamiento paciente rw (borrada en 0021_rls_check_pertenencia)
+- `public.sets_completados` · sets_completados paciente rw (borrada en 0021_rls_check_pertenencia)
+- `public.profiles` · profiles update own (borrada en 0032_profiles_update_staff)
+<!-- END:policies -->
+
+## 2. Huella de `@supabase/*` por capa
+
+<!-- BEGIN:huella -->
+Archivos de codigo que referencian `@supabase/*` o `lib/supabase/*`: **1**.
+
+### Por ubicacion
+
+| Ubicacion | Archivos |
+|---|---|
+| scripts | 1 |
+
+### Por capa (un archivo puede estar en mas de una)
+
+<details><summary><b>auth</b> (1)</summary>
+
+- `scripts/migracion/generar-inventario.mjs`
+
+</details>
+
+<details><summary><b>storage</b> (1)</summary>
+
+- `scripts/migracion/generar-inventario.mjs`
+
+</details>
+
+<details><summary><b>datos</b> (1)</summary>
+
+- `scripts/migracion/generar-inventario.mjs`
+
+</details>
+
+<details><summary><b>cliente/otros</b> (0)</summary>
+
+
+</details>
+
+### Llamadas `.from()` a tablas
+
+Total con tabla literal: **0** en 0 archivos (+ 6 `.from(<variable>)` no resolubles estaticamente).
+
+| Tabla | `.from()` | Archivos |
+|---|---|---|
+
+### Storage (`storage.from(<bucket>)`)
+
+| Bucket | Llamadas |
+|---|---|
+<!-- END:huella -->
+
+## 3. Conteos de produccion (Supabase `ayjzcxvtylvsjacgjxgh`, 2026-10-13)
+
+Consulta de solo lectura via Management API con `scripts/migracion/conteos-prod.mjs`; salida completa en
+[`conteos-prod.md`](conteos-prod.md). Solo cantidades.
+
+| Dato | Valor |
+|---|---|
+| Usuarios `auth.users` | 8 (4 con email confirmado, 4 invitados, 3 con login alguna vez, 0 sinteticos) |
+| Roles en `profiles` | paciente 4, nutricionista 2, entrenador 1, admin 1 |
+| Hash de contrasena | bcrypt 5, vacio 3 (invitados que nunca fijaron contrasena) |
+| Filas en `public` | 28 en total: `profiles` 8, `horarios_disponibles` 15, `servicios` 4, `contenido_sitio` 1; el resto 0 |
+| Datos clinicos | 0 filas en fichas, evolucion, planes, mediciones y evaluaciones |
+| `audit_log` | 0 filas |
+| Storage | 4 buckets, 0 objetos, 0 MB |
+
+**Lectura para el plan**
+1. Produccion esta practicamente vacia: ningun dato de paciente real ni archivo. El riesgo del corte es hoy minimo y cuanto antes
+   se haga, menos datos hay que mover. La Fase 7 se simplifica (no hace falta copia de objetos ni backfill de cifrado).
+2. Decision de contrasenas: con 5 hashes bcrypt, importarlos (opcion B) es viable y barato de probar; con 3 usuarios sin
+   contrasena no hay nada que migrar. El reset obligatorio (opcion A) tambien es aceptable a esta escala.
+3. **Drift detectado:** `public` no tiene `plan_secciones`, `plan_seccion_comidas` ni `plan_seccion_imagenes` (migracion `0037`).
+   La `0038` (columnas `_enc`) y la `0039` (`audit_log`) si estan aplicadas. El codigo desplegado de planes asume
+   `0037`; hoy no falla visiblemente porque hay 0 planes, pero cualquier plan nuevo con secciones daria error. Con el
+   esquema nuevo por Drizzle el drift deja de ser un problema; mientras tanto, avisar antes de cargar planes reales.
+4. `ejercicios` esta en 0 filas: el catalogo base no se sembro en prod (`npm run seed:ejercicios`); tenerlo en cuenta
+   para la migracion de datos de referencia (Fase 2).
+5. La tabla `supabase_migrations.schema_migrations` registra 18 migraciones (hasta `0018`), consistente con lo ya documentado.
+
+**`vimet-dev` (`qwzlhbecpgysgophpbyf`)**: la Management API respondio HTTP 544 a la primera consulta; no se obtuvieron conteos.
+Probable proyecto pausado o inaccesible (ya hubo un episodio de DNS sin resolver en junio). Si se quiere usar como base de
+`test` mientras dure Supabase, hay que reactivarlo desde el dashboard y repetir el script con `SUPABASE_PROJECT_REF`.
+
+## 4. Auditoria de `audit_log` (migracion `0039`, `lib/audit.ts`)
+
+**Que existe**
+- Tabla `audit_log` append-only (sin policy de update/delete), lectura solo `is_admin()`, insert de staff solo como si mismo.
+- Escrituras: trigger `log_audit_change()` (security definer) en 5 tablas: `fichas_paciente`, `planes`,
+  `evolucion_entradas`, `mediciones_antropometricas`, `evaluaciones_funcionales`. Guarda solo los *nombres* de columna
+  modificados, no los valores.
+- Lecturas: `logAuditView()` a nivel app, accion `ver`.
+
+**Hallazgos**
+1. **Cobertura de lecturas minima.** `logAuditView` tiene un unico call site: `app/admin/pacientes/[id]/ficha/page.tsx`.
+   No se registran lecturas de evolucion, planes, antropometria, evaluaciones ni resumen del paciente, ni el acceso del propio paciente.
+2. **El actor depende de `auth.uid()`.** En el trigger, `actor_id = auth.uid()`. Con service role (`createAdminClient()`) queda `null`.
+   En el backend propio `auth.uid()` no existe: hay que pasar el actor por `set_config('app.user_id', ..., true)` dentro de la
+   transaccion o registrar desde la capa de datos (ya previsto en la Fase 2 del plan). Sin eso, todo el log queda sin actor.
+3. **Nadie lee el log.** Ninguna pantalla consulta `audit_log` (solo existe el insert); solo es accesible por SQL. Cumple como
+   registro, no como control operativo.
+4. **Sin retencion definida.** No hay politica de purga; la migracion lo deja como accion manual de DBA.
+5. **`on delete set null` en `paciente_id`/`actor_id`.** Al eliminar un paciente (`eliminarPacienteAction`) sus filas de
+   auditoria quedan huerfanas (sin `paciente_id`). Ademas, el borrado en cascada de `fichas_paciente` dispara el trigger
+   mientras el perfil se esta borrando: **no verificado** si el insert de auditoria choca con la FK; probarlo en el ensayo en `test`.
+6. **Dependencia de Supabase.** `lib/audit.ts` tipa su parametro con `createClient` de `lib/supabase/server`; se reescribe en la Fase 4.
+   Los triggers migran como SQL manual (no hay policies que portar, pero si la referencia a `auth.uid()`).
+
+**Para migrar:** conservar tabla y triggers, cambiar el origen del actor, extender `logAuditView` a las vistas clinicas
+que faltan (decision de producto, no tecnica), y ver el conteo real de filas en el punto 3.
+
+## 5. Auditoria del cifrado clinico (migracion `0038`, `lib/crypto/clinical.ts`)
+
+**Que existe**
+- AES-256-GCM con `node:crypto`, clave `CLINICAL_DATA_ENCRYPTION_KEY` (32 bytes en base64) solo en el entorno de la app.
+- Formato `v1.<iv>.<tag>.<ciphertext>` en columnas `_enc`. IV aleatorio de 12 bytes por valor, authTag validado al leer.
+- 7 campos: `fichas_paciente.{dx_medico, dx_nutricional, medicacion, datos_laboratorio, observaciones_internas}`,
+  `evolucion_entradas.contenido`, `planes.notas`.
+- Escritura: `actions/ficha.ts`, `actions/evolucion.ts`, `actions/planes.ts`. Lectura: `readClinicalField()` en 8 vistas
+  (`mi-ficha`, `mi-progreso`, `mis-planes/[id]`, `planes/[id]/imprimir`, y las de admin de ficha, evolucion, resumen y plan).
+
+**Hallazgos**
+1. **Portable tal cual.** El modulo solo depende de `node:crypto`; no cambia en la migracion. El `pg_dump` copia los
+   ciphertexts como texto.
+2. **La clave es el unico punto de falla.** Perderla = perder los 7 campos. Los backups a B2 contienen los ciphertexts
+   pero **no** la clave: debe respaldarse por separado (gestor de secretos), y viajar a Coolify antes del primer arranque.
+   No hay rotacion ni identificador de clave en el formato (solo el prefijo `v1`).
+3. **Siguen existiendo las columnas planas.** Estan marcadas `DEPRECATED` pero no se dropearon (son el rollback).
+   Si el backfill `scripts/migrar-cifrado-clinico.mjs` no corrio completo en produccion, hay texto plano real en la base.
+   El conteo exacto esta en el script de produccion (seccion 3). Decidir si el esquema nuevo las arrastra o no.
+4. **Sin AAD.** El ciphertext no esta ligado a fila ni columna: un valor copiado a otra fila o columna descifra bien.
+   Mejora de bajo costo para el formato `v2` si se quiere, no bloquea la migracion.
+5. **`readClinicalField` cae a la columna plana** si `_enc` es null: correcto durante la transicion, pero oculta filas sin
+   migrar. Tras el backfill, pasar a leer solo `_enc`.
+6. **Datos de salud que NO se cifran:** `fichas_paciente` (`lesiones`, `molestias`, `suplementacion`, `motivos_consulta`,
+   `fuma`, `bebe`, `drogas`), `feedback_semanal` y `feedback_mensajes` (dudas y chat), `plan_secciones.contenido` y
+   `plan_seccion_comidas` (ya documentado como pendiente), mediciones antropometricas, evaluaciones y adjuntos. Es una
+   decision de alcance, no un bug; queda anotado para la revision de seguridad.
+7. **El script de backfill usa `supabase-js`** y duplica el algoritmo (corre standalone); se reescribe sobre Drizzle en la Fase 4.
+8. **Pendiente de `vimet-app`:** ninguna ruta `app/api/mobile/*` lee campos clinicos, pero si la app lee `fichas_paciente`
+   o `evolucion_entradas` directo con `supabase-js` recibiria `_enc` o texto plano sin descifrar. Confirmar en el inventario de la app.

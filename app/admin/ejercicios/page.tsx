@@ -1,8 +1,11 @@
 import { EjercicioDeleteButton } from '@/components/seguimiento/ejercicio-delete-button'
 import { EjercicioUploader } from '@/components/seguimiento/ejercicio-uploader'
 import { EjercicioYoutubeThumbnail } from '@/components/seguimiento/ejercicio-youtube-thumbnail'
-import { requireStaff } from '@/lib/supabase/auth-helpers'
-import { createClient } from '@/lib/supabase/server'
+import { desc, eq } from 'drizzle-orm'
+
+import { ejercicios as tabla } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,15 +29,20 @@ type EjercicioCustom = {
 
 export default async function EjerciciosPage() {
   await requireStaff()
-  const supabase = await createClient()
-
-  const { data } = await supabase
-    .from('ejercicios')
-    .select('id, nombre, categoria, parte_cuerpo, gif_url, youtube_url, modo, instrucciones')
-    .eq('origen', 'staff')
-    .order('created_at', { ascending: false })
-
-  const ejercicios = (data ?? []) as EjercicioCustom[]
+  const ejercicios: EjercicioCustom[] = await db
+    .select({
+      id: tabla.id,
+      nombre: tabla.nombre,
+      categoria: tabla.categoria,
+      parte_cuerpo: tabla.parte_cuerpo,
+      gif_url: tabla.gif_url,
+      youtube_url: tabla.youtube_url,
+      modo: tabla.modo,
+      instrucciones: tabla.instrucciones,
+    })
+    .from(tabla)
+    .where(eq(tabla.origen, 'staff'))
+    .orderBy(desc(tabla.created_at))
 
   return (
     <div className="space-y-6">

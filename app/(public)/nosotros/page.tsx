@@ -48,7 +48,7 @@ function ProfileSection({ prof, reverse }: { prof: Profesional; reverse: boolean
             reverse ? 'lg:[&>*:first-child]:order-last' : ''
           }`}
         >
-          <div className="relative aspect-[4/5] w-full max-w-md mx-auto rounded-2xl overflow-hidden shadow-lg">
+          <div className="relative aspect-4/5 w-full max-w-md mx-auto rounded-2xl overflow-hidden shadow-lg">
             <Image
               src={prof.avatar}
               alt={`${prof.nombre}, ${prof.titulo} en VIMET`}
@@ -92,7 +92,7 @@ function ProfileSection({ prof, reverse }: { prof: Profesional; reverse: boolean
                 href={prof.whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-vimet-gradient text-white font-semibold shadow-md text-sm transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-vimet-gradient text-white font-semibold shadow-md text-sm transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
               >
                 Consultá por WhatsApp <ArrowRight className="size-4" />
               </a>
@@ -100,7 +100,7 @@ function ProfileSection({ prof, reverse }: { prof: Profesional; reverse: boolean
                 href={prof.instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-300 text-gray-800 font-semibold text-sm transition-colors hover:bg-gray-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/40 focus-visible:ring-offset-2"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-300 text-gray-800 font-semibold text-sm transition-colors hover:bg-gray-50 active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/40 focus-visible:ring-offset-2"
               >
                 {prof.instagram}
               </a>
@@ -141,13 +141,13 @@ export default async function NosotrosPage() {
           <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/metodologia"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-vimet-red font-semibold shadow-lg transition-all hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-vimet-red"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-vimet-red font-semibold shadow-lg transition-all hover:shadow-xl active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-vimet-red"
             >
               Ver metodología <ArrowRight className="size-4" />
             </Link>
             <Link
               href="/servicios"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white text-white font-semibold transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white text-white font-semibold transition-colors hover:bg-white/10 active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/70"
             >
               Ver servicios
             </Link>

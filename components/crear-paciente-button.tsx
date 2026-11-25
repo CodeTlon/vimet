@@ -44,7 +44,7 @@ export function CrearPacienteButton() {
                 name="nombre"
                 required
                 placeholder="Ej: María"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40"
               />
             </div>
             <div>
@@ -53,7 +53,7 @@ export function CrearPacienteButton() {
                 name="apellido"
                 required
                 placeholder="Ej: Gómez"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40"
               />
             </div>
           </div>
@@ -64,7 +64,7 @@ export function CrearPacienteButton() {
               type="tel"
               required
               placeholder="Para contactarlo por WhatsApp"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40"
             />
           </div>
           <div>
@@ -73,7 +73,7 @@ export function CrearPacienteButton() {
               name="email"
               type="email"
               placeholder="Si no tiene, dejar en blanco"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40"
             />
           </div>
           <button

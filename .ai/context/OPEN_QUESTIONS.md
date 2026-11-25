@@ -12,3 +12,13 @@ Preguntas que no se pudieron cerrar desde este entorno — quién puede confirma
 8. ~~¿Qué es el proyecto Supabase `vimet` (`ayjzcxvtylvsjacgjxgh`)?~~ **Cerrada, 2026-09-22** — es el Supabase real de producción, confirmado vía Coolify (ver #3).
 9. ~~¿Se aplican las migraciones faltantes contra producción?~~ **Cerrada, 2026-09-22.** Las 14 migraciones reales que faltaban (no las 6 originales) se aplicaron con autorización explícita del usuario, sin error, y se verificaron funcionalmente. Ver `KNOWN_ISSUES.md` #1.
 10. **`vimet-dev` (`qwzlhbecpgysgophpbyf`) quedó reactivado** (estaba pausado) tras la verificación de `activo` de esta sesión — no se volvió a pausar. El usuario puede pausarlo manualmente si prefiere no dejarlo corriendo; Supabase free-tier lo vuelve a pausar solo tras inactividad prolongada.
+
+## Nuevas (2026-10-13, migración a backend propio)
+11. **¿Cuándo es el corte?** Conviene antes de que carguen pacientes reales (prod hoy: 8 usuarios, 28 filas). **Quién decide**: Mateo con Avril y Gero (ventana de bajo tráfico).
+12. **Contraseñas: se decidió importar los hashes bcrypt** (opción B de la doctrina, probada en tests). Falta confirmarlo con un usuario real en `test`. Los 3 invitados sin contraseña pasan por "recuperar".
+13. **Convivencia con la app publicada**: ¿update forzado (recomendado, hay pocos usuarios) o doble backend un tiempo? **Quién decide**: Mateo.
+14. **Cifrar `plan_secciones` y el resto de campos de salud sin cifrar?** (producto/seguridad; ya listado en `KNOWN_ISSUES.md` #2).
+15. **¿Se mantiene el proyecto Vercel o se retira junto a Supabase?**
+16. **Mecanismo de deploy de Coolify** (push automático o manual) sigue sin verificarse (#1 original).
+17. **Backups**: ¿cuenta/bucket B2 y clave por proyecto ya creados? (`docs/migracion/FASE1-COOLIFY.md`).
+18. **Fecha de baja de Supabase** (sugerida 2 semanas después del corte, en solo lectura).

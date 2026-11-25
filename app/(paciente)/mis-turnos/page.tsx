@@ -1,17 +1,18 @@
 import { Building2, CalendarDays, CalendarPlus, Clock, UserRound, Video } from 'lucide-react'
 import Link from 'next/link'
 
-import {
-  cancelarPendientesSinConfirmar,
-  cancelarTurnoAction,
-  confirmarTurnoAction,
-  marcarNoAsistioVencidos,
-} from '@/actions/turnos'
+import { desc, eq, sql } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
+
+import { cancelarTurnoAction, confirmarTurnoAction } from '@/actions/turnos'
+import { profiles, servicios, turnos } from '@/db/schema'
+import { getSessionUser } from '@/lib/auth/session'
+import { db } from '@/lib/db'
+import { cancelarPendientesSinConfirmar, marcarNoAsistioVencidos } from '@/lib/services/turnos'
 import { Pagination } from '@/components/pagination'
 import { hoyArgentina, horaArgentina, turnoCorteDesde } from '@/lib/datetime'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
 import { ESTADO_TURNO_BADGE as ESTADO_BADGE, ESTADO_TURNO_LABEL as ESTADO_LABEL } from '@/lib/seguimiento'
-import { createClient } from '@/lib/supabase/server'
 const MESES = [
   '',
   'Ene',
@@ -42,10 +43,7 @@ export default async function MisTurnosPage(
   }
 ) {
   const searchParams = await props.searchParams;
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   // Layout (paciente) ya valida sesión y rol — acá user nunca es null.
   if (!user) return null
 
@@ -55,18 +53,31 @@ export default async function MisTurnosPage(
   const page = parsePage(searchParams?.page)
   const [from, to] = pageRange(page)
 
-  const [{ data: profile }, { data: turnos, count }] = await Promise.all([
-    supabase.from('profiles').select('nombre, apellido').eq('id', user.id).maybeSingle(),
-    supabase
-      .from('turnos')
-      .select(
-        'id, fecha, hora_inicio, hora_fin, modalidad, estado, motivo_cancelacion, motivo_reprogramacion, servicios(nombre), profesional:profiles!turnos_profesional_id_fkey(nombre, apellido)',
-        { count: 'exact' },
-      )
-      .eq('paciente_id', user.id)
-      .order('fecha', { ascending: false })
-      .order('hora_inicio', { ascending: false })
-      .range(from, to),
+  const profesional = alias(profiles, 'profesional')
+  // Solo los turnos del propio paciente (reemplaza la policy `turnos paciente own select`).
+  const [[profile], rowsDb, [{ count }]] = await Promise.all([
+    db.select({ nombre: profiles.nombre }).from(profiles).where(eq(profiles.id, user.id)).limit(1),
+    db
+      .select({
+        id: turnos.id,
+        fecha: turnos.fecha,
+        hora_inicio: turnos.hora_inicio,
+        hora_fin: turnos.hora_fin,
+        modalidad: turnos.modalidad,
+        estado: turnos.estado,
+        motivo_cancelacion: turnos.motivo_cancelacion,
+        motivo_reprogramacion: turnos.motivo_reprogramacion,
+        servicios: { nombre: servicios.nombre },
+        profesional: { nombre: profesional.nombre, apellido: profesional.apellido },
+      })
+      .from(turnos)
+      .leftJoin(servicios, eq(servicios.id, turnos.servicio_id))
+      .leftJoin(profesional, eq(profesional.id, turnos.profesional_id))
+      .where(eq(turnos.paciente_id, user.id))
+      .orderBy(desc(turnos.fecha), desc(turnos.hora_inicio))
+      .limit(to - from + 1)
+      .offset(from),
+    db.select({ count: sql<number>`count(*)::int` }).from(turnos).where(eq(turnos.paciente_id, user.id)),
   ])
 
   type Row = {
@@ -81,7 +92,7 @@ export default async function MisTurnosPage(
     servicios: { nombre: string } | null
     profesional: { nombre: string; apellido: string } | null
   }
-  const rows = (turnos ?? []) as unknown as Row[]
+  const rows = rowsDb as Row[]
   const hoy = hoyArgentina()
   const showNuevo = searchParams?.nuevo === '1'
   const pages = calcTotalPages(count)

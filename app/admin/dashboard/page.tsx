@@ -1,10 +1,16 @@
 import { CalendarCheck2, CalendarClock, CalendarDays, CalendarRange } from 'lucide-react'
 import Link from 'next/link'
 
-import { cancelarPendientesSinConfirmar, marcarNoAsistioVencidos } from '@/actions/turnos'
+import { and, asc, eq, gt, inArray, lte } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
+
+import { profiles, servicios, turnos } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { condicionTurnosVisibles } from '@/lib/data/turnos'
 import { hoyArgentina } from '@/lib/datetime'
+import { db } from '@/lib/db'
+import { cancelarPendientesSinConfirmar, marcarNoAsistioVencidos } from '@/lib/services/turnos'
 import { ESTADO_TURNO_BADGE, ESTADO_TURNO_LABEL } from '@/lib/seguimiento'
-import { createClient } from '@/lib/supabase/server'
 export const metadata = { title: 'Dashboard' }
 export const dynamic = 'force-dynamic'
 
@@ -19,36 +25,45 @@ type TurnoRow = {
 }
 
 export default async function AdminDashboard() {
+  const { profile } = await requireStaff()
   await marcarNoAsistioVencidos()
   await cancelarPendientesSinConfirmar()
 
-  const supabase = await createClient()
   const today = hoyArgentina()
   const in15 = hoyArgentina(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000))
 
-  const [{ data: hoyData }, { data: proxData }] = await Promise.all([
-    supabase
-      .from('turnos')
-      .select(
-        'id, fecha, hora_inicio, hora_fin, estado, servicios(nombre), paciente:profiles!turnos_paciente_id_fkey(nombre, apellido)',
-      )
-      .eq('fecha', today)
-      .order('hora_inicio'),
-    supabase
-      .from('turnos')
-      .select(
-        'id, fecha, hora_inicio, hora_fin, estado, servicios(nombre), paciente:profiles!turnos_paciente_id_fkey(nombre, apellido)',
-      )
-      .gt('fecha', today)
-      .lte('fecha', in15)
-      .in('estado', ['pendiente', 'confirmado'])
-      .order('fecha')
-      .order('hora_inicio')
-      .limit(15),
-  ])
+  // El staff ve sus turnos; el admin, todos (condicionTurnosVisibles).
+  const visibles = condicionTurnosVisibles(profile)
+  const paciente = alias(profiles, 'paciente')
+  const columnas = {
+    id: turnos.id,
+    fecha: turnos.fecha,
+    hora_inicio: turnos.hora_inicio,
+    hora_fin: turnos.hora_fin,
+    estado: turnos.estado,
+    servicios: { nombre: servicios.nombre },
+    paciente: { nombre: paciente.nombre, apellido: paciente.apellido },
+  }
 
-  const hoy = (hoyData ?? []) as unknown as TurnoRow[]
-  const proximos = (proxData ?? []) as unknown as TurnoRow[]
+  const [hoy, proximos] = (await Promise.all([
+    db
+      .select(columnas)
+      .from(turnos)
+      .leftJoin(servicios, eq(servicios.id, turnos.servicio_id))
+      .leftJoin(paciente, eq(paciente.id, turnos.paciente_id))
+      .where(and(eq(turnos.fecha, today), visibles))
+      .orderBy(asc(turnos.hora_inicio)),
+    db
+      .select(columnas)
+      .from(turnos)
+      .leftJoin(servicios, eq(servicios.id, turnos.servicio_id))
+      .leftJoin(paciente, eq(paciente.id, turnos.paciente_id))
+      .where(
+        and(gt(turnos.fecha, today), lte(turnos.fecha, in15), inArray(turnos.estado, ['pendiente', 'confirmado']), visibles),
+      )
+      .orderBy(asc(turnos.fecha), asc(turnos.hora_inicio))
+      .limit(15),
+  ])) as [TurnoRow[], TurnoRow[]]
   const confirmados = hoy.filter((t) => t.estado === 'confirmado').length
   const pendientes = hoy.filter((t) => t.estado === 'pendiente').length
 

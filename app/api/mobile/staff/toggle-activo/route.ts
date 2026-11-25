@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 
-import { createAdminClient } from '@/lib/supabase/admin'
-import { requireMobileStaff } from '@/lib/supabase/bearer'
+import { requireMobileStaff } from '@/lib/auth/mobile'
+import { cambiarActivo } from '@/lib/services/staff'
 
 export const dynamic = 'force-dynamic'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function POST(request: Request) {
   const ctx = await requireMobileStaff(request)
@@ -11,17 +13,9 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => null)
   const id = String(body?.id ?? '')
-  const activo = body?.activo === true
-  if (!id) return NextResponse.json({ error: 'Paciente inválido' }, { status: 400 })
+  if (!UUID_RE.test(id)) return NextResponse.json({ error: 'Paciente inválido' }, { status: 400 })
 
-  const admin = createAdminClient()
-  const payload: { activo: boolean; activado_en?: string } = { activo }
-  if (activo) {
-    const { data: profile } = await admin.from('profiles').select('activado_en').eq('id', id).maybeSingle()
-    if (!profile?.activado_en) payload.activado_en = new Date().toISOString()
-  }
-  const { error } = await admin.from('profiles').update(payload).eq('id', id)
-  if (error) return NextResponse.json({ error: 'No se pudo actualizar.' }, { status: 400 })
-
+  const res = await cambiarActivo(ctx.profile, id, body?.activo === true)
+  if (!res.ok) return NextResponse.json({ error: res.error }, { status: res.status ?? 400 })
   return NextResponse.json({ ok: true })
 }

@@ -30,7 +30,7 @@ export function AuthShell({
           sizes="50vw"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-vimet-dark/80 via-vimet-dark/10 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-vimet-dark/80 via-vimet-dark/10 to-transparent" />
         <div className="absolute bottom-12 left-12 right-12">
           <p className="font-heading text-3xl font-bold text-white leading-tight">
             Nutrición y entrenamiento<br />para tu salud
@@ -39,7 +39,7 @@ export function AuthShell({
       </div>
 
       {/* Panel del form */}
-      <div className="flex-1 pt-24 pb-16 md:pt-0 md:pb-0 bg-gradient-to-br from-vimet-sand to-vimet-cream flex items-center">
+      <div className="flex-1 pt-24 pb-16 md:pt-0 md:pb-0 bg-linear-to-br from-vimet-sand to-vimet-cream flex items-center">
         <div className="container-vimet md:mx-0 md:max-w-none md:px-8 lg:px-12 xl:px-20">
           <div className="max-w-md lg:max-w-lg mx-auto md:mx-0">
             <Link

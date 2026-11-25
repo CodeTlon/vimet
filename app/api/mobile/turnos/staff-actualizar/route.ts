@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
-import { actualizarTurnoStaff } from '@/actions/turnos'
-import { requireMobileUser } from '@/lib/supabase/bearer'
+import { actualizarTurnoStaff } from '@/lib/services/turnos'
+import { requireMobileUser } from '@/lib/auth/mobile'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   const estado = ESTADOS.includes(body?.estado) ? body.estado : null
   if (!id || !estado) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 })
 
-  const result = await actualizarTurnoStaff(ctx.supabase, ctx.user.id, {
+  const result = await actualizarTurnoStaff(ctx.user.id, {
     id,
     estado,
     notas_profesional: String(body?.notas_profesional ?? ''),

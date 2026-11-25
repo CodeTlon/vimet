@@ -1,5 +1,9 @@
 import { ExpandableChart } from '@/components/expandable-chart'
-import { createClient } from '@/lib/supabase/server'
+import { asc, eq } from 'drizzle-orm'
+
+import { mediciones_wearable as tabla } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 
 type MedicionWearable = {
@@ -20,15 +24,22 @@ const FUENTE_LABEL: Record<string, string> = {
 
 export default async function WearablePage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params
-  const supabase = await createClient()
+  await requireStaff()
 
-  const { data } = await supabase
-    .from('mediciones_wearable')
-    .select('fecha, pasos, calorias_activas, fc_prom, fc_min, fc_max, minutos_sueno, fuente')
-    .eq('paciente_id', params.id)
-    .order('fecha', { ascending: true })
-
-  const serie = (data ?? []) as MedicionWearable[]
+  const serie = (await db
+    .select({
+      fecha: tabla.fecha,
+      pasos: tabla.pasos,
+      calorias_activas: tabla.calorias_activas,
+      fc_prom: tabla.fc_prom,
+      fc_min: tabla.fc_min,
+      fc_max: tabla.fc_max,
+      minutos_sueno: tabla.minutos_sueno,
+      fuente: tabla.fuente,
+    })
+    .from(tabla)
+    .where(eq(tabla.paciente_id, params.id))
+    .orderBy(asc(tabla.fecha))) as MedicionWearable[]
 
   if (serie.length === 0) {
     return (

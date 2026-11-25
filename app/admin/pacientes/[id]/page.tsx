@@ -1,7 +1,18 @@
 import { ArrowRight, ClipboardList, Dumbbell, FileText, MessageSquare, Ruler, Target, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 
-import { createClient } from '@/lib/supabase/server'
+import { and, desc, eq, inArray } from 'drizzle-orm'
+
+import {
+  evaluaciones_funcionales,
+  feedback_semanal,
+  fichas_paciente,
+  mediciones_antropometricas,
+  objetivos as tablaObjetivos,
+  planes as tablaPlanes,
+} from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 import {
   CATEGORIA_OBJETIVO_LABEL,
   PUNTAJE_MAX_FUNCIONAL,
@@ -16,56 +27,75 @@ export default async function PacienteResumen(
     params: Promise<{ id: string }>
   }
 ) {
+  await requireStaff()
   const params = await props.params;
-  const supabase = await createClient()
   const id = params.id
 
-  const [
-    { data: fichaRaw },
-    { data: ultimaMedicion },
-    { data: ultimaEval },
-    { data: planes },
-    { data: ultFeedback },
-    { data: objetivos },
-  ] = await Promise.all([
-    supabase
-      .from('fichas_paciente')
-      .select('dx_medico, dx_medico_enc, dx_nutricional, dx_nutricional_enc, fecha_primera_consulta, updated_at')
-      .eq('paciente_id', id)
-      .maybeSingle(),
-    supabase
-      .from('mediciones_antropometricas')
-      .select('peso_kg, talla_cm, imc, porc_grasa, fecha_medicion')
-      .eq('paciente_id', id)
-      .order('fecha_medicion', { ascending: false })
-      .order('id', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from('evaluaciones_funcionales')
-      .select('puntaje_total, fecha')
-      .eq('paciente_id', id)
-      .order('fecha', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from('planes')
-      .select('id, tipo, titulo, estado, fecha_desde')
-      .eq('paciente_id', id)
-      .eq('estado', 'vigente')
-      .order('fecha_desde', { ascending: false }),
-    supabase
-      .from('feedback_semanal')
-      .select('semana_inicio, animo, energia, adherencia_alimentacion, adherencia_entrenamiento, dudas, respondido_at')
-      .eq('paciente_id', id)
-      .order('semana_inicio', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from('objetivos')
-      .select('id, categoria, descripcion, estado')
-      .eq('paciente_id', id)
-      .in('estado', ['pendiente', 'en_progreso']),
+  const [[fichaRaw], [ultimaMedicion], [ultimaEval], planes, [ultFeedback], objetivos] = await Promise.all([
+    db
+      .select({
+        dx_medico: fichas_paciente.dx_medico,
+        dx_medico_enc: fichas_paciente.dx_medico_enc,
+        dx_nutricional: fichas_paciente.dx_nutricional,
+        dx_nutricional_enc: fichas_paciente.dx_nutricional_enc,
+        fecha_primera_consulta: fichas_paciente.fecha_primera_consulta,
+        updated_at: fichas_paciente.updated_at,
+      })
+      .from(fichas_paciente)
+      .where(eq(fichas_paciente.paciente_id, id))
+      .limit(1),
+    db
+      .select({
+        peso_kg: mediciones_antropometricas.peso_kg,
+        talla_cm: mediciones_antropometricas.talla_cm,
+        imc: mediciones_antropometricas.imc,
+        porc_grasa: mediciones_antropometricas.porc_grasa,
+        fecha_medicion: mediciones_antropometricas.fecha_medicion,
+      })
+      .from(mediciones_antropometricas)
+      .where(eq(mediciones_antropometricas.paciente_id, id))
+      .orderBy(desc(mediciones_antropometricas.fecha_medicion), desc(mediciones_antropometricas.id))
+      .limit(1),
+    db
+      .select({ puntaje_total: evaluaciones_funcionales.puntaje_total, fecha: evaluaciones_funcionales.fecha })
+      .from(evaluaciones_funcionales)
+      .where(eq(evaluaciones_funcionales.paciente_id, id))
+      .orderBy(desc(evaluaciones_funcionales.fecha))
+      .limit(1),
+    db
+      .select({
+        id: tablaPlanes.id,
+        tipo: tablaPlanes.tipo,
+        titulo: tablaPlanes.titulo,
+        estado: tablaPlanes.estado,
+        fecha_desde: tablaPlanes.fecha_desde,
+      })
+      .from(tablaPlanes)
+      .where(and(eq(tablaPlanes.paciente_id, id), eq(tablaPlanes.estado, 'vigente')))
+      .orderBy(desc(tablaPlanes.fecha_desde)),
+    db
+      .select({
+        semana_inicio: feedback_semanal.semana_inicio,
+        animo: feedback_semanal.animo,
+        energia: feedback_semanal.energia,
+        adherencia_alimentacion: feedback_semanal.adherencia_alimentacion,
+        adherencia_entrenamiento: feedback_semanal.adherencia_entrenamiento,
+        dudas: feedback_semanal.dudas,
+        respondido_at: feedback_semanal.respondido_at,
+      })
+      .from(feedback_semanal)
+      .where(eq(feedback_semanal.paciente_id, id))
+      .orderBy(desc(feedback_semanal.semana_inicio))
+      .limit(1),
+    db
+      .select({
+        id: tablaObjetivos.id,
+        categoria: tablaObjetivos.categoria,
+        descripcion: tablaObjetivos.descripcion,
+        estado: tablaObjetivos.estado,
+      })
+      .from(tablaObjetivos)
+      .where(and(eq(tablaObjetivos.paciente_id, id), inArray(tablaObjetivos.estado, ['pendiente', 'en_progreso']))),
   ])
 
   const cat = ultimaEval?.puntaje_total != null

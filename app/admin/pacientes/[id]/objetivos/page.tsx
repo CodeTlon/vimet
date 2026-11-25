@@ -4,7 +4,11 @@ import { eliminarObjetivoAction } from '@/actions/objetivos'
 import { ObjetivoEstadoSelect } from '@/components/seguimiento/objetivo-estado-select'
 import { ObjetivoForm } from '@/components/seguimiento/objetivo-form'
 import { hoyArgentina } from '@/lib/datetime'
-import { createClient } from '@/lib/supabase/server'
+import { desc, eq } from 'drizzle-orm'
+
+import { objetivos as tabla } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 import {
   CATEGORIA_OBJETIVO_LABEL,
   ESTADO_OBJETIVO_LABEL,
@@ -25,14 +29,19 @@ type Objetivo = {
 
 export default async function ObjetivosPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('objetivos')
-    .select('id, categoria, descripcion, estado, fecha_objetivo, created_at')
-    .eq('paciente_id', params.id)
-    .order('created_at', { ascending: false })
-
-  const objetivos = (data ?? []) as Objetivo[]
+  await requireStaff()
+  const objetivos: Objetivo[] = await db
+    .select({
+      id: tabla.id,
+      categoria: tabla.categoria,
+      descripcion: tabla.descripcion,
+      estado: tabla.estado,
+      fecha_objetivo: tabla.fecha_objetivo,
+      created_at: tabla.created_at,
+    })
+    .from(tabla)
+    .where(eq(tabla.paciente_id, params.id))
+    .orderBy(desc(tabla.created_at))
 
   return (
     <div className="space-y-5">

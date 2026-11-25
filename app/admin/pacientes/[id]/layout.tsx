@@ -4,7 +4,11 @@ import { notFound } from 'next/navigation'
 import { type ReactNode } from 'react'
 
 import { Tabs } from '@/components/tabs'
-import { createClient } from '@/lib/supabase/server'
+import { eq } from 'drizzle-orm'
+
+import { profiles } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 
 export default async function PacienteLayout(
@@ -19,12 +23,21 @@ export default async function PacienteLayout(
     children
   } = props;
 
-  const supabase = await createClient()
-  const { data: paciente } = await supabase
-    .from('profiles')
-    .select('id, nombre, apellido, email, telefono, rol, created_at, gestionado_por_staff')
-    .eq('id', params.id)
-    .maybeSingle()
+  await requireStaff()
+  const [paciente] = await db
+    .select({
+      id: profiles.id,
+      nombre: profiles.nombre,
+      apellido: profiles.apellido,
+      email: profiles.email,
+      telefono: profiles.telefono,
+      rol: profiles.rol,
+      created_at: profiles.created_at,
+      gestionado_por_staff: profiles.gestionado_por_staff,
+    })
+    .from(profiles)
+    .where(eq(profiles.id, params.id))
+    .limit(1)
 
   if (!paciente || paciente.rol !== 'paciente') notFound()
 

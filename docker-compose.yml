@@ -1,0 +1,24 @@
+# Entorno local de desarrollo (rama dev): solo Postgres 16. Los archivos van a ./storage (carpeta ignorada por git).
+# test y prod viven en Coolify con docker-compose.coolify.yml. Credenciales de ESTE archivo: solo desarrollo local.
+#
+# Puerto solo en loopback. En la VPS (cuenta dev1/dev2) usar el rango propio, ver /etc/dev-ports.conf:
+#   VIMET_DB_PORT=42432 docker compose up -d
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vimet
+      POSTGRES_PASSWORD: vimet
+      POSTGRES_DB: vimet
+    ports:
+      - '127.0.0.1:${VIMET_DB_PORT:-5432}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U vimet -d vimet']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

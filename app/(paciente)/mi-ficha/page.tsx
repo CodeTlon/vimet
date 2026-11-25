@@ -1,25 +1,49 @@
 import { ClipboardList, FileWarning } from 'lucide-react'
 
-import { createClient } from '@/lib/supabase/server'
+import { eq } from 'drizzle-orm'
+
+import { fichas_paciente } from '@/db/schema'
+import { getSessionUser } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 import { formatearFechaCorta, SEXO_LABEL, ACTIVIDAD_DIARIA_LABEL } from '@/lib/seguimiento'
 import { readClinicalField } from '@/lib/crypto/clinical'
 export const metadata = { title: 'Mi ficha' }
 export const dynamic = 'force-dynamic'
 
 export default async function MiFichaPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   if (!user) return null
 
-  const { data: fichaRaw } = await supabase
-    .from('fichas_paciente')
-    .select(
-      'fecha_nacimiento, sexo, ocupacion, fecha_primera_consulta, fuma, bebe, drogas, entrena, actividad_diaria, horas_sueno, dx_medico, dx_medico_enc, dx_nutricional, dx_nutricional_enc, medicacion, medicacion_enc, suplementacion, lesiones, molestias, datos_laboratorio, datos_laboratorio_enc, motivos_consulta, updated_at',
-    )
-    .eq('paciente_id', user.id)
-    .maybeSingle()
+  // Solo la ficha propia (policy `fichas paciente read`).
+  const [fichaRaw] = await db
+    .select({
+      fecha_nacimiento: fichas_paciente.fecha_nacimiento,
+      sexo: fichas_paciente.sexo,
+      ocupacion: fichas_paciente.ocupacion,
+      fecha_primera_consulta: fichas_paciente.fecha_primera_consulta,
+      fuma: fichas_paciente.fuma,
+      bebe: fichas_paciente.bebe,
+      drogas: fichas_paciente.drogas,
+      entrena: fichas_paciente.entrena,
+      actividad_diaria: fichas_paciente.actividad_diaria,
+      horas_sueno: fichas_paciente.horas_sueno,
+      dx_medico: fichas_paciente.dx_medico,
+      dx_medico_enc: fichas_paciente.dx_medico_enc,
+      dx_nutricional: fichas_paciente.dx_nutricional,
+      dx_nutricional_enc: fichas_paciente.dx_nutricional_enc,
+      medicacion: fichas_paciente.medicacion,
+      medicacion_enc: fichas_paciente.medicacion_enc,
+      suplementacion: fichas_paciente.suplementacion,
+      lesiones: fichas_paciente.lesiones,
+      molestias: fichas_paciente.molestias,
+      datos_laboratorio: fichas_paciente.datos_laboratorio,
+      datos_laboratorio_enc: fichas_paciente.datos_laboratorio_enc,
+      motivos_consulta: fichas_paciente.motivos_consulta,
+      updated_at: fichas_paciente.updated_at,
+    })
+    .from(fichas_paciente)
+    .where(eq(fichas_paciente.paciente_id, user.id))
+    .limit(1)
 
   // Campos clínicos cifrados: `_enc` si la fila ya pasó por el cifrado
   // (nueva o backfillada), si no cae a la columna vieja en texto plano

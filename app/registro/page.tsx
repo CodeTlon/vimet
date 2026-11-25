@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 import { AuthShell } from '@/components/auth-shell'
 import { RegisterForm } from '@/components/register-form'
+import { esStaff, getUserAndProfile } from '@/lib/auth/session'
 
 export const metadata: Metadata = {
   title: 'Crear cuenta',
@@ -10,7 +12,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export default function RegistroPage() {
+export default async function RegistroPage() {
+  const { user, profile } = await getUserAndProfile()
+  if (user && profile) redirect(esStaff(profile.rol) ? '/admin/dashboard' : '/mis-turnos')
+
   return (
     <AuthShell
       description="Creá tu cuenta para sacar turnos"

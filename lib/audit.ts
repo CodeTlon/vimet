@@ -1,36 +1,27 @@
-import type { createClient } from '@/lib/supabase/server'
-
-type Supabase = Awaited<ReturnType<typeof createClient>>
+import { audit_log } from '@/db/schema'
+import { db as dbGlobal, type Db } from '@/lib/db'
 
 /**
- * Registra en `audit_log` que un miembro del staff abrió una vista con
- * datos clínicos de un paciente (acción `'ver'`). Postgres no audita SELECT
- * nativamente sin la extensión `pgaudit` (no garantizada en Supabase
- * managed) — este es el complemento a nivel app de los triggers de
- * insert/update/delete (migración 0039_audit_log.sql, que sí cubren
- * escritura automáticamente).
+ * Registra en `audit_log` que un miembro del staff abrió una vista con datos clínicos de un
+ * paciente (acción `'ver'`). Las escrituras las registra el trigger `log_audit_change`
+ * (drizzle/0001); las lecturas solo existen a nivel app, así que solo queda registrado lo que
+ * pasa por un call site que llame a esta función.
  *
- * Limitación real, documentada también en la migración: solo queda
- * registrado lo que pasa por un call site que llama a esta función. Una
- * lectura que no la invoque (una vista clínica nueva a la que no se le
- * sumó el logging, o un acceso directo a la API de Supabase con la
- * service_role key) no aparece acá.
- *
- * Best-effort a propósito: si el insert falla (RLS, red, lo que sea) NO
- * debe romper la página que la llamó — solo loguea el error server-side.
+ * Best-effort a propósito: si el insert falla NO debe romper la página que la llamó.
  */
 export async function logAuditView(
-  supabase: Supabase,
   params: { pacienteId: string; actorId: string; tabla: string; registroId?: string },
+  db: Db = dbGlobal,
 ) {
-  const { error } = await supabase.from('audit_log').insert({
-    paciente_id: params.pacienteId,
-    actor_id: params.actorId,
-    accion: 'ver',
-    tabla: params.tabla,
-    registro_id: params.registroId ?? params.pacienteId,
-  })
-  if (error) {
-    console.error(`logAuditView: no se pudo registrar el acceso a ${params.tabla}`, error.message)
+  try {
+    await db.insert(audit_log).values({
+      paciente_id: params.pacienteId,
+      actor_id: params.actorId,
+      accion: 'ver',
+      tabla: params.tabla,
+      registro_id: params.registroId ?? params.pacienteId,
+    })
+  } catch (err) {
+    console.error(`logAuditView: no se pudo registrar el acceso a ${params.tabla}`, err)
   }
 }

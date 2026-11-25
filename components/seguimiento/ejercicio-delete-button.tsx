@@ -30,7 +30,7 @@ export function EjercicioDeleteButton({ id }: { id: number }) {
         </button>
       </form>
       {visible && state.error ? (
-        <p className="mt-1 text-xs text-vimet-red max-w-[10rem] text-right">{state.error}</p>
+        <p className="mt-1 text-xs text-vimet-red max-w-40 text-right">{state.error}</p>
       ) : null}
 
       <ConfirmDialog

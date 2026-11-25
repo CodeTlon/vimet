@@ -1,10 +1,14 @@
 import type { Metadata } from 'next'
 import { ArrowLeft } from 'lucide-react'
+import { getSessionUser } from '@/lib/auth/session'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { BookingWizard } from '@/components/booking-wizard'
-import { createClient } from '@/lib/supabase/server'
+import { and, asc, eq, inArray } from 'drizzle-orm'
+
+import { profiles, servicios as tablaServicios } from '@/db/schema'
+import { db } from '@/lib/db'
 
 export const metadata: Metadata = {
   title: 'Reservar turno',
@@ -15,28 +19,30 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function NuevoTurnoPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   if (!user) redirect('/login?next=/turnos/nuevo')
 
-  const [{ data: profesionales }, { data: servicios }] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('id, nombre, apellido, rol')
-      .in('rol', ['nutricionista', 'entrenador'])
-      .eq('activo', true)
-      .order('nombre'),
-    supabase
-      .from('servicios')
-      .select('id, nombre, duracion_minutos, tipo, profesional_id')
-      .eq('activo', true)
-      .order('nombre'),
+  const [profesionales, servicios] = await Promise.all([
+    db
+      .select({ id: profiles.id, nombre: profiles.nombre, apellido: profiles.apellido, rol: profiles.rol })
+      .from(profiles)
+      .where(and(inArray(profiles.rol, ['nutricionista', 'entrenador']), eq(profiles.activo, true)))
+      .orderBy(asc(profiles.nombre)),
+    db
+      .select({
+        id: tablaServicios.id,
+        nombre: tablaServicios.nombre,
+        duracion_minutos: tablaServicios.duracion_minutos,
+        tipo: tablaServicios.tipo,
+        profesional_id: tablaServicios.profesional_id,
+      })
+      .from(tablaServicios)
+      .where(eq(tablaServicios.activo, true))
+      .orderBy(asc(tablaServicios.nombre)),
   ])
 
   return (
-    <div className="min-h-screen pt-24 pb-16 bg-gradient-to-br from-vimet-sand to-vimet-cream">
+    <div className="min-h-screen pt-24 pb-16 bg-linear-to-br from-vimet-sand to-vimet-cream">
       <div className="container-vimet">
         <div className="max-w-3xl mx-auto mb-4">
           <Link
@@ -56,7 +62,7 @@ export default async function NuevoTurnoPage() {
             </p>
           </div>
           <div className="p-7">
-            {(profesionales?.length ?? 0) === 0 ? (
+            {profesionales.length === 0 ? (
               <div className="rounded-lg bg-vimet-red/5 border border-vimet-red/20 px-5 py-4 text-sm text-vimet-red">
                 Estamos terminando de configurar el sistema de reservas. Mientras tanto,{' '}
                 <Link href="/contacto" className="font-semibold underline">
@@ -66,8 +72,8 @@ export default async function NuevoTurnoPage() {
               </div>
             ) : (
               <BookingWizard
-                profesionales={(profesionales ?? []) as never}
-                servicios={(servicios ?? []) as never}
+                profesionales={profesionales as never}
+                servicios={servicios as never}
               />
             )}
           </div>

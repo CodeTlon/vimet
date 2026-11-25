@@ -1,30 +1,32 @@
 import { toggleServicioActivoAction, actualizarServicioAction, crearServicioAction } from '@/actions/contenido'
 import { ServicioForm } from '@/components/admin/servicio-form'
 import { ServiciosList } from '@/components/admin/servicios-list'
-import { createClient } from '@/lib/supabase/server'
+import { and, asc, eq, inArray } from 'drizzle-orm'
+
+import { profiles, servicios as tabla } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 
 export default async function ContenidoServiciosPage() {
-  const supabase = await createClient()
-
-  const [{ data: servicios }, { data: profesionales }] = await Promise.all([
-    supabase.from('servicios').select('*').order('tipo').order('nombre'),
-    supabase
-      .from('profiles')
-      .select('id, nombre, apellido')
-      .in('rol', ['nutricionista', 'entrenador', 'admin'])
-      .eq('activo', true),
+  await requireStaff()
+  const [servicios, profesionales] = await Promise.all([
+    db.select().from(tabla).orderBy(asc(tabla.tipo), asc(tabla.nombre)),
+    db
+      .select({ id: profiles.id, nombre: profiles.nombre, apellido: profiles.apellido })
+      .from(profiles)
+      .where(and(inArray(profiles.rol, ['nutricionista', 'entrenador', 'admin']), eq(profiles.activo, true))),
   ])
 
-  const opcionesProfesional = (profesionales ?? []).map((p) => ({
-    id: p.id as string,
+  const opcionesProfesional = profesionales.map((p) => ({
+    id: p.id,
     nombre: `${p.nombre} ${p.apellido}`.trim(),
   }))
 
   return (
     <div className="space-y-6">
       <ServiciosList
-        servicios={(servicios ?? []) as never}
+        servicios={servicios as never}
         profesionales={opcionesProfesional}
         actualizarAction={actualizarServicioAction}
         toggleAction={toggleServicioActivoAction}

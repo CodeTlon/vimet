@@ -1,0 +1,80 @@
+# Verifica el test real (recurso el recurso de test de Coolify, mismo compose que prod, base y archivos propios).
+# Test se enciende solo cuando se quiere probar algo: si al hacer push a `test` esta apagado, el workflow lo avisa y termina sin fallar.
+# Si esta encendido, espera a que Coolify termine el deploy de ese push y corre los E2E contra la URL de test.
+# No necesita token de Coolify ni acceso a la base.
+#
+# Configuracion (la hace el usuario):
+#   Variable del repo: TEST_URL (por ejemplo https://test.<dominio>). Sin ella el workflow no hace nada.
+# El deploy se detecta por `started_at` de /api/health: se espera un contenedor que haya arrancado despues de que empezo este job.
+name: Entornos
+on:
+  push:
+    branches: [test]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: entornos-test
+  cancel-in-progress: true
+
+jobs:
+  e2e-test:
+    if: ${{ vars.TEST_URL != '' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: '22', cache: 'npm' }
+      - name: Esperar el deploy de test (si esta encendido)
+        id: espera
+        env:
+          TEST_URL: ${{ vars.TEST_URL }}
+          EVENTO: ${{ github.event_name }}
+        run: |
+          inicio=$(date +%s)
+          # Test apagado: no es un error, simplemente no hay nada que probar.
+          for _ in 1 2 3; do
+            curl -fsS --max-time 10 "$TEST_URL/api/health" > /dev/null 2>&1 && encendido=1 && break
+            sleep 10
+          done
+          if [ -z "${encendido:-}" ]; then
+            echo "::notice::el recurso de test esta apagado: se omiten los E2E"
+            echo "omitir=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          deadline=$((SECONDS + 900))
+          while [ $SECONDS -lt $deadline ]; do
+            cuerpo=$(curl -fsS --max-time 10 "$TEST_URL/api/health" 2>/dev/null || true)
+            estado=$(echo "$cuerpo" | jq -r '.status // empty' 2>/dev/null || true)
+            arranque=$(echo "$cuerpo" | jq -r '.started_at // empty' 2>/dev/null || true)
+            if [ "$estado" = "ok" ]; then
+              # Disparado a mano no hay deploy nuevo que esperar: alcanza con que responda.
+              [ "$EVENTO" = "workflow_dispatch" ] && { echo "Test responde"; exit 0; }
+              if [ -n "$arranque" ] && [ "$(date -d "$arranque" +%s)" -ge "$inicio" ]; then echo "Test desplegado (arranque $arranque)"; exit 0; fi
+              echo "Test sigue con el contenedor anterior (arranque ${arranque:-desconocido})"
+            fi
+            sleep 15
+          done
+          echo "::error::no hubo un deploy nuevo de test en 15 min"; exit 1
+      - if: steps.espera.outputs.omitir != 'true'
+        run: npm ci
+      - name: E2E contra test
+        if: steps.espera.outputs.omitir != 'true'
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test
+        env:
+          BASE_URL: ${{ vars.TEST_URL }}
+      - name: Guardar el reporte si fallo
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 7

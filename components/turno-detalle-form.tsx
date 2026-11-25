@@ -143,7 +143,7 @@ function CancelarTurnoConfirmadoModal({ id, notas }: { id: number; notas: string
               rows={4}
               maxLength={500}
               placeholder="Ej: Lo siento, no voy a poder atenderte ese día por..."
-              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none"
+              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none"
             />
           </div>
 
@@ -235,7 +235,7 @@ export function TurnoDetalleForm({
             rows={4}
             defaultValue={notas}
             placeholder="Notas internas sobre el turno (no visibles al paciente)"
-            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none"
+            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange resize-none"
           />
         </div>
 

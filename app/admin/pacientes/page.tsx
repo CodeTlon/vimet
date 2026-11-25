@@ -6,7 +6,11 @@ import { CrearPacienteButton } from '@/components/crear-paciente-button'
 import { Pagination } from '@/components/pagination'
 import { PacienteDeleteButton } from '@/components/paciente-delete-button'
 import { pageRange, parsePage, totalPages as calcTotalPages } from '@/lib/pagination'
-import { createClient } from '@/lib/supabase/server'
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm'
+
+import { profiles } from '@/db/schema'
+import { requireStaff } from '@/lib/auth/session'
+import { db } from '@/lib/db'
 export const metadata = { title: 'Pacientes' }
 export const dynamic = 'force-dynamic'
 
@@ -27,32 +31,41 @@ export default async function PacientesPage(
     searchParams: Promise<{ page?: string }>
   }
 ) {
+  await requireStaff()
   const searchParams = await props.searchParams;
-  const supabase = await createClient()
   const page = parsePage(searchParams?.page)
   const [from, to] = pageRange(page)
 
-  const [{ data, count }, { count: activosCount }, { count: pendientesCount }] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('id, nombre, apellido, email, telefono, activo, activado_en, gestionado_por_staff, created_at', { count: 'exact' })
-      .eq('rol', 'paciente')
-      .order('activo', { ascending: true })   // pendientes primero
-      .order('created_at', { ascending: false })
-      .range(from, to),
-    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('rol', 'paciente').eq('activo', true),
-    supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true })
-      .eq('rol', 'paciente')
-      .eq('activo', false)
-      .is('activado_en', null),
-  ])
-
-  const pacientes = (data ?? []) as Paciente[]
-  const pages = calcTotalPages(count)
-  const activos = activosCount ?? 0
-  const pendientes = pendientesCount ?? 0
+  const soloPacientes = eq(profiles.rol, 'paciente')
+  const [pacientes, [{ total }], [{ activos }], [{ pendientes }]] = await Promise.all([
+    db
+      .select({
+        id: profiles.id,
+        nombre: profiles.nombre,
+        apellido: profiles.apellido,
+        email: profiles.email,
+        telefono: profiles.telefono,
+        activo: profiles.activo,
+        activado_en: profiles.activado_en,
+        gestionado_por_staff: profiles.gestionado_por_staff,
+        created_at: profiles.created_at,
+      })
+      .from(profiles)
+      .where(soloPacientes)
+      .orderBy(asc(profiles.activo), desc(profiles.created_at)) // sin activar primero
+      .limit(to - from + 1)
+      .offset(from),
+    db.select({ total: sql<number>`count(*)::int` }).from(profiles).where(soloPacientes),
+    db
+      .select({ activos: sql<number>`count(*)::int` })
+      .from(profiles)
+      .where(and(soloPacientes, eq(profiles.activo, true))),
+    db
+      .select({ pendientes: sql<number>`count(*)::int` })
+      .from(profiles)
+      .where(and(soloPacientes, eq(profiles.activo, false), isNull(profiles.activado_en))),
+  ]) as [Paciente[], { total: number }[], { activos: number }[], { pendientes: number }[]]
+  const pages = calcTotalPages(total)
 
   return (
     <div>

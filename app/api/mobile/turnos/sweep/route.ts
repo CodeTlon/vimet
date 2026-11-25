@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
-import { cancelarPendientesSinConfirmar, marcarNoAsistioVencidos } from '@/actions/turnos'
-import { requireMobileUser } from '@/lib/supabase/bearer'
+import { cancelarPendientesSinConfirmar, marcarNoAsistioVencidos } from '@/lib/services/turnos'
+import { requireMobileUser } from '@/lib/auth/mobile'
 
 export const dynamic = 'force-dynamic'
 

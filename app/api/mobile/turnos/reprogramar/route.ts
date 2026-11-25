@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
-import { reprogramarTurno } from '@/actions/turnos'
-import { requireMobileUser } from '@/lib/supabase/bearer'
+import { reprogramarTurno } from '@/lib/services/turnos'
+import { requireMobileUser } from '@/lib/auth/mobile'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 })
   }
 
-  const result = await reprogramarTurno(ctx.supabase, ctx.user.id, {
+  const result = await reprogramarTurno(ctx.user.id, {
     id,
     fecha,
     hora_inicio,

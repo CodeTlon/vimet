@@ -58,7 +58,7 @@ export function EjercicioPicker({
     }
   }, [q, parte, equipo])
 
-  const inputBase = 'rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
+  const inputBase = 'rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange'
 
   return (
     <div className="space-y-3">

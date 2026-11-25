@@ -8,7 +8,7 @@
 // correrlo. Upgrade path si aparecen quejas de calidad: revisión manual puntual o API de
 // traducción real.
 import assert from 'node:assert/strict'
-import { createClient } from '@supabase/supabase-js'
+import pg from 'pg'
 
 // --- Campos "enum" (categoria/parte_cuerpo comparten el mismo set de 10 valores) ---
 const PARTE_CUERPO_ES = {
@@ -540,30 +540,26 @@ function traducirLista(valores) {
   return (valores ?? []).map((v) => MUSCULO_ES[v] ?? capitalizar(v))
 }
 
-async function fetchTodos(supabase) {
-  const PAGE = 1000
-  let desde = 0
-  const filas = []
-  for (;;) {
-    const { data, error } = await supabase
-      .from('ejercicios')
-      .select('id, nombre, categoria, parte_cuerpo, equipo, musculo_principal, musculos_secundarios')
-      .order('id')
-      .range(desde, desde + PAGE - 1)
-    if (error) throw error
-    filas.push(...data)
-    if (data.length < PAGE) break
-    desde += PAGE
-  }
-  return filas
+async function fetchTodos(client) {
+  const { rows } = await client.query(
+    'select id, nombre, categoria, parte_cuerpo, equipo, musculo_principal, musculos_secundarios from ejercicios order by id',
+  )
+  return rows
 }
 
 async function main() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-  )
-  const filas = await fetchTodos(supabase)
+  if (!process.env.DATABASE_URL) throw new Error('Falta DATABASE_URL')
+  const client = new pg.Client({ connectionString: process.env.DATABASE_URL })
+  await client.connect()
+  try {
+    await traducir(client)
+  } finally {
+    await client.end()
+  }
+}
+
+async function traducir(client) {
+  const filas = await fetchTodos(client)
   console.log(`Traduciendo ${filas.length} ejercicios...`)
 
   const desconocidas = new Set()
@@ -599,8 +595,13 @@ async function main() {
   const CHUNK = 500
   for (let i = 0; i < actualizadas.length; i += CHUNK) {
     const lote = actualizadas.slice(i, i + CHUNK)
-    const { error } = await supabase.from('ejercicios').upsert(lote, { onConflict: 'id' })
-    if (error) throw error
+    for (const f of lote) {
+      await client.query(
+        `update ejercicios set nombre = $2, categoria = $3, parte_cuerpo = $4, equipo = $5,
+           musculo_principal = $6, musculos_secundarios = $7 where id = $1`,
+        [f.id, f.nombre, f.categoria, f.parte_cuerpo, f.equipo, f.musculo_principal, f.musculos_secundarios],
+      )
+    }
     console.log(`  ${Math.min(i + CHUNK, actualizadas.length)}/${actualizadas.length}`)
   }
 

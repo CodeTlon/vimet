@@ -1,5 +1,44 @@
 # KNOWN_ISSUES — VIMET (web)
 
+## Auditoria 2026-11-25 (entornos Coolify)
+- **ALTA (prod actual, Supabase):** falta la migracion `0037` (`plan_secciones`); el detalle de plan da 500 en cuanto exista un plan. Hoy 0 planes. Se resuelve con el corte.
+- **ALTA (prod actual):** la app vieja `vimet` no tiene `CLINICAL_DATA_ENCRYPTION_KEY`: guardar ficha, evolucion o notas de plan falla. Se resuelve con el corte (la clave ya esta en `vimet-produccion`).
+- **MEDIA:** catalogo `ejercicios` vacio en prod (Supabase). **En `vimet-test` ya esta cargado** (2026-11-25: 1324 ejercicios + GIF/imagen, 137 MB en el volumen, traducidos con `traducir-ejercicios.mjs`; nombres algo literales, ej. "Abajo Asistido Colgado Rodilla Elevacion Lanzamiento"). En `vimet-produccion` hay que correrlo en el corte con `STORAGE_PUBLIC_URL=https://vimetsalud.com.ar/media` (las URLs quedan absolutas). Ver `docs/migracion/CORTE.md`.
+- **MEDIA:** credenciales de Supabase prod y token de Coolify compartidos en chat el 2026-11-25: rotar tras el corte.
+- **BAJA (perf):** las paginas publicas se renderizan por request (`no-store`, TTFB 0,5-0,9 s). Evaluar `revalidate` cuando la app viva en Coolify.
+- Resueltos en `fix/auditoria-entornos-coolify`: login sin `next`, test indexable, `/turnos/nuevo` en sitemap, video del hero de 3-5 MB siempre, Next 16.4.2 con avisos moderados, `importar.mjs` roto en Windows.
+
+## Vigente (2026-10-16)
+- `npm audit` completo conserva 5 altas de herramientas de desarrollo: `braces` <= 3.0.3 via `eslint-config-next` -> `fast-glob` -> `micromatch`. Sin version corregida publicada; no entra al runtime (`npm audit --omit=dev` = 0). No usar `npm audit fix --force`.
+- Se retiro `overrides.tinypool`: con Vitest 5 ya no hace falta (el audit de runtime sigue en 0). Si reaparece una alta de `tinypool`, reponerlo.
+- 20 avisos de lint (`set-state-in-effect`, variables sin uso). Deuda existente.
+- El texto de las paginas legales ahora respeta `max-w-3xl` (con Tailwind 3 quedaba mas ancho por el orden entre `container-vimet` y la utilidad).
+
+## Estado tras la migración a backend propio (2026-10-13)
+
+Los items 1-11 de abajo describen producción con Supabase (`main`). En la rama `feature/dev1-backend-propio`:
+
+| # | Tema | Estado en la rama |
+|---|---|---|
+| 1 | Gap de migraciones aplicadas a mano | **Obsoleto**: el esquema sale de `drizzle/` y se verifica con `npm run db:paridad`. Al corte la base nueva nace completa. |
+| 2 | Cifrado clínico sin cubrir `plan_secciones` | **Sigue abierto** (decisión de producto, ver `OPEN_QUESTIONS.md`). Además no se cifran: `fichas_paciente` (lesiones, molestias, suplementación, motivos, hábitos), `feedback_*`, mediciones. |
+| 3 | Audit log de lecturas con un solo call site | **Sigue abierto** (`logAuditView` solo en la ficha de admin). El actor de las escrituras ahora sale de `app.user_id` (`conActor`). |
+| 4 | Backfill de cifrado | `scripts/migrar-cifrado-clinico.mjs` reescrito con `pg`; las columnas planas siguen existiendo (rollback). Hoy 0 filas clínicas en prod. |
+| 5-9 | Next/sharp, rate limit y `activo` mobile, validación de turnos | **Resueltos** y preservados (`requireMobileUser` chequea `activo`; `crearSchema` en `lib/validation/turnos.ts`). |
+| 10 | README/`docs/environments.md` hablan de Vercel | README actualizado; `docs/environments.md` sigue desactualizado. |
+| 11 | `recursos` mobile con validación laxa | **Resuelto**: web y app comparten `lib/services/recursos.ts` (uuid validado, mismos tipos y tamaños). |
+
+### Nuevos (abiertos)
+- **N1 — Sin verificar contra infra real** (Postgres/volumen/correo/dispositivo): ver `CURRENT_STATE.md`. Severidad ALTA para el corte, no para producción actual.
+- **N2 — `.env.example` desactualizado** (lista Supabase); está protegido en el sandbox de dev1. Fuente vigente: `docs/migracion/ENTORNO.md`.
+- **N3 — Falta cobertura automática de las acciones web y páginas de admin** (la protección es `requireStaff()` + filtros explícitos). Hace falta una pasada manual con un paciente y un staff no admin.
+- **N4 — Rate limit en memoria** (`lib/rate-limit.ts`): no se comparte entre instancias; ya era así.
+- **N5 — Contraseñas vacías importadas** (invitados que nunca eligieron): quedan sin hash y deben usar "recuperar contraseña".
+- **N6 — La app publicada (Supabase directo) deja de funcionar al apagar Supabase**: coordinar update forzado antes de la baja.
+- **N7 — Lint**: 20 errores `react-hooks/set-state-in-effect` preexistentes sin limpiar.
+Corregidos en la migración (detalle en `docs/migracion/HALLAZGOS.md`): `activarPerfilConfirmado` expuesta como Server Action, reglas con `userId` exportadas desde `'use server'`, desactivación de cuentas del equipo por cualquier staff, ficha/evolución escritas en texto plano por la app, borrado de paciente roto por la FK de `audit_log`.
+
+
 Severidad explícita, evidencia con archivo:línea donde aplica, escenario de falla concreto, fix propuesto **sin aplicar** salvo que se indique lo contrario. Generado el 2026-09-22 combinando verificación directa (`npm audit`, DNS/curl, GitHub Apps, **API de Coolify**, lectura directa de la DB de producción real) y dos auditorías de subagente de solo lectura (cifrado clínico + Quirks; paridad auth web/mobile).
 
 **Identidad de producción confirmada con evidencia dura (no por inferencia)**: se consultó la API de Coolify (`GET /api/v1/applications/{uuid}/envs` sobre la app `vimet`, `fqdn=https://vimetsalud.com.ar`) — `NEXT_PUBLIC_SUPABASE_URL` real de producción es `https://ayjzcxvtylvsjacgjxgh.supabase.co`. Ya no es una hipótesis por emails de staff: es el valor configurado de verdad. De paso, `RESEND_FROM_EMAIL` en ese mismo entorno ya está en `no-reply@vimetsalud.com.ar` (dominio verificado) — cierra `OPEN_QUESTIONS.md` #4.
@@ -73,3 +112,11 @@ Se agregó el chequeo dentro de `requireMobileUser()` (`lib/supabase/bearer.ts`)
 
 ### 11. `recursos` (POST) mobile con validación de datos algo más laxa que su equivalente web
 Sin `enum`/`.uuid()`/tope de longitud del lado mobile. Falla controlada contra el `CHECK` de la tabla, no es bypass de permisos.
+
+- **N-lint — Deuda de lint (2026-10-15):** 19 usos de `setState` dentro de `useEffect` (`react-hooks/set-state-in-effect`) en componentes viejos (`booking-wizard`, `reprogramar-turno-form`, `rutina-panel`, `use-reset-on-success`, etc.). La regla pasó de `error` a `warn` en `eslint.config.mjs` para no trabar el CI; refactorizar de a uno y volver a `error`. Severidad baja.
+- **N-storage — Archivos de prod sin migrar:** el código lee del volumen; los objetos de producción (hoy en Supabase Storage) se copian con `scripts/migracion/copiar-storage.mjs --apply` en el corte.
+
+## Actualización 2026-10-15
+- **Lint:** `react-hooks/set-state-in-effect` pasó de `error` a `warn` en `eslint.config.mjs` (19 usos de `setState` dentro de `useEffect` en componentes viejos: `booking-wizard`, `reprogramar-turno-form`, `rutina-panel`, `use-reset-on-success`, etc.). Refactorizar de a uno y volver a `error`. Severidad baja.
+- **Archivos de producción sin migrar:** el código lee del volumen; los objetos de Supabase Storage se copian en el corte con `scripts/migracion/copiar-storage.mjs --apply`.
+- **Audit:** `npm audit` solo marca 2 moderadas de herramientas de desarrollo (`esbuild` anidado de `drizzle-kit`, `@vitest/mocker`); el gate de alta/crítica de runtime pasa.

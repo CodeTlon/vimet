@@ -95,7 +95,7 @@ export function Select({
       window.removeEventListener('scroll', updatePos, true)
       window.removeEventListener('resize', updatePos)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open])
 
   useEffect(() => {
@@ -174,7 +174,7 @@ export function Select({
         aria-controls={listId}
         className={
           triggerClassName ??
-          `flex w-full min-w-0 items-center justify-between gap-2 rounded-lg border bg-white px-2.5 py-2 text-left text-sm transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${
+          `flex w-full min-w-0 items-center justify-between gap-2 rounded-lg border bg-white px-2.5 py-2 text-left text-sm transition-colors focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-60 ${
             open ? 'border-vimet-orange ring-2 ring-vimet-orange/40' : 'border-gray-200 hover:border-gray-300'
           }`
         }

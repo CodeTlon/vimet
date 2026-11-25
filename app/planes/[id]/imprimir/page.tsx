@@ -2,11 +2,14 @@ import { notFound, redirect } from 'next/navigation'
 
 import { PlanImprimirToolbar } from '@/components/seguimiento/plan-imprimir-toolbar'
 import { PlanImprimirView } from '@/components/seguimiento/plan-imprimir-view'
-import type { RutinaEjercicio } from '@/components/seguimiento/rutina-viewer'
 import { readClinicalField } from '@/lib/crypto/clinical'
 import { obtenerSeccionesPlan } from '@/lib/plan-secciones'
-import { getUserAndProfile } from '@/lib/supabase/auth-helpers'
-import { createClient } from '@/lib/supabase/server'
+import { eq } from 'drizzle-orm'
+
+import { fichas_paciente, planes, profiles } from '@/db/schema'
+import { esStaff, getUserAndProfile } from '@/lib/auth/session'
+import { obtenerRutinaPlan } from '@/lib/data/rutina'
+import { db } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 
 export default async function ImprimirPlanPage(props: { params: Promise<{ id: string }> }) {
@@ -16,47 +19,46 @@ export default async function ImprimirPlanPage(props: { params: Promise<{ id: st
   const { user, profile } = await getUserAndProfile()
   if (!user || !profile) redirect(`/login?next=/planes/${params.id}/imprimir`)
 
-  const supabase = await createClient()
-  const { data: planRaw } = await supabase.from('planes').select('*').eq('id', planId).maybeSingle()
+  const [planRaw] = await db.select().from(planes).where(eq(planes.id, planId)).limit(1)
   if (!planRaw) notFound()
 
-  const isStaff = ['nutricionista', 'entrenador', 'admin'].includes(profile.rol)
-  if (!isStaff && planRaw.paciente_id !== user.id) notFound()
+  // Paciente dueño o staff (reemplaza la policy `planes read`).
+  if (!esStaff(profile.rol) && planRaw.paciente_id !== user.id) notFound()
 
   // Ver lib/crypto/clinical.ts — `_enc` si el plan ya está cifrado, si no
   // cae a la columna vieja en texto plano (histórico sin backfillear).
   const plan = { ...planRaw, notas: readClinicalField(planRaw.notas_enc, planRaw.notas) }
 
-  const [{ data: paciente }, { data: ficha }, { data: profesional }, secciones, { data: rutina }] =
-    await Promise.all([
-      supabase.from('profiles').select('nombre, apellido, email').eq('id', plan.paciente_id).maybeSingle(),
-      supabase
-        .from('fichas_paciente')
-        .select('fecha_nacimiento, sexo, ocupacion')
-        .eq('paciente_id', plan.paciente_id)
-        .maybeSingle(),
-      plan.profesional_id
-        ? supabase.from('profiles').select('nombre, apellido').eq('id', plan.profesional_id).maybeSingle()
-        : Promise.resolve({ data: null }),
-      obtenerSeccionesPlan(supabase, planId),
-      plan.tipo === 'entrenamiento' || plan.tipo === 'combo'
-        ? supabase
-            .from('plan_ejercicios')
-            .select(
-              'id, dia_semana, series, repeticiones, descanso_seg, notas, ' +
-                'cardio_entrada_calor_valor, cardio_entrada_calor_unidad, ' +
-                'cardio_trabajo_principal_valor, cardio_trabajo_principal_unidad, ' +
-                'cardio_vuelta_calma_valor, cardio_vuelta_calma_unidad, ' +
-                'ejercicio:ejercicios(nombre, gif_url, imagen_url, youtube_url, atribucion, instrucciones, modo)',
-            )
-            .eq('plan_id', planId)
-            .order('orden')
-        : Promise.resolve({ data: null }),
-    ])
+  const [[paciente], [ficha], profesional, secciones, rutina] = await Promise.all([
+    db
+      .select({ nombre: profiles.nombre, apellido: profiles.apellido, email: profiles.email })
+      .from(profiles)
+      .where(eq(profiles.id, plan.paciente_id))
+      .limit(1),
+    db
+      .select({
+        fecha_nacimiento: fichas_paciente.fecha_nacimiento,
+        sexo: fichas_paciente.sexo,
+        ocupacion: fichas_paciente.ocupacion,
+      })
+      .from(fichas_paciente)
+      .where(eq(fichas_paciente.paciente_id, plan.paciente_id))
+      .limit(1),
+    plan.profesional_id
+      ? db
+          .select({ nombre: profiles.nombre, apellido: profiles.apellido })
+          .from(profiles)
+          .where(eq(profiles.id, plan.profesional_id))
+          .limit(1)
+          .then((r) => r[0] ?? null)
+      : Promise.resolve(null),
+    obtenerSeccionesPlan(planId),
+    plan.tipo === 'entrenamiento' || plan.tipo === 'combo' ? obtenerRutinaPlan(planId) : Promise.resolve([]),
+  ])
 
   if (!paciente) notFound()
 
-  const diasDescanso = (plan.dias_descanso ?? []) as string[]
+  const diasDescanso = plan.dias_descanso
   const dias = [
     'disponibilidad_lunes',
     'disponibilidad_martes',
@@ -74,10 +76,10 @@ export default async function ImprimirPlanPage(props: { params: Promise<{ id: st
         <PlanImprimirView
           plan={plan}
           paciente={paciente}
-          ficha={ficha}
+          ficha={ficha ?? null}
           profesional={profesional}
           secciones={secciones}
-          rutina={(rutina ?? []) as unknown as RutinaEjercicio[]}
+          rutina={rutina}
           diasDescanso={diasDescanso}
           tieneEntreno={Boolean(tieneEntreno)}
         />

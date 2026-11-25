@@ -1,8 +1,12 @@
 import { ArrowRight, FileText, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import { getSessionUser } from '@/lib/auth/session'
 
 import { PlanDownloadButton } from '@/components/seguimiento/plan-download'
-import { createClient } from '@/lib/supabase/server'
+import { and, desc, eq, ne } from 'drizzle-orm'
+
+import { planes as tablaPlanes } from '@/db/schema'
+import { db } from '@/lib/db'
 import {
   ESTADO_PLAN_BADGE,
   ESTADO_PLAN_LABEL,
@@ -23,20 +27,23 @@ type Plan = {
 }
 
 export default async function MisPlanesPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   if (!user) return null
 
-  const { data } = await supabase
-    .from('planes')
-    .select('id, tipo, titulo, estado, fecha_desde, fecha_hasta, archivo_path')
-    .eq('paciente_id', user.id)
-    .neq('estado', 'borrador')
-    .order('fecha_desde', { ascending: false })
-
-  const planes = (data ?? []) as Plan[]
+  // Solo los planes propios y no en borrador (policy `planes read`: paciente dueño).
+  const planes: Plan[] = await db
+    .select({
+      id: tablaPlanes.id,
+      tipo: tablaPlanes.tipo,
+      titulo: tablaPlanes.titulo,
+      estado: tablaPlanes.estado,
+      fecha_desde: tablaPlanes.fecha_desde,
+      fecha_hasta: tablaPlanes.fecha_hasta,
+      archivo_path: tablaPlanes.archivo_path,
+    })
+    .from(tablaPlanes)
+    .where(and(eq(tablaPlanes.paciente_id, user.id), ne(tablaPlanes.estado, 'borrador')))
+    .orderBy(desc(tablaPlanes.fecha_desde))
 
   return (
     <>

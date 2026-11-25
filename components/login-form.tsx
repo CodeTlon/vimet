@@ -17,7 +17,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2 disabled:opacity-60 disabled:active:scale-100"
+      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-vimet-gradient text-white font-semibold shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2 disabled:opacity-60 disabled:active:scale-100"
     >
       {pending ? 'Ingresando…' : (
         <>
@@ -30,7 +30,9 @@ function SubmitButton() {
 
 export function LoginForm() {
   const [state, formAction] = useActionState(loginAction, initialState)
-  const confirmado = useSearchParams().get('confirmado') === '1'
+  const searchParams = useSearchParams()
+  const confirmado = searchParams.get('confirmado') === '1'
+  const next = searchParams.get('next')
   // El email es controlado a propósito: React resetea los inputs NO controlados
   // del <form action={...}> al terminar la action, y hacer retipear el email
   // cuando lo único que falló fue la contraseña es puro ruido. Solo lo vaciamos
@@ -48,12 +50,13 @@ export function LoginForm() {
 
   return (
     <form action={formAction} className="space-y-4">
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       {confirmado && !state.error ? (
         <div
           role="status"
           className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700"
         >
-          Cuenta confirmada. Iniciá sesión — un admin todavía tiene que activarla antes de que puedas entrar.
+          Cuenta confirmada. Ya podés iniciar sesión.
         </div>
       ) : null}
       {state.error ? (
@@ -73,7 +76,7 @@ export function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="tu@email.com"
-          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
+          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-vimet-orange/40 focus:border-vimet-orange"
         />
       </div>
       <div>

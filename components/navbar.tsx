@@ -7,7 +7,6 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useLayoutEffect, useState } from 'react'
 
 import { LogoutButton } from '@/components/logout-button'
-import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
 const links = [
@@ -32,7 +31,7 @@ const HIDE_PREFIXES = [
   '/mis-recursos',
 ]
 
-export function Navbar() {
+export function Navbar({ user }: { user: { id: string; rol: string } | null }) {
   const pathname = usePathname()
   const router = useRouter()
   const hidden = HIDE_PREFIXES.some(
@@ -46,10 +45,6 @@ export function Navbar() {
   // calculado del scroll real en el mismo render de hidratación puede
   // aplicarse de forma no atómica entre el header y los links anidados).
   const [heroDarkness, setHeroDarkness] = useState(0)
-  // undefined = todavía no se resolvió la sesión (evita mostrar "Ingresar" un
-  // instante antes de corregir a "Salir" cuando el usuario sí está logueado).
-  const [user, setUser] = useState<{ id: string; rol: string } | null | undefined>(undefined)
-
   useLayoutEffect(() => {
     const onScroll = () => {
       const threshold = window.innerHeight * 0.3
@@ -71,38 +66,6 @@ export function Navbar() {
   useEffect(() => {
     setOpen(false)
   }, [pathname])
-
-  useEffect(() => {
-    const supabase = createClient()
-    let mounted = true
-
-    const refresh = async () => {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser()
-      if (!authUser) {
-        if (mounted) setUser(null)
-        return
-      }
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('rol')
-        .eq('id', authUser.id)
-        .maybeSingle()
-      if (mounted) setUser({ id: authUser.id, rol: profile?.rol ?? 'paciente' })
-    }
-
-    refresh()
-
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      refresh()
-    })
-
-    return () => {
-      mounted = false
-      sub.subscription.unsubscribe()
-    }
-  }, [])
 
   const isStaff = user && ['nutricionista', 'entrenador', 'admin'].includes(user.rol)
   const scrolled = heroDarkness >= 1
@@ -139,7 +102,7 @@ export function Navbar() {
                 key={l.href}
                 href={l.href}
                 className={cn(
-                  'px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
+                  'px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
                   active
                     ? transparent
                       ? 'bg-white/15 text-white'
@@ -164,7 +127,7 @@ export function Navbar() {
                 <Link
                   href="/admin/dashboard"
                   className={cn(
-                    'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
+                    'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
                     transparent ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100',
                   )}
                 >
@@ -174,7 +137,7 @@ export function Navbar() {
                 <Link
                   href="/mis-turnos"
                   className={cn(
-                    'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
+                    'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
                     transparent ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100',
                   )}
                 >
@@ -183,7 +146,7 @@ export function Navbar() {
               )}
               <LogoutButton
                 className={cn(
-                  'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 disabled:opacity-60 disabled:active:scale-100',
+                  'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-colors active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50 disabled:opacity-60 disabled:active:scale-100',
                   transparent
                     ? 'border-white/40 text-white hover:bg-white/10'
                     : 'border-gray-300 text-gray-700 hover:bg-gray-50',
@@ -197,7 +160,7 @@ export function Navbar() {
               <Link
                 href="/login"
                 className={cn(
-                  'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
+                  'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
                   transparent ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100',
                 )}
               >
@@ -205,7 +168,7 @@ export function Navbar() {
               </Link>
               <Link
                 href="/turnos/nuevo"
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold bg-vimet-gradient text-white shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold bg-vimet-gradient text-white shadow-md transition-all hover:shadow-lg active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50 focus-visible:ring-offset-2"
               >
                 <CalendarPlus className="size-4" /> Reservar turno
               </Link>
@@ -217,7 +180,7 @@ export function Navbar() {
           type="button"
           aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
           className={cn(
-            'lg:hidden p-2 rounded-md transition-colors active:scale-[0.92] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
+            'lg:hidden p-2 rounded-md transition-colors active:scale-[0.92] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-vimet-orange/50',
             transparent ? 'text-white' : 'text-gray-900',
           )}
           onClick={() => setOpen((v) => !v)}

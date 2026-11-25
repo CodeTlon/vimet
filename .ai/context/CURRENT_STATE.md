@@ -1,6 +1,38 @@
 # CURRENT_STATE — VIMET (web)
 
-Al 2026-09-22, HEAD `dcdb7bf` (`origin/main`, recién sincronizado).
+**Actualizacion 2026-10-16:** la rama `feature/dev2-estandar-2026` (integrada en `dev` y `test`) lleva la web al estandar de versiones de la flota: Next 16.4.2, React 19.3.1, Tailwind 4.3.3, TypeScript 6.0.3, ESLint 10.13.0, Vitest 5.0.5, Zod 4.6.7, Better Auth 1.7.10. Verificado localmente: `tsc`, lint (0 errores, 20 avisos), 48 tests, build, `npm audit --omit=dev` en 0 y comparacion visual contra la version anterior (igual salvo 12 px en el pie y el ancho de los textos legales). Imagen Docker Alpine construida. **Sin verificar:** los 51 E2E (los corre el CI) y el despliegue en Coolify (sin recursos todavia). `main` sigue en Supabase.
+
+Al **2026-10-15**. Ramas: `main` = producción (Supabase, `186829d`, sin migrar); `dev` = `test` = backend propio (v0.29.1, `15aebbd`, imagen Docker verificada, sin desplegar); `archive/dev-dokku-2026-07` = la `dev` vieja. El detalle de abajo es del 2026-10-13 y sigue vigente salvo lo anotado en el README (v0.29.x). Pendiente del corte a `main`: recursos de Coolify, variables, copia de archivos y revocar el token de Supabase compartido.
+
+## Backend propio (rama `feature/dev1-backend-propio`, en `dev`/`test`, SIN desplegar a producción)
+
+**Verificado (con evidencia, sandbox sin Docker):**
+- `npx tsc --noEmit` y `npm run build` limpios; `npm test`: 43 tests verdes (Vitest + PGlite con las migraciones reales): flujo de auth (registro → confirmar activa → login; hash bcrypt de Supabase; recuperación por código; bearer), invitaciones, IDOR de turnos, matriz de autorización de toda la capa mobile, borrado de paciente, importador con checksum.
+- `npm run db:paridad`: esquema Drizzle == esquema final de `supabase/migrations` (columnas, defaults, constraints, índices, enums, triggers), con la única diferencia deliberada de `audit_log` sin FK a `profiles`.
+- `npm run lint`: 20 errores preexistentes (`react-hooks/set-state-in-effect`) y 4 warnings; ninguno nuevo.
+- La web ya no importa nada de Supabase (`lib/supabase` eliminado, dependencias `@supabase/*` quitadas). Los scripts de mantenimiento usan `pg`.
+- `vimet-app` (rama `feature/dev1-backend-propio`, en `dev`/`test` del repo de la app): sin supabase-js; `tsc` con solo 2 errores preexistentes de `components/ui.tsx`.
+
+**NO verificado (requiere infra real):**
+- Ejecución contra un Postgres y un MinIO reales (el daemon de Docker no es accesible desde la cuenta dev1); `drizzle-kit migrate` real.
+- El importador contra el Supabase de producción (probado solo contra una réplica PGlite del esquema legado), y `copiar-storage.mjs` (no hay objetos hoy).
+- Correo real (Resend) de confirmación/recuperación; cookies de Better Auth tras el proxy de Coolify.
+- La app mobile en dispositivo (login, recuperación, subida de PDF/imágenes, sesión de entrenamiento).
+- Backups a B2 y simulacro de restauración (`scripts/backup/*` solo con `bash -n`).
+- Ensayo completo en `test`; el runbook está en `docs/migracion/CORTE.md`.
+
+**Datos de producción medidos (2026-10-13, solo lectura):** 8 usuarios (5 bcrypt, 3 sin contraseña), 28 filas en `public`, 0 datos clínicos, 0 objetos de Storage; faltan en prod las tablas de `0037` (`plan_secciones*`). El corte es barato hoy; conviene antes de que carguen pacientes reales.
+
+## Pendiente (lo ejecuta Mateo o requiere infra)
+1. Recurso de Coolify de `test`/`prod` (Docker Compose con `docker-compose.coolify.yml`: Postgres + volumen de archivos, sin MinIO); variables de `docs/migracion/ENTORNO.md`.
+2. `db:migrate` + `importar.mjs` + pruebas manuales en `test`; luego PR `test` → `main` (lo mergea Mateo).
+3. Copiar `docs/workflows/*.yml` a `.github/workflows/` (token de dev1 sin scope `workflow`); reducir `.env.example`.
+4. Build de la app en dispositivo contra `test`; forzar update de la app publicada tras el corte.
+5. Revocar el token de Supabase compartido en el chat (vencía a las 24 h).
+
+---
+
+# Histórico — 2026-09-22 (producción con Supabase; sigue vigente para `main` hasta el corte)
 
 ## Verificado end-to-end (FACT, con evidencia)
 
@@ -35,3 +67,10 @@ Esto también explica por qué el cifrado clínico y el gap de `plan_secciones` 
 
 - Mecanismo exacto de auto-deploy de Coolify (push automático vs. manual) — se confirmó la app/proyecto correctos, no el trigger de deploy en sí.
 - Si el código YA deployado en Coolify (no el de esta rama) queda 100% conforme con el nuevo schema — las migraciones están aplicadas, pero no se re-deployó la app en esta sesión.
+
+## Actualización 2026-10-15 (estándar de Coolify, video y vulnerabilidades)
+- **Hecho y verificado:** archivos en volumen (`lib/storage/disk.ts`, ruta `/media`; buckets `ejercicios-media` y `sitio` públicos, `planes` y `recursos` privados con URL firmada HMAC con vencimiento; sin MinIO ni `@aws-sdk/*`); `Dockerfile` + `docker-entrypoint.sh` (migra al arrancar, falla cerrado) + `docker-compose.coolify.yml`; `/api/health` con `started_at`; workflows `ci.yml` (lint, tipos, 48 tests, build, audit, E2E, imagen Docker), `entornos.yml`, `produccion.yml`, `backup-check.yml`. **Imagen Docker real probada** contra Postgres 17: migra (28 tablas), health 200, `/media` público 200, privado sin firma 403, path traversal 404, Range 206. Local: 48/48 tests, 51 E2E públicos en 3 viewports, `tsc` limpio, lint 0 errores (19 avisos `set-state-in-effect`, ver KNOWN_ISSUES), `npm audit --omit=dev --audit-level=high` en 0.
+- **Video:** los videos de recursos del paciente (tope 40 MB) pasan por el servicio global de compresión en `lib/services/recursos.ts` (`lib/transcode.ts`, preset `web`, soft-fail). El uploader de ejercicios convierte el video a GIF de hasta 6 s en el navegador (no sube video) y el video del hero es un archivo estático del repo: ahí no aplica.
+- **Dependencias:** `next` 16.3.8, `vitest` 3.2.7 y `overrides.tinypool` 2.2.0 (la copia vulnerable llega por el peer opcional de `better-auth`).
+- **Sin verificar:** firma de URL privada punta a punta contra la imagen (solo cubierta por tests unitarios, `tests/storage.test.ts`); compresión real de un video contra el servicio; despliegue en Coolify.
+- **Pendiente (del usuario):** crear los recursos de Coolify, cargar variables (`TRANSCODE_API_KEY` solo ahí), copiar los archivos de Supabase al volumen con `scripts/migracion/copiar-storage.mjs --apply`, ensayo y corte (`docs/migracion/CORTE.md`), cron de backup B2.

@@ -1,6 +1,136 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 1rem;
+  @media (width >= --theme(--breakpoint-sm)) {
+    max-width: none;
+  }
+  @media (width >= 640px) {
+    max-width: 640px;
+  }
+  @media (width >= 768px) {
+    max-width: 768px;
+    padding-inline: 1.5rem;
+  }
+  @media (width >= 1024px) {
+    max-width: 1024px;
+    padding-inline: 2rem;
+  }
+  @media (width >= 1280px) {
+    max-width: 1280px;
+  }
+}
+
+@theme {
+  --color-vimet-orange: #e8611a;
+  --color-vimet-red: #c4391c;
+  --color-vimet-dark: #1a1a1a;
+  --color-vimet-cream: #fff8f5;
+  --color-vimet-sand: #fff9f5;
+  --color-vimet-tint1: #f8e1ce;
+  --color-vimet-tint2: #f2d99e;
+  --color-vimet-tint3: #e9b292;
+  --color-vimet-tint4: #ed9755;
+  --color-vimet-tint5: #cc751c;
+  --color-vimet-tint6: #d94c32;
+  --color-vimet-tint7: #c43c44;
+  --color-vimet-tint8: #cb2820;
+
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f0f0f0;
+  --color-gray-200: #e5e5e5;
+  --color-gray-300: #b8b8b8;
+  --color-gray-400: #9a9a9a;
+  --color-gray-500: #7a7a7a;
+  --color-gray-600: #5a5a5a;
+  --color-gray-700: #4a4a4a;
+  --color-gray-800: #2d2d2d;
+  --color-gray-900: #1a1a1a;
+
+  --color-success: #2d8a4e;
+  --color-warning: #d4a017;
+  --color-danger: #c4391c;
+  --color-info: #2563eb;
+
+  --font-heading: var(--font-heading), system-ui, sans-serif;
+  --font-body: var(--font-body), system-ui, sans-serif;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 16px 50px rgba(0, 0, 0, 0.15);
+
+  --background-image-vimet-gradient: linear-gradient(135deg, #e8611a, #c4391c);
+
+  --animate-fade-up: fade-up 0.6s ease-out forwards;
+  --animate-modal-in: modal-in 0.18s ease-out;
+  --animate-fade-in: fade-in 0.18s ease-out;
+
+  @keyframes fade-up {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes modal-in {
+    0% {
+      opacity: 0;
+      transform: translateY(8px) scale(0.97);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  @keyframes fade-in {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility text-gradient {
+  @apply bg-vimet-gradient bg-clip-text text-transparent;
+}
+
+@utility container-vimet {
+  @apply mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8;
+}
 
 @layer base {
   html {
@@ -9,21 +139,21 @@
        alineado con el contenido (container-vimet) y no se corre a un costado. */
     scrollbar-gutter: stable;
     scrollbar-width: thin;
-    scrollbar-color: theme('colors.gray.300') theme('colors.gray.100');
+    scrollbar-color: var(--color-gray-300) var(--color-gray-100);
   }
   html::-webkit-scrollbar {
     width: 10px;
   }
   html::-webkit-scrollbar-track {
-    background: theme('colors.gray.100');
+    background: var(--color-gray-100);
   }
   html::-webkit-scrollbar-thumb {
-    background-color: theme('colors.gray.300');
+    background-color: var(--color-gray-300);
     border-radius: 9999px;
-    border: 2px solid theme('colors.gray.100');
+    border: 2px solid var(--color-gray-100);
   }
   html::-webkit-scrollbar-thumb:hover {
-    background-color: theme('colors.vimet.orange');
+    background-color: var(--color-vimet-orange);
   }
 
   body {
@@ -35,24 +165,12 @@
   }
 }
 
-@media print {
-  body {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-}
-
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-
-  .text-gradient {
-    @apply bg-vimet-gradient bg-clip-text text-transparent;
-  }
-
-  .container-vimet {
-    @apply mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8;
+  @media print {
+    body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
   }
 }
 
