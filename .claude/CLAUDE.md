@@ -23,9 +23,9 @@ La rama `feature/dev1-backend-propio` (hoy en `dev` y `test`; **producción en `
 - **Cliente:** VIMET — Vida y Metabolismo (Avril Jerushalmi + Gerónimo Gallardo)
 - **Tipo:** L3 — Web app con auth + booking + dashboard admin (migración desde stack PHP MVC + MySQL)
 - **Generado:** 2026-05-09
-- **URL Producción:** https://vimetsalud.com.ar (app vieja con Supabase hasta el corte) · **Test:** https://test.vimetsalud.com.ar (Coolify, Postgres propio)
+- **URL Producción:** https://vimetsalud.com.ar (Coolify, Postgres propio desde 2026-11-25) · **Test:** https://test.vimetsalud.com.ar (Coolify, Postgres propio)
 - **Repo GitHub:** CodeTlon/vimet
-- **Deploy:** **Coolify es la producción real** (sirve `vimetsalud.com.ar`, confirmado el 09/09 — DNS resuelve y responde 200 detrás de Cloudflare). Vercel existe aparte y solo se usa para pruebas/preview — no auto-deploya el sitio real pese a lo que decía esta línea antes. Ver quirk "Deploy real es Coolify, no Vercel" para el detalle y las implicancias (dónde chequear env vars, por qué el dominio nunca apareció cargado en Vercel). Supabase aparte, en su propio proyecto.
+- **Deploy:** **Coolify `vimet-produccion`** (`2qb26vmqtsxvwfojdpcv0yz8`, Docker Compose: app + Postgres 17 + volumen `storage`), auto-deploy desde `main`, sirve `vimetsalud.com.ar` y `www` desde el **corte del 2026-11-25**. **Supabase ya no se usa** (proyecto `ayjzcxvtylvsjacgjxgh` queda solo como respaldo de solo lectura hasta su baja). Test: `vimet-test` (`eenyumu5fmauotsd3d3fdmk8`, rama `test`, `test.vimetsalud.com.ar`), apagado y **sin auto-deploy**: para probar, Deploy/Start a mano en Coolify y apagarlo al terminar. Backup diario 03:45 UTC a B2 (`prod/vimet/`). Detalle: `docs/migracion/CORTE.md`.
 
 ## Origen del proyecto
 Migración desde sitio PHP MVC propio (en `client-assets/vimet/vimet/`) que corría sobre Laragon + MySQL. Ver `docs/migration-report.md` para mapeo legacy → nuevo stack.
@@ -298,6 +298,7 @@ npx playwright test  # Tests E2E
 ## Historial de Cambios
 | Fecha | Rama | Cambio |
 |-------|------|--------|
+| 2026-11-25 | docs/corte-coolify-hecho | v0.31.1 — **Corte hecho**: `main` (v0.31.0) deployado en `vimet-produccion` con el dominio real; app vieja (Nixpacks + Supabase) apagada y borrada. Datos importados desde Supabase prod (8 usuarios con su hash, 4 servicios, 15 horarios, contenido del sitio; conteos y checksums OK); catalogo de 1324 ejercicios + media cargado. Ventana de corte ~8 min (22:04-22:12 UTC). Backup diario a B2 configurado (cron 03:45 UTC, `FILES_MODE=volume`) y probado con restauracion. 3 usuarios importados sin contraseña (invitados que nunca la eligieron) y 4 con email sin confirmar: usan "Olvidé mi contraseña" / confirmar mail. |
 | 2026-11-25 | fix/auditoria-entornos-coolify | v0.31.0 — Entornos `vimet-test` y `vimet-produccion` creados en Coolify; ensayo de importacion desde Supabase prod a test (verificacion OK). Fixes de la auditoria: login vuelve a `next` (validado con `lib/safe-next.ts`), noindex fuera de produccion, sitemap sin `/turnos/nuevo`, video del hero respeta Save-Data/reduced-motion, Next 16.4.6, CLI de `importar.mjs` en Windows + origen TLS/solo lectura. `docs/migracion/CORTE.md` reescrito con el procedimiento real. Catalogo de ejercicios cargado en test (1324 + media). Al cerrar, `vimet-test` queda apagado. |
 | 2026-10-16 | feature/dev2-estandar-2026 | v0.30.0 — estandar de versiones de la flota: Next 16.4.2, React 19.3.1, Tailwind 4.3.3, TS 6.0.3, ESLint 10, Vitest 5. Sin cambios de comportamiento; capturas iguales salvo el ancho de los textos legales. Ver README (changelog) y `.ai/context/DECISIONS.md`. |
 | 2026-10-15 | dev/test | v0.29.1 — Video de recursos por el servicio global de compresión (`lib/transcode.ts`, soft-fail, `TRANSCODE_API_KEY` solo en Coolify), `next` 16.3.8, `vitest` 3.2.7 + `overrides.tinypool`, audit en 0. 48 tests, 51 E2E, imagen Docker verificada. Sin desplegar. |
