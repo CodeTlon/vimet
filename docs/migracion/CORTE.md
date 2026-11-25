@@ -1,6 +1,6 @@
 # Ensayo y corte: Supabase -> Coolify (Postgres propio)
 
-Actualizado 2026-11-25. Los recursos de Coolify ya existen y el ensayo en `test` ya se hizo con datos reales.
+Actualizado 2026-11-25. **El corte se hizo el 2026-11-25** (22:04-22:12 UTC): produccion corre en `vimet-produccion` con Postgres propio; la app vieja `vimet` (Supabase) se borro. Este documento queda como registro y receta (rollback ya no aplica: Supabase solo conserva el estado previo al corte).
 
 ## Recursos (Coolify `https://coolify.codetlon.com.ar`, proyecto "Vimet")
 | Recurso | UUID | Rama | Dominio | Estado |
